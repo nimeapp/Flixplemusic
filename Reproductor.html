@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reproductor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+</head>
+<body class="bg-black text-white flex items-center justify-center min-h-screen p-4">
+
+  <div class="w-full max-w-sm mx-auto bg-gradient-to-b from-[#2d1600] to-black p-6 rounded-xl shadow-lg">
+    <div class="flex justify-center mb-6">
+      <img id="albumCover" src="https://via.placeholder.com/300" alt="Imagen del álbum" class="rounded-xl w-full max-w-xs shadow-lg" />
+    </div>
+    <div class="text-center mb-2">
+      <h2 id="trackTitle" class="text-lg font-semibold">Título</h2>
+      <p id="trackArtist" class="text-sm text-gray-400">Artista</p>
+    </div>
+    <div class="flex justify-center my-2">
+      <i class="fa-regular fa-heart text-xl opacity-70 hover:opacity-100"></i>
+    </div>
+    <audio id="audio" src=""></audio>
+    <div class="mt-4">
+      <input type="range" id="progress" value="0" class="w-full accent-green-500" />
+      <div class="flex justify-between text-xs text-gray-400 mt-1">
+        <span id="current">0:00</span>
+        <span id="total">0:00</span>
+      </div>
+    </div>
+    <div class="flex justify-between items-center mt-4 px-6 text-2xl text-white">
+      <button id="shuffleBtn" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-shuffle"></i></button>
+      <button id="back"><i class="fa-solid fa-backward-step"></i></button>
+      <button id="playBtn" class="bg-white text-black w-14 h-14 rounded-full flex items-center justify-center shadow-lg">
+        <i class="fa-solid fa-play" id="playIcon"></i>
+      </button>
+      <button id="next"><i class="fa-solid fa-forward-step"></i></button>
+      <button id="repeatBtn" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-repeat"></i></button>
+    </div>
+  </div>
+
+<script>
+  const audio = document.getElementById('audio');
+  const playBtn = document.getElementById('playBtn');
+  const playIcon = document.getElementById('playIcon');
+  const progress = document.getElementById('progress');
+  const current = document.getElementById('current');
+  const total = document.getElementById('total');
+  const repeatBtn = document.getElementById('repeatBtn');
+  const shuffleBtn = document.getElementById('shuffleBtn');
+  const backBtn = document.getElementById('back');
+  const nextBtn = document.getElementById('next');
+  const albumCoverImg = document.getElementById('albumCover');
+  const trackTitleElem = document.getElementById('trackTitle');
+  const trackArtistElem = document.getElementById('trackArtist');
+
+  // Leer parámetros desde la URL
+  function getParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return {
+      title: urlParams.get('title'),
+      artist: urlParams.get('artist'),
+      url: urlParams.get('url'),
+      cover: urlParams.get('cover'),
+      year: urlParams.get('year')
+    };
+  }
+
+  // Playlist default (si no hay datos en la URL)
+  const defaultPlaylist = [
+    {
+      title: "Canción 1",
+      artist: "Artista 1",
+      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+      cover: "https://via.placeholder.com/300?text=Album+1"
+    },
+    {
+      title: "Canción 2",
+      artist: "Artista 2",
+      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+      cover: "https://via.placeholder.com/300?text=Album+2"
+    }
+  ];
+
+  let playlist = [];
+  let currentTrackIndex = 0;
+  let isRepeat = false;
+  let isShuffle = false;
+
+  const params = getParams();
+
+  if (params.url && params.title) {
+    playlist = [{
+      title: params.title,
+      artist: params.artist || 'Desconocido',
+      url: params.url,
+      cover: params.cover || 'https://via.placeholder.com/300?text=Album'
+    }];
+  } else {
+    playlist = defaultPlaylist;
+  }
+
+  function formatTime(sec) {
+    if (isNaN(sec)) return '0:00';
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  }
+
+  function playTrack(index) {
+    if (index < 0 || index >= playlist.length) return;
+    currentTrackIndex = index;
+    const track = playlist[index];
+    albumCoverImg.src = track.cover;
+    trackTitleElem.textContent = track.title;
+    trackArtistElem.textContent = track.artist;
+    audio.src = track.url;
+    audio.play();
+    playIcon.classList.replace('fa-play', 'fa-pause');
+  }
+
+  audio.addEventListener('loadedmetadata', () => {
+    total.textContent = formatTime(audio.duration);
+  });
+
+  audio.addEventListener('timeupdate', () => {
+    if (audio.duration) {
+      progress.value = (audio.currentTime / audio.duration) * 100;
+      current.textContent = formatTime(audio.currentTime);
+    }
+  });
+
+  progress.addEventListener('input', () => {
+    if (audio.duration) {
+      audio.currentTime = (progress.value / 100) * audio.duration;
+    }
+  });
+
+  playBtn.addEventListener('click', () => {
+    if (audio.paused) {
+      audio.play();
+      playIcon.classList.replace('fa-play', 'fa-pause');
+    } else {
+      audio.pause();
+      playIcon.classList.replace('fa-pause', 'fa-play');
+    }
+  });
+
+  repeatBtn.addEventListener('click', () => {
+    isRepeat = !isRepeat;
+    audio.loop = isRepeat;
+    repeatBtn.classList.toggle('text-green-500', isRepeat);
+  });
+
+  shuffleBtn.addEventListener('click', () => {
+    isShuffle = !isShuffle;
+    shuffleBtn.classList.toggle('text-green-500', isShuffle);
+  });
+
+  nextBtn.addEventListener('click', () => {
+    if (isShuffle) {
+      const randomIndex = Math.floor(Math.random() * playlist.length);
+      playTrack(randomIndex);
+    } else {
+      if (currentTrackIndex + 1 < playlist.length) {
+        playTrack(currentTrackIndex + 1);
+      } else if (isRepeat) {
+        playTrack(0);
+      }
+    }
+  });
+
+  backBtn.addEventListener('click', () => {
+    if (isShuffle) {
+      const randomIndex = Math.floor(Math.random() * playlist.length);
+      playTrack(randomIndex);
+    } else {
+      if (currentTrackIndex - 1 >= 0) {
+        playTrack(currentTrackIndex - 1);
+      } else if (isRepeat) {
+        playTrack(playlist.length - 1);
+      }
+    }
+  });
+
+  audio.addEventListener('ended', () => {
+    nextBtn.click();
+  });
+
+  // Iniciar reproducción
+  playTrack(0);
+</script>
+</body>
+</html>
