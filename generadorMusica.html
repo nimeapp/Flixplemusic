@@ -3,53 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Deezer Álbum Playlist con Reproductor Spotify Clone</title>
-
+  <title>Generador de música</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Biblioteca para compresión -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
 </head>
-
 <body class="bg-gradient-to-b from-[#2d1600] to-black text-white min-h-screen flex flex-col items-center p-4">
-
   <div class="w-full max-w-3xl">
-
-    <h1 class="text-3xl font-bold mb-6 text-center">Buscador de Artistas (Deezer)</h1>
-
+    <h1 class="text-3xl font-bold mb-6 text-center">Buscador de Artistas</h1>
     <div class="mb-6 max-w-sm mx-auto">
       <input id="searchInput" type="text" placeholder="Escribe un artista (ej: Shakira)" class="w-full p-3 rounded-lg text-black" />
       <button id="searchBtn" class="w-full mt-3 bg-green-500 hover:bg-green-600 text-black font-semibold py-2 rounded-lg">Buscar</button>
     </div>
-
     <div id="albumsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
-
     <div id="tracksSection" class="hidden mb-8">
       <h2 class="text-2xl font-semibold mb-4 text-center">Canciones del Álbum</h2>
       <div id="tracksContainer" class="space-y-3 max-h-[400px] overflow-y-auto bg-gray-800 p-4 rounded-lg"></div>
       <button id="saveAlbumBtn" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-black font-semibold py-2 rounded-lg">Guardar álbum en playlist y generar URL</button>
     </div>
-
     <div id="generatedUrlContainer" class="hidden mt-4 max-w-full bg-gray-900 p-3 rounded-lg break-words text-green-400 font-mono"></div>
-
     <!-- REPRODUCTOR Spotify Clone -->
     <div class="w-full max-w-sm mx-auto bg-gradient-to-b from-[#2d1600] to-black p-6 rounded-xl shadow-lg mt-8">
-
       <div class="flex justify-center mb-6">
         <img id="albumCover" src="https://via.placeholder.com/300" alt="Imagen del álbum" class="rounded-xl w-full max-w-xs shadow-lg" />
       </div>
-
       <div class="text-center mb-2">
         <h2 id="trackTitle" class="text-lg font-semibold">Título</h2>
         <p id="trackArtist" class="text-sm text-gray-400">Artista</p>
       </div>
-
       <div class="flex justify-center my-2">
         <i class="fa-regular fa-heart text-xl opacity-70 hover:opacity-100"></i>
       </div>
-
       <audio id="audio" src=""></audio>
-
       <div class="mt-4">
         <input type="range" id="progress" value="0" class="w-full accent-green-500" />
         <div class="flex justify-between text-xs text-gray-400 mt-1">
@@ -57,53 +45,32 @@
           <span id="total">0:00</span>
         </div>
       </div>
-
       <div class="flex justify-between items-center mt-4 px-6 text-2xl text-white">
         <button id="shuffleBtn" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-shuffle"></i></button>
         <button id="back"><i class="fa-solid fa-backward-step"></i></button>
-
-        <button id="playBtn" class="bg-white text-black w-14 h-14 rounded-full flex items-center justify-center shadow-lg">
-          <i class="fa-solid fa-play" id="playIcon"></i>
-        </button>
-
+        <button id="playBtn" class="bg-white text-black w-14 h-14 rounded-full flex items-center justify-center shadow-lg"><i class="fa-solid fa-play" id="playIcon"></i></button>
         <button id="next"><i class="fa-solid fa-forward-step"></i></button>
         <button id="repeatBtn" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-repeat"></i></button>
       </div>
-
     </div>
-
   </div>
 
 <script>
-  // JSONP helper para Deezer API
   function jsonp(url) {
     return new Promise(resolve => {
       const cb = 'cb_' + Math.random().toString(36).substr(2, 9);
-      window[cb] = data => {
-        delete window[cb];
-        script.remove();
-        resolve(data);
-      };
+      window[cb] = data => { delete window[cb]; script.remove(); resolve(data); };
       const script = document.createElement('script');
       script.src = `${url}&output=jsonp&callback=${cb}`;
       document.body.appendChild(script);
     });
   }
-
-  // Encode / decode base64 para URL segura
-  function encodeBase64(str) {
-    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
-      function(match, p1) {
-        return String.fromCharCode('0x' + p1);
-      }));
-  }
-  function decodeBase64(str) {
-    return decodeURIComponent(Array.prototype.map.call(atob(str), function(c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
+  function formatTime(sec) {
+    if (isNaN(sec)) return '0:00';
+    const m = Math.floor(sec/60), s = Math.floor(sec % 60).toString().padStart(2,'0');
+    return `${m}:${s}`;
   }
 
-  // Elementos DOM
   const searchInput = document.getElementById('searchInput');
   const searchBtn = document.getElementById('searchBtn');
   const albumsContainer = document.getElementById('albumsContainer');
@@ -111,7 +78,6 @@
   const tracksContainer = document.getElementById('tracksContainer');
   const saveAlbumBtn = document.getElementById('saveAlbumBtn');
   const generatedUrlContainer = document.getElementById('generatedUrlContainer');
-
   const audio = document.getElementById('audio');
   const playBtn = document.getElementById('playBtn');
   const playIcon = document.getElementById('playIcon');
@@ -122,245 +88,156 @@
   const shuffleBtn = document.getElementById('shuffleBtn');
   const backBtn = document.getElementById('back');
   const nextBtn = document.getElementById('next');
-
   const albumCoverImg = document.getElementById('albumCover');
   const trackTitleElem = document.getElementById('trackTitle');
   const trackArtistElem = document.getElementById('trackArtist');
 
-  // Variables para playlist y estado
-  let playlist = [];
-  let currentTrackIndex = 0;
-  let isRepeat = false;
-  let isShuffle = false;
+  let playlist = [], currentTrackIndex = 0, isRepeat = false, isShuffle = false;
 
-  // Formatea tiempo mm:ss
-  function formatTime(sec) {
-    if (isNaN(sec)) return '0:00';
-    const m = Math.floor(sec / 60);
-    const s = Math.floor(sec % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  }
-
-  // Buscar artista y mostrar álbumes
   async function searchArtist() {
-    const query = searchInput.value.trim();
-    if (!query) return alert("Escribe el nombre de un artista");
-
+    const q = searchInput.value.trim();
+    if (!q) return alert("Escribe un artista");
     albumsContainer.innerHTML = 'Buscando...';
     tracksSection.classList.add('hidden');
-    playlist = [];
-    currentTrackIndex = 0;
-    resetPlayer();
-    generatedUrlContainer.classList.add('hidden');
-    generatedUrlContainer.textContent = '';
-
+    playlist = []; currentTrackIndex = 0; resetPlayer();
+    generatedUrlContainer.classList.add('hidden'); generatedUrlContainer.textContent = '';
     try {
-      const data = await jsonp(`https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}`);
-      const artist = data.data && data.data[0];
-      if (!artist) {
-        albumsContainer.innerHTML = '<p class="text-center text-red-500">Artista no encontrado</p>';
-        return;
-      }
-      const albumsData = await jsonp(`https://api.deezer.com/artist/${artist.id}/albums?limit=20`);
+      const d = await jsonp(`https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}`);
+      const art = d.data && d.data[0];
+      if (!art) { albumsContainer.innerHTML = '<p class="text-center text-red-500">Artista no encontrado</p>'; return; }
+      const albumsData = await jsonp(`https://api.deezer.com/artist/${art.id}/albums?limit=20`);
       renderAlbums(albumsData.data);
     } catch {
       albumsContainer.innerHTML = '<p class="text-center text-red-500">Error al buscar artista</p>';
     }
   }
-
-  // Renderiza álbumes
-  function renderAlbums(albums) {
+  function renderAlbums(arr) {
     albumsContainer.innerHTML = '';
-    albums.forEach(album => {
-      const albumDiv = document.createElement('div');
-      albumDiv.className = 'bg-gray-800 p-3 rounded cursor-pointer flex flex-col items-center hover:bg-gray-700';
-      albumDiv.innerHTML = `
-        <img src="${album.cover_medium}" alt="Portada" class="w-32 h-32 object-cover rounded mb-2" />
-        <h3 class="text-center font-semibold">${album.title}</h3>
-      `;
-      albumDiv.onclick = () => loadTracks(album.id, album.cover_big, album.title);
-      albumsContainer.appendChild(albumDiv);
+    arr.forEach(album => {
+      const div = document.createElement('div');
+      div.className = 'bg-gray-800 p-3 rounded cursor-pointer flex flex-col items-center hover:bg-gray-700';
+      div.innerHTML = `<img src="${album.cover_medium}" alt="Portada" class="w-32 h-32 object-cover rounded mb-2" /><h3 class="text-center font-semibold">${album.title}</h3>`;
+      div.onclick = () => loadTracks(album.id, album.cover_big, album.title);
+      albumsContainer.appendChild(div);
     });
   }
-
-  // Carga canciones del álbum
   async function loadTracks(albumId, coverUrl, albumTitle) {
     tracksContainer.innerHTML = 'Cargando canciones...';
     tracksSection.classList.remove('hidden');
-    playlist = [];
-    currentTrackIndex = 0;
-    resetPlayer();
-    generatedUrlContainer.classList.add('hidden');
-    generatedUrlContainer.textContent = '';
-
+    playlist = []; currentTrackIndex = 0; resetPlayer();
+    generatedUrlContainer.classList.add('hidden'); generatedUrlContainer.textContent = '';
     try {
-      const data = await jsonp(`https://api.deezer.com/album/${albumId}`);
+      const d = await jsonp(`https://api.deezer.com/album/${albumId}`);
       tracksContainer.innerHTML = '';
-
-      data.tracks.data.forEach(track => {
+      d.tracks.data.forEach(track => {
         const div = document.createElement('div');
         div.className = 'bg-gray-700 p-2 rounded flex justify-between items-center';
-
-        const titleDiv = document.createElement('div');
-        titleDiv.textContent = track.title;
-
-        const input = document.createElement('input');
-        input.type = 'url';
-        input.placeholder = `URL MP3 para "${track.title}"`;
-        input.className = 'w-2/3 p-1 rounded text-black';
-
-        div.appendChild(titleDiv);
-        div.appendChild(input);
+        const t = document.createElement('div'); t.textContent = track.title;
+        const inp = document.createElement('input'); inp.type = 'url';
+        inp.placeholder = `URL MP3 para "${track.title}"`;
+        inp.className = 'w-2/3 p-1 rounded text-black';
+        div.appendChild(t); div.appendChild(inp);
         tracksContainer.appendChild(div);
       });
-
       saveAlbumBtn.onclick = () => {
         playlist = [];
-        const tracksDivs = tracksContainer.children;
-        for (const div of tracksDivs) {
+        Array.from(tracksContainer.children).forEach(div => {
           const title = div.children[0].textContent;
           const url = div.children[1].value.trim();
-          if (url) {
-            playlist.push({
-              title,
-              artist: data.artist.name,
-              url,
-              cover: coverUrl
-            });
-          }
-        }
-        if (playlist.length === 0) {
-          return alert("Debes ingresar al menos una URL válida para guardar el álbum.");
-        }
-        currentTrackIndex = 0;
-        playTrack(currentTrackIndex);
+          if (url) playlist.push({ title, artist: d.artist.name, url, cover: coverUrl });
+        });
+        if (playlist.length === 0) return alert("Debes ingresar al menos una URL válida");
+        currentTrackIndex = 0; playTrack(0);
 
-        // Crear URL con playlist en base64
         const jsonStr = JSON.stringify(playlist);
-        const encoded = encodeBase64(jsonStr);
-        const url = `https://nimeapp.github.io/Flixplemusic/Reproductor.html?playlist=${encoded}`;
-
-        generatedUrlContainer.textContent = url;
+        const compressed = LZString.compressToEncodedURIComponent(jsonStr);
+        const shortUrl = `${window.location.origin + window.location.pathname.replace(/index\.html?.*$/, '')}?data=${compressed}`;
+        generatedUrlContainer.textContent = shortUrl;
         generatedUrlContainer.classList.remove('hidden');
-        generatedUrlContainer.scrollIntoView({ behavior: 'smooth' });
+        generatedUrlContainer.scrollIntoView({ behavior:'smooth' });
       };
-
     } catch {
       tracksContainer.innerHTML = '<p class="text-center text-red-500">Error al cargar canciones</p>';
     }
   }
-
-  // Reproducir track por índice
-  function playTrack(index) {
-    if (index < 0 || index >= playlist.length) return;
-
-    currentTrackIndex = index;
-    const track = playlist[index];
-    albumCoverImg.src = track.cover;
-    trackTitleElem.textContent = track.title;
-    trackArtistElem.textContent = track.artist;
-
-    audio.src = track.url;
-    audio.play();
-    playIcon.classList.replace('fa-play', 'fa-pause');
+  function playTrack(idx) {
+    if (idx<0 || idx>=playlist.length) return;
+    currentTrackIndex = idx;
+    const tr = playlist[idx];
+    albumCoverImg.src = tr.cover;
+    trackTitleElem.textContent = tr.title;
+    trackArtistElem.textContent = tr.artist;
+    audio.src = tr.url; audio.play();
+    playIcon.classList.replace('fa-play','fa-pause');
   }
-
-  // Resetear reproductor
   function resetPlayer() {
     albumCoverImg.src = 'https://via.placeholder.com/300';
     trackTitleElem.textContent = 'Título';
     trackArtistElem.textContent = 'Artista';
-    audio.src = '';
-    playIcon.classList.replace('fa-pause', 'fa-play');
-    progress.value = 0;
-    current.textContent = '0:00';
-    total.textContent = '0:00';
+    audio.src = ''; playIcon.classList.replace('fa-pause','fa-play');
+    progress.value = 0; current.textContent = '0:00'; total.textContent = '0:00';
   }
 
-  // Controles audio
-  audio.addEventListener('loadedmetadata', () => {
-    total.textContent = formatTime(audio.duration);
-  });
+  audio.addEventListener('loadedmetadata', () => { total.textContent = formatTime(audio.duration); });
   audio.addEventListener('timeupdate', () => {
     if (audio.duration) {
-      progress.value = (audio.currentTime / audio.duration) * 100;
+      progress.value = audio.currentTime/audio.duration * 100;
       current.textContent = formatTime(audio.currentTime);
     }
   });
-
   progress.addEventListener('input', () => {
-    if (audio.duration) {
-      audio.currentTime = (progress.value / 100) * audio.duration;
-    }
+    if (audio.duration) audio.currentTime = (progress.value/100)*audio.duration;
   });
-
   playBtn.addEventListener('click', () => {
-    if (audio.paused) {
-      audio.play();
-      playIcon.classList.replace('fa-play', 'fa-pause');
-    } else {
-      audio.pause();
-      playIcon.classList.replace('fa-pause', 'fa-play');
-    }
+    if (audio.paused) { audio.play(); playIcon.classList.replace('fa-play','fa-pause'); }
+    else { audio.pause(); playIcon.classList.replace('fa-pause','fa-play'); }
   });
-
   repeatBtn.addEventListener('click', () => {
-    isRepeat = !isRepeat;
-    audio.loop = isRepeat;
+    isRepeat = !isRepeat; audio.loop = isRepeat;
     repeatBtn.classList.toggle('text-green-500', isRepeat);
   });
-
   shuffleBtn.addEventListener('click', () => {
     isShuffle = !isShuffle;
     shuffleBtn.classList.toggle('text-green-500', isShuffle);
-    alert("Modo aleatorio " + (isShuffle ? "activado" : "desactivado") + " (funciona para playlist guardada).");
+    alert("Modo aleatorio " + (isShuffle?"activado":"desactivado"));
   });
-
   nextBtn.addEventListener('click', () => {
-    if (playlist.length === 0) return;
-    if (isShuffle) {
-      const randomIndex = Math.floor(Math.random() * playlist.length);
-      playTrack(randomIndex);
-    } else {
-      if (currentTrackIndex + 1 < playlist.length) {
-        playTrack(currentTrackIndex + 1);
-      } else if (isRepeat) {
-        playTrack(0);
-      }
-    }
+    if (!playlist.length) return;
+    if (isShuffle) playTrack(Math.floor(Math.random()*playlist.length));
+    else if (currentTrackIndex+1<playlist.length) playTrack(currentTrackIndex+1);
+    else if (isRepeat) playTrack(0);
   });
-
   backBtn.addEventListener('click', () => {
-    if (playlist.length === 0) return;
-    if (isShuffle) {
-      const randomIndex = Math.floor(Math.random() * playlist.length);
-      playTrack(randomIndex);
-    } else {
-      if (currentTrackIndex - 1 >= 0) {
-        playTrack(currentTrackIndex - 1);
-      } else if (isRepeat) {
-        playTrack(playlist.length - 1);
+    if (!playlist.length) return;
+    if (isShuffle) playTrack(Math.floor(Math.random()*playlist.length));
+    else if (currentTrackIndex-1>=0) playTrack(currentTrackIndex-1);
+    else if (isRepeat) playTrack(playlist.length-1);
+  });
+  audio.addEventListener('ended', () => {
+    if (isRepeat) { audio.currentTime=0; audio.play(); }
+    else nextBtn.click();
+  });
+
+  searchBtn.addEventListener('click', searchArtist);
+  searchInput.addEventListener('keyup', e => { if (e.key==='Enter') searchArtist(); });
+
+  // Si se recibe parámetro "data" comprimido en la URL, cargar playlist
+  window.addEventListener('load', () => {
+    const params = new URLSearchParams(window.location.search);
+    const compressed = params.get('data');
+    if (compressed) {
+      try {
+        const json = LZString.decompressFromEncodedURIComponent(compressed);
+        const arr = JSON.parse(json);
+        if (Array.isArray(arr)) {
+          playlist = arr;
+          playTrack(0);
+        }
+      } catch (err) {
+        console.error("No fue posible cargar playlist:", err);
       }
     }
-  });
-
-  audio.addEventListener('ended', () => {
-    if (isRepeat) {
-      audio.currentTime = 0;
-      audio.play();
-    } else {
-      nextBtn.click();
-    }
-  });
-
-  // Botón buscar artista
-  searchBtn.addEventListener('click', searchArtist);
-
-  // Enter para buscar artista
-  searchInput.addEventListener('keyup', e => {
-    if (e.key === 'Enter') searchArtist();
   });
 </script>
-
 </body>
 </html>
