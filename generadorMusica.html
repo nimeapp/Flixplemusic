@@ -27,11 +27,13 @@
     <div id="tracksSection" class="hidden mb-8">
       <h2 class="text-2xl font-semibold mb-4 text-center">Canciones del Álbum</h2>
       <div id="tracksContainer" class="space-y-3 max-h-[400px] overflow-y-auto bg-gray-800 p-4 rounded-lg"></div>
-      <button id="saveAlbumBtn" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-black font-semibold py-2 rounded-lg">Guardar álbum en playlist</button>
+      <button id="saveAlbumBtn" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-black font-semibold py-2 rounded-lg">Guardar álbum en playlist y generar URL</button>
     </div>
 
+    <div id="generatedUrlContainer" class="hidden mt-4 max-w-full bg-gray-900 p-3 rounded-lg break-words text-green-400 font-mono"></div>
+
     <!-- REPRODUCTOR Spotify Clone -->
-    <div class="w-full max-w-sm mx-auto bg-gradient-to-b from-[#2d1600] to-black p-6 rounded-xl shadow-lg">
+    <div class="w-full max-w-sm mx-auto bg-gradient-to-b from-[#2d1600] to-black p-6 rounded-xl shadow-lg mt-8">
 
       <div class="flex justify-center mb-6">
         <img id="albumCover" src="https://via.placeholder.com/300" alt="Imagen del álbum" class="rounded-xl w-full max-w-xs shadow-lg" />
@@ -88,6 +90,19 @@
     });
   }
 
+  // Encode / decode base64 para URL segura
+  function encodeBase64(str) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+      function(match, p1) {
+        return String.fromCharCode('0x' + p1);
+      }));
+  }
+  function decodeBase64(str) {
+    return decodeURIComponent(Array.prototype.map.call(atob(str), function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+  }
+
   // Elementos DOM
   const searchInput = document.getElementById('searchInput');
   const searchBtn = document.getElementById('searchBtn');
@@ -95,6 +110,7 @@
   const tracksSection = document.getElementById('tracksSection');
   const tracksContainer = document.getElementById('tracksContainer');
   const saveAlbumBtn = document.getElementById('saveAlbumBtn');
+  const generatedUrlContainer = document.getElementById('generatedUrlContainer');
 
   const audio = document.getElementById('audio');
   const playBtn = document.getElementById('playBtn');
@@ -117,7 +133,7 @@
   let isRepeat = false;
   let isShuffle = false;
 
-  // Función para formatear tiempo en mm:ss
+  // Formatea tiempo mm:ss
   function formatTime(sec) {
     if (isNaN(sec)) return '0:00';
     const m = Math.floor(sec / 60);
@@ -135,6 +151,8 @@
     playlist = [];
     currentTrackIndex = 0;
     resetPlayer();
+    generatedUrlContainer.classList.add('hidden');
+    generatedUrlContainer.textContent = '';
 
     try {
       const data = await jsonp(`https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}`);
@@ -150,7 +168,7 @@
     }
   }
 
-  // Renderizar álbumes
+  // Renderiza álbumes
   function renderAlbums(albums) {
     albumsContainer.innerHTML = '';
     albums.forEach(album => {
@@ -165,13 +183,15 @@
     });
   }
 
-  // Cargar canciones del álbum
+  // Carga canciones del álbum
   async function loadTracks(albumId, coverUrl, albumTitle) {
     tracksContainer.innerHTML = 'Cargando canciones...';
     tracksSection.classList.remove('hidden');
     playlist = [];
     currentTrackIndex = 0;
     resetPlayer();
+    generatedUrlContainer.classList.add('hidden');
+    generatedUrlContainer.textContent = '';
 
     try {
       const data = await jsonp(`https://api.deezer.com/album/${albumId}`);
@@ -214,6 +234,15 @@
         }
         currentTrackIndex = 0;
         playTrack(currentTrackIndex);
+
+        // Crear URL con playlist en base64
+        const jsonStr = JSON.stringify(playlist);
+        const encoded = encodeBase64(jsonStr);
+        const url = `https://nimeapp.github.io/Flixplemusic/Reproductor.html?playlist=${encoded}`;
+
+        generatedUrlContainer.textContent = url;
+        generatedUrlContainer.classList.remove('hidden');
+        generatedUrlContainer.scrollIntoView({ behavior: 'smooth' });
       };
 
     } catch {
@@ -288,6 +317,7 @@
   });
 
   nextBtn.addEventListener('click', () => {
+    if (playlist.length === 0) return;
     if (isShuffle) {
       const randomIndex = Math.floor(Math.random() * playlist.length);
       playTrack(randomIndex);
@@ -301,6 +331,7 @@
   });
 
   backBtn.addEventListener('click', () => {
+    if (playlist.length === 0) return;
     if (isShuffle) {
       const randomIndex = Math.floor(Math.random() * playlist.length);
       playTrack(randomIndex);
