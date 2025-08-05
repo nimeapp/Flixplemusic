@@ -54,52 +54,23 @@
   const trackTitleElem = document.getElementById('trackTitle');
   const trackArtistElem = document.getElementById('trackArtist');
 
-  // Leer parámetros desde la URL
-  function getParams() {
-    const urlParams = new URLSearchParams(window.location.search);
-    return {
-      title: urlParams.get('title'),
-      artist: urlParams.get('artist'),
-      url: urlParams.get('url'),
-      cover: urlParams.get('cover'),
-      year: urlParams.get('year')
-    };
-  }
-
-  // Playlist default (si no hay datos en la URL)
-  const defaultPlaylist = [
-    {
-      title: "Canción 1",
-      artist: "Artista 1",
-      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-      cover: "https://via.placeholder.com/300?text=Album+1"
-    },
-    {
-      title: "Canción 2",
-      artist: "Artista 2",
-      url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-      cover: "https://via.placeholder.com/300?text=Album+2"
-    }
-  ];
-
   let playlist = [];
   let currentTrackIndex = 0;
   let isRepeat = false;
   let isShuffle = false;
 
-  const params = getParams();
-
-  if (params.url && params.title) {
-    playlist = [{
-      title: params.title,
-      artist: params.artist || 'Desconocido',
-      url: params.url,
-      cover: params.cover || 'https://via.placeholder.com/300?text=Album'
-    }];
-  } else {
-    playlist = defaultPlaylist;
+  // Decodificar Base64 URL-safe y parsear JSON
+  function decodeBase64(str) {
+    try {
+      return decodeURIComponent(Array.prototype.map.call(atob(str), c =>
+        '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+      ).join(''));
+    } catch {
+      return null;
+    }
   }
 
+  // Formato tiempo mm:ss
   function formatTime(sec) {
     if (isNaN(sec)) return '0:00';
     const m = Math.floor(sec / 60);
@@ -107,22 +78,54 @@
     return `${m}:${s}`;
   }
 
+  // Cargar playlist desde URL
+  function loadPlaylistFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const encodedPlaylist = urlParams.get('playlist');
+    if (!encodedPlaylist) return false;
+
+    const jsonStr = decodeBase64(encodedPlaylist);
+    if (!jsonStr) return false;
+
+    try {
+      playlist = JSON.parse(jsonStr);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  // Reproducir canción por índice
   function playTrack(index) {
-    if (index < 0 || index >= playlist.length) return;
+    if (playlist.length === 0 || index < 0 || index >= playlist.length) return;
     currentTrackIndex = index;
     const track = playlist[index];
-    albumCoverImg.src = track.cover;
-    trackTitleElem.textContent = track.title;
-    trackArtistElem.textContent = track.artist;
-    audio.src = track.url;
+
+    albumCoverImg.src = track.cover || 'https://via.placeholder.com/300';
+    trackTitleElem.textContent = track.title || 'Título';
+    trackArtistElem.textContent = track.artist || 'Artista';
+
+    audio.src = track.url || '';
     audio.play();
     playIcon.classList.replace('fa-play', 'fa-pause');
   }
 
+  // Resetear reproductor
+  function resetPlayer() {
+    albumCoverImg.src = 'https://via.placeholder.com/300';
+    trackTitleElem.textContent = 'Título';
+    trackArtistElem.textContent = 'Artista';
+    audio.src = '';
+    playIcon.classList.replace('fa-pause', 'fa-play');
+    progress.value = 0;
+    current.textContent = '0:00';
+    total.textContent = '0:00';
+  }
+
+  // Actualizar barra y tiempos
   audio.addEventListener('loadedmetadata', () => {
     total.textContent = formatTime(audio.duration);
   });
-
   audio.addEventListener('timeupdate', () => {
     if (audio.duration) {
       progress.value = (audio.currentTime / audio.duration) * 100;
@@ -130,12 +133,14 @@
     }
   });
 
+  // Barra progreso manual
   progress.addEventListener('input', () => {
     if (audio.duration) {
       audio.currentTime = (progress.value / 100) * audio.duration;
     }
   });
 
+  // Play/Pause botón
   playBtn.addEventListener('click', () => {
     if (audio.paused) {
       audio.play();
@@ -146,18 +151,23 @@
     }
   });
 
+  // Repeat toggle
   repeatBtn.addEventListener('click', () => {
     isRepeat = !isRepeat;
     audio.loop = isRepeat;
     repeatBtn.classList.toggle('text-green-500', isRepeat);
   });
 
+  // Shuffle toggle
   shuffleBtn.addEventListener('click', () => {
     isShuffle = !isShuffle;
     shuffleBtn.classList.toggle('text-green-500', isShuffle);
   });
 
+  // Next track
   nextBtn.addEventListener('click', () => {
+    if (playlist.length === 0) return;
+
     if (isShuffle) {
       const randomIndex = Math.floor(Math.random() * playlist.length);
       playTrack(randomIndex);
@@ -170,7 +180,10 @@
     }
   });
 
+  // Back track
   backBtn.addEventListener('click', () => {
+    if (playlist.length === 0) return;
+
     if (isShuffle) {
       const randomIndex = Math.floor(Math.random() * playlist.length);
       playTrack(randomIndex);
@@ -183,12 +196,26 @@
     }
   });
 
+  // Cuando termina canción
   audio.addEventListener('ended', () => {
-    nextBtn.click();
+    if (isRepeat) {
+      audio.currentTime = 0;
+      audio.play();
+    } else {
+      nextBtn.click();
+    }
   });
 
-  // Iniciar reproducción
-  playTrack(0);
+  // Iniciar reproductor si hay playlist en URL
+  window.onload = () => {
+    if (!loadPlaylistFromUrl()) {
+      resetPlayer();
+      alert("No se encontró playlist válida en la URL.");
+    } else {
+      playTrack(0);
+    }
+  }
 </script>
+
 </body>
 </html>
