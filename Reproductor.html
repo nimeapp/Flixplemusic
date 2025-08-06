@@ -57,7 +57,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Variables de control del reproductor
     const audio = document.getElementById('audio');
     const playBtn = document.getElementById('playBtn');
     const playIcon = document.getElementById('playIcon');
@@ -86,7 +85,7 @@
     }
 
     function playTrack(index) {
-      if (playlist.length === 0 || index < 0 || index >= playlist.length) return;
+      if (!playlist || playlist.length === 0 || index < 0 || index >= playlist.length) return;
 
       currentTrackIndex = index;
       const track = playlist[index];
@@ -98,17 +97,6 @@
       audio.src = track.file || '';
       audio.play();
       playIcon.classList.replace('fa-play', 'fa-pause');
-    }
-
-    function resetPlayer() {
-      albumCoverImg.src = 'https://via.placeholder.com/300';
-      trackTitleElem.textContent = 'Título';
-      trackArtistElem.textContent = 'Artista';
-      audio.src = '';
-      playIcon.classList.replace('fa-pause', 'fa-play');
-      progress.value = 0;
-      current.textContent = '0:00';
-      total.textContent = '0:00';
     }
 
     audio.addEventListener('loadedmetadata', () => {
@@ -194,6 +182,12 @@
           return;
         }
         const data = snapshot.val();
+
+        if (!data.playlist || !Array.isArray(data.playlist.songs)) {
+          alert("Estructura de playlist inválida.");
+          return;
+        }
+
         album = data.playlist;
         playlist = album.songs;
         playTrack(0);
@@ -208,7 +202,6 @@
       const id = urlParams.get("id");
       if (!id) {
         alert("No se proporcionó un ID de playlist.");
-        resetPlayer();
         return;
       }
       loadPlaylistFromFirebase(id);
