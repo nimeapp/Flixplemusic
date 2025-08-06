@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Generador musica</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+</head>
+
+<body class="bg-gradient-to-b from-[#2d1600] to-black text-white min-h-screen flex flex-col items-center p-4">
+  <div class="w-full max-w-3xl">
+    <h1 class="text-3xl font-bold mb-6 text-center">Buscador de Artistas</h1>
+
+    <div class="mb-6 max-w-sm mx-auto">
+      <input id="searchInput" type="text" placeholder="Escribe un artista (ej: Shakira)" class="w-full p-3 rounded-lg text-black" />
+      <button id="searchBtn" class="w-full mt-3 bg-green-500 hover:bg-green-600 text-black font-semibold py-2 rounded-lg">Buscar</button>
+    </div>
+
+    <div id="albumsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
+
+    <div id="tracksSection" class="hidden mb-8">
+      <h2 class="text-2xl font-semibold mb-4 text-center">Canciones del Álbum</h2>
+      <div id="tracksContainer" class="space-y-3 max-h-[400px] overflow-y-auto bg-gray-800 p-4 rounded-lg"></div>
+      <button id="saveAlbumBtn" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-black font-semibold py-2 rounded-lg">Guardar álbum en playlist y generar URL</button>
+    </div>
+
+    <div id="generatedUrlContainer" class="hidden mt-4 max-w-full bg-gray-900 p-3 rounded-lg break-words text-green-400 font-mono"></div>
+
+    <!-- REPRODUCTOR -->
+    <div class="w-full max-w-sm mx-auto bg-gradient-to-b from-[#2d1600] to-black p-6 rounded-xl shadow-lg mt-8">
+      <div class="flex justify-center mb-6">
+        <img id="albumCover" src="https://via.placeholder.com/300" alt="Imagen del álbum" class="rounded-xl w-full max-w-xs shadow-lg" />
+      </div>
+      <div class="text-center mb-2">
+        <h2 id="trackTitle" class="text-lg font-semibold">Título</h2>
+        <p id="trackArtist" class="text-sm text-gray-400">Artista</p>
+      </div>
+      <div class="flex justify-center my-2">
+        <i class="fa-regular fa-heart text-xl opacity-70 hover:opacity-100"></i>
+      </div>
+      <audio id="audio" src=""></audio>
+      <div class="mt-4">
+        <input type="range" id="progress" value="0" class="w-full accent-green-500" />
+        <div class="flex justify-between text-xs text-gray-400 mt-1">
+          <span id="current">0:00</span>
+          <span id="total">0:00</span>
+        </div>
+      </div>
+      <div class="flex justify-between items-center mt-4 px-6 text-2xl text-white">
+        <button id="shuffleBtn" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-shuffle"></i></button>
+        <button id="back"><i class="fa-solid fa-backward-step"></i></button>
+        <button id="playBtn" class="bg-white text-black w-14 h-14 rounded-full flex items-center justify-center shadow-lg">
+          <i class="fa-solid fa-play" id="playIcon"></i>
+        </button>
+        <button id="next"><i class="fa-solid fa-forward-step"></i></button>
+        <button id="repeatBtn" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-repeat"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase inicialización -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getDatabase, ref, push, set, get, child } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+      authDomain: "flixplemusic.firebaseapp.com",
+      databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+      projectId: "flixplemusic",
+      storageBucket: "flixplemusic.appspot.com",
+      messagingSenderId: "792301053512",
+      appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    window.db = db;
+    window.fbRef = ref;
+    window.fbPush = push;
+    window.fbSet = set;
+    window.fbGet = get;
+    window.fbChild = child;
+  </script>
+
+  <script>
+    // JSONP API y utilidades
+    function jsonp(url) {
+      return new Promise(resolve => {
+        const cb = 'cb_' + Math.random().toString(36).substr(2, 9);
+        window[cb] = data => { delete window[cb]; script.remove(); resolve(data); };
+        const script = document.createElement('script');
+        script.src = `${url}&output=jsonp&callback=${cb}`;
+        document.body.appendChild(script);
+      });
+    }
+
+    function formatTime(sec) {
+      if (isNaN(sec)) return '0:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    // DOM
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const albumsContainer = document.getElementById('albumsContainer');
+    const tracksSection = document.getElementById('tracksSection');
+    const tracksContainer = document.getElementById('tracksContainer');
+    const saveAlbumBtn = document.getElementById('saveAlbumBtn');
+    const generatedUrlContainer = document.getElementById('generatedUrlContainer');
+    const audio = document.getElementById('audio');
+    const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
+    const progress = document.getElementById('progress');
+    const current = document.getElementById('current');
+    const total = document.getElementById('total');
+    const repeatBtn = document.getElementById('repeatBtn');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const backBtn = document.getElementById('back');
+    const nextBtn = document.getElementById('next');
+    const albumCoverImg = document.getElementById('albumCover');
+    const trackTitleElem = document.getElementById('trackTitle');
+    const trackArtistElem = document.getElementById('trackArtist');
+
+    // Estado
+    let playlist = [], currentTrackIndex = 0, isRepeat = false, isShuffle = false;
+
+    // Funciones
+    async function searchArtist() {
+      const q = searchInput.value.trim();
+      if (!q) return alert("Escribe artista");
+      albumsContainer.innerHTML = 'Buscando...';
+      tracksSection.classList.add('hidden');
+      playlist = [];
+      currentTrackIndex = 0;
+      resetPlayer();
+      generatedUrlContainer.classList.add('hidden');
+      try {
+        const d = await jsonp(`https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}`);
+        const artist = d.data?.[0];
+        if (!artist) {
+          albumsContainer.innerHTML = '<p class="text-red-500 text-center">Artista no encontrado</p>';
+          return;
+        }
+        const ad = await jsonp(`https://api.deezer.com/artist/${artist.id}/albums?limit=20`);
+        renderAlbums(ad.data);
+      } catch {
+        albumsContainer.innerHTML = '<p class="text-red-500 text-center">Error al buscar</p>';
+      }
+    }
+
+    function renderAlbums(albums) {
+      albumsContainer.innerHTML = '';
+      albums.forEach(a => {
+        const div = document.createElement('div');
+        div.className = 'bg-gray-800 p-3 rounded cursor-pointer flex flex-col items-center hover:bg-gray-700';
+        div.innerHTML = `<img src="${a.cover_medium}" class="w-32 h-32 rounded mb-2"/> <h3 class="text-center font-semibold">${a.title}</h3>`;
+        div.onclick = () => loadTracks(a.id, a.cover_big, a.title);
+        albumsContainer.appendChild(div);
+      });
+    }
+
+    async function loadTracks(albumId, coverUrl, albumTitle) {
+      tracksContainer.innerHTML = 'Cargando canciones...';
+      tracksSection.classList.remove('hidden');
+      playlist = [];
+      currentTrackIndex = 0;
+      resetPlayer();
+      generatedUrlContainer.classList.add('hidden');
+      try {
+        const d = await jsonp(`https://api.deezer.com/album/${albumId}`);
+        tracksContainer.innerHTML = '';
+        d.tracks.data.forEach(t => {
+          const div = document.createElement('div');
+          div.className = 'bg-gray-700 p-2 rounded flex justify-between items-center';
+          const titleDiv = document.createElement('div');
+          titleDiv.textContent = t.title;
+          const input = document.createElement('input');
+          input.type = 'url';
+          input.placeholder = `URL MP3 para "${t.title}"`;
+          input.className = 'w-2/3 p-1 rounded text-black';
+          div.appendChild(titleDiv);
+          div.appendChild(input);
+          tracksContainer.appendChild(div);
+        });
+
+        saveAlbumBtn.onclick = async () => {
+          playlist = [];
+          for (const div of tracksContainer.children) {
+            const title = div.children[0].textContent;
+            const url = div.children[1].value.trim();
+            if (url) playlist.push({ title, artist: d.artist.name, url, cover: coverUrl });
+          }
+          if (!playlist.length) return alert("Ingresa al menos una URL válida.");
+
+          currentTrackIndex = 0;
+          playTrack(0);
+
+          // Guardar en Firebase y generar URL que apunta a Reproductor.html?id=...
+          try {
+            const pr = window.fbPush(window.fbRef(window.db, 'playlists'));
+            const id = pr.key;
+            await window.fbSet(pr, { createdAt: new Date().toISOString(), playlist });
+            const link = `${location.origin}/Flixplemusic/Reproductor.html?id=${id}`;
+            generatedUrlContainer.textContent = link;
+            generatedUrlContainer.classList.remove('hidden');
+            generatedUrlContainer.scrollIntoView({ behavior: 'smooth' });
+          } catch (err) {
+            alert("Error al guardar: " + err.message);
+          }
+        };
+      } catch {
+        tracksContainer.innerHTML = '<p class="text-red-500 text-center">Error al cargar canciones</p>';
+      }
+    }
+
+    function playTrack(idx) {
+      if (idx < 0 || idx >= playlist.length) return;
+      currentTrackIndex = idx;
+      const t = playlist[idx];
+      albumCoverImg.src = t.cover;
+      trackTitleElem.textContent = t.title;
+      trackArtistElem.textContent = t.artist;
+      audio.src = t.url;
+      audio.play();
+      playIcon.classList.replace('fa-play', 'fa-pause');
+    }
+
+    function resetPlayer() {
+      albumCoverImg.src = 'https://via.placeholder.com/300';
+      trackTitleElem.textContent = 'Título';
+      trackArtistElem.textContent = 'Artista';
+      audio.src = '';
+      playIcon.classList.replace('fa-pause', 'fa-play');
+      progress.value = 0;
+      current.textContent = '0:00';
+      total.textContent = '0:00';
+    }
+
+    audio.addEventListener('loadedmetadata', () => {
+      total.textContent = formatTime(audio.duration);
+    });
+    audio.addEventListener('timeupdate', () => {
+      if (audio.duration) {
+        progress.value = (audio.currentTime / audio.duration) * 100;
+        current.textContent = formatTime(audio.currentTime);
+      }
+    });
+    progress.addEventListener('input', () => {
+      if (audio.duration) audio.currentTime = (progress.value / 100) * audio.duration;
+    });
+    playBtn.addEventListener('click', () => {
+      if (audio.paused) {
+        audio.play();
+        playIcon.classList.replace('fa-play', 'fa-pause');
+      } else {
+        audio.pause();
+        playIcon.classList.replace('fa-pause', 'fa-play');
+      }
+    });
+    repeatBtn.addEventListener('click', () => {
+      isRepeat = !isRepeat;
+      audio.loop = isRepeat;
+      repeatBtn.classList.toggle('text-green-500', isRepeat);
+    });
+    shuffleBtn.addEventListener('click', () => {
+      isShuffle = !isShuffle;
+      shuffleBtn.classList.toggle('text-green-500', isShuffle);
+      alert("Modo aleatorio " + (isShuffle ? "activado" : "desactivado"));
+    });
+    nextBtn.addEventListener('click', () => {
+      if (!playlist.length) return;
+      if (isShuffle) playTrack(Math.floor(Math.random() * playlist.length));
+      else if (currentTrackIndex + 1 < playlist.length) playTrack(currentTrackIndex + 1);
+      else if (isRepeat) playTrack(0);
+    });
+    backBtn.addEventListener('click', () => {
+      if (!playlist.length) return;
+      if (isShuffle) playTrack(Math.floor(Math.random() * playlist.length));
+      else if (currentTrackIndex - 1 >= 0) playTrack(currentTrackIndex - 1);
+      else if (isRepeat) playTrack(playlist.length - 1);
+    });
+    audio.addEventListener('ended', () => {
+      if (isRepeat) {
+        audio.currentTime = 0;
+        audio.play();
+      } else nextBtn.click();
+    });
+
+    searchBtn.addEventListener('click', searchArtist);
+    searchInput.addEventListener('keyup', e => {
+      if (e.key === 'Enter') searchArtist();
+    });
+
+    // Al cargar la página: desde firebase 
+    window.addEventListener('DOMContentLoaded', async () => {
+      const params = new URLSearchParams(location.search);
+      const pid = params.get('id');
+      if (pid) {
+        try {
+          const dataSnap = await window.fbGet(window.fbChild(window.fbRef(window.db), `playlists/${pid}`));
+          if (dataSnap.exists()) {
+            playlist = dataSnap.val().playlist;
+            currentTrackIndex = 0;
+            playTrack(0);
+            generatedUrlContainer.textContent = location.href;
+            generatedUrlContainer.classList.remove('hidden');
+          } else {
+            alert("Playlist no encontrada.");
+          }
+        } catch (e) {
+          console.error("Error al cargar playlist:", e);
+        }
+      }
+    });
+// Bloquear clic derecho
+  document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+  });
+
+  </script>
+</body>
+</html>
