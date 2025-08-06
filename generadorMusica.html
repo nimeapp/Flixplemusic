@@ -3,16 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Deezer Álbum Playlist con Reproductor Spotify Clone</title>
-  <!-- Tailwind CSS -->
+  <title>Generador musica</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<style>
+
+* {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+</style>
+
 </head>
 
 <body class="bg-gradient-to-b from-[#2d1600] to-black text-white min-h-screen flex flex-col items-center p-4">
   <div class="w-full max-w-3xl">
-    <h1 class="text-3xl font-bold mb-6 text-center">Buscador de Artistas (Deezer)</h1>
+    <h1 class="text-3xl font-bold mb-6 text-center">Buscador de Artistas</h1>
 
     <div class="mb-6 max-w-sm mx-auto">
       <input id="searchInput" type="text" placeholder="Escribe un artista (ej: Shakira)" class="w-full p-3 rounded-lg text-black" />
@@ -87,7 +94,7 @@
   </script>
 
   <script>
-    // JSONP Deezer y utilidades
+    // JSONP API y utilidades
     function jsonp(url) {
       return new Promise(resolve => {
         const cb = 'cb_' + Math.random().toString(36).substr(2, 9);
@@ -297,7 +304,7 @@
       if (e.key === 'Enter') searchArtist();
     });
 
-    // Al cargar la página: si hay ?id= en la URL, cargar playlist desde Firebase y reproducir (opcional aquí)
+    // Al cargar la página: desde firebase 
     window.addEventListener('DOMContentLoaded', async () => {
       const params = new URLSearchParams(location.search);
       const pid = params.get('id');
@@ -318,6 +325,37 @@
         }
       }
     });
+// Bloquear clic derecho
+  document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+  });
+
+  // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
+  document.addEventListener('keydown', function (e) {
+    if (
+      e.key === 'F12' ||
+      (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+      (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
+    ) {
+      e.preventDefault();
+    }
+  });
+
+  // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
+  window.oncontextmenu = function () {
+    return false;
+  };
+
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('a').forEach(el => {
+      const url = el.getAttribute('href');
+      el.removeAttribute('href');
+      el.style.cursor = 'pointer';
+      el.onclick = () => window.location.href = url;
+    });
+  });
+
   </script>
 </body>
 </html>
