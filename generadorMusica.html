@@ -61,7 +61,7 @@
     </div>
   </div>
 
-  <!--| Firebase inicialización -->
+  <!-- Firebase inicialización -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getDatabase, ref, push, set, get, child } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
@@ -75,6 +75,7 @@
       messagingSenderId: "792301053512",
       appId: "1:792301053512:web:13878703d081f1a7b3da7d"
     };
+
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     window.db = db;
@@ -96,7 +97,13 @@
         document.body.appendChild(script);
       });
     }
-    function formatTime(sec) { if (isNaN(sec)) return '0:00'; const m = Math.floor(sec/60); const s = Math.floor(sec%60).toString().padStart(2,'0'); return `${m}:${s}`; }
+
+    function formatTime(sec) {
+      if (isNaN(sec)) return '0:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
 
     // DOM
     const searchInput = document.getElementById('searchInput');
@@ -125,16 +132,26 @@
 
     // Funciones
     async function searchArtist() {
-      const q = searchInput.value.trim(); if (!q) return alert("Escribe artista");
-      albumsContainer.innerHTML = 'Buscando...'; tracksSection.classList.add('hidden');
-      playlist = []; currentTrackIndex=0; resetPlayer();
+      const q = searchInput.value.trim();
+      if (!q) return alert("Escribe artista");
+      albumsContainer.innerHTML = 'Buscando...';
+      tracksSection.classList.add('hidden');
+      playlist = [];
+      currentTrackIndex = 0;
+      resetPlayer();
       generatedUrlContainer.classList.add('hidden');
       try {
         const d = await jsonp(`https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}`);
-        const artist = d.data?.[0]; if (!artist) { albumsContainer.innerHTML = '<p class="text-red-500 text-center">Artista no encontrado</p>'; return; }
+        const artist = d.data?.[0];
+        if (!artist) {
+          albumsContainer.innerHTML = '<p class="text-red-500 text-center">Artista no encontrado</p>';
+          return;
+        }
         const ad = await jsonp(`https://api.deezer.com/artist/${artist.id}/albums?limit=20`);
         renderAlbums(ad.data);
-      } catch { albumsContainer.innerHTML = '<p class="text-red-500 text-center">Error al buscar</p>'; }
+      } catch {
+        albumsContainer.innerHTML = '<p class="text-red-500 text-center">Error al buscar</p>';
+      }
     }
 
     function renderAlbums(albums) {
@@ -149,8 +166,11 @@
     }
 
     async function loadTracks(albumId, coverUrl, albumTitle) {
-      tracksContainer.innerHTML = 'Cargando canciones...'; tracksSection.classList.remove('hidden');
-      playlist=[]; currentTrackIndex=0; resetPlayer();
+      tracksContainer.innerHTML = 'Cargando canciones...';
+      tracksSection.classList.remove('hidden');
+      playlist = [];
+      currentTrackIndex = 0;
+      resetPlayer();
       generatedUrlContainer.classList.add('hidden');
       try {
         const d = await jsonp(`https://api.deezer.com/album/${albumId}`);
@@ -158,9 +178,14 @@
         d.tracks.data.forEach(t => {
           const div = document.createElement('div');
           div.className = 'bg-gray-700 p-2 rounded flex justify-between items-center';
-          const titleDiv = document.createElement('div'); titleDiv.textContent = t.title;
-          const input = document.createElement('input'); input.type='url'; input.placeholder=`URL MP3 para "${t.title}"`; input.className='w-2/3 p-1 rounded text-black';
-          div.appendChild(titleDiv); div.appendChild(input);
+          const titleDiv = document.createElement('div');
+          titleDiv.textContent = t.title;
+          const input = document.createElement('input');
+          input.type = 'url';
+          input.placeholder = `URL MP3 para "${t.title}"`;
+          input.className = 'w-2/3 p-1 rounded text-black';
+          div.appendChild(titleDiv);
+          div.appendChild(input);
           tracksContainer.appendChild(div);
         });
 
@@ -173,19 +198,20 @@
           }
           if (!playlist.length) return alert("Ingresa al menos una URL válida.");
 
-          currentTrackIndex=0; playTrack(0);
+          currentTrackIndex = 0;
+          playTrack(0);
 
-          // Guardar en Firebase
+          // Guardar en Firebase y generar URL que apunta a Reproductor.html?id=...
           try {
             const pr = window.fbPush(window.fbRef(window.db, 'playlists'));
             const id = pr.key;
             await window.fbSet(pr, { createdAt: new Date().toISOString(), playlist });
-            const link = `${location.origin}${location.pathname}?id=${id}`;
+            const link = `${location.origin}/Flixplemusic/Reproductor.html?id=${id}`;
             generatedUrlContainer.textContent = link;
             generatedUrlContainer.classList.remove('hidden');
             generatedUrlContainer.scrollIntoView({ behavior: 'smooth' });
-          } catch(err) {
-            alert("Error al guardar: "+ err.message);
+          } catch (err) {
+            alert("Error al guardar: " + err.message);
           }
         };
       } catch {
@@ -194,7 +220,7 @@
     }
 
     function playTrack(idx) {
-      if (idx<0||idx>=playlist.length) return;
+      if (idx < 0 || idx >= playlist.length) return;
       currentTrackIndex = idx;
       const t = playlist[idx];
       albumCoverImg.src = t.cover;
@@ -202,53 +228,92 @@
       trackArtistElem.textContent = t.artist;
       audio.src = t.url;
       audio.play();
-      playIcon.classList.replace('fa-play','fa-pause');
+      playIcon.classList.replace('fa-play', 'fa-pause');
     }
 
-    function resetPlayer(){
-      albumCoverImg.src='https://via.placeholder.com/300';
-      trackTitleElem.textContent='Título'; trackArtistElem.textContent='Artista';
-      audio.src=''; playIcon.classList.replace('fa-pause','fa-play'); progress.value = 0;
-      current.textContent='0:00'; total.textContent='0:00';
+    function resetPlayer() {
+      albumCoverImg.src = 'https://via.placeholder.com/300';
+      trackTitleElem.textContent = 'Título';
+      trackArtistElem.textContent = 'Artista';
+      audio.src = '';
+      playIcon.classList.replace('fa-pause', 'fa-play');
+      progress.value = 0;
+      current.textContent = '0:00';
+      total.textContent = '0:00';
     }
 
-    audio.addEventListener('loadedmetadata', ()=> { total.textContent = formatTime(audio.duration); });
-    audio.addEventListener('timeupdate', ()=> { if(audio.duration){ progress.value=(audio.currentTime/audio.duration)*100; current.textContent=formatTime(audio.currentTime); } });
-    progress.addEventListener('input', ()=> { if(audio.duration) audio.currentTime=(progress.value/100)*audio.duration; });
-    playBtn.addEventListener('click', ()=> { if(audio.paused){audio.play();playIcon.classList.replace('fa-play','fa-pause');} else{audio.pause();playIcon.classList.replace('fa-pause','fa-play');} });
-    repeatBtn.addEventListener('click', ()=> { isRepeat = !isRepeat; audio.loop = isRepeat; repeatBtn.classList.toggle('text-green-500', isRepeat); });
-    shuffleBtn.addEventListener('click', ()=> { isShuffle = !isShuffle; shuffleBtn.classList.toggle('text-green-500', isShuffle); alert("Modo aleatorio "+(isShuffle?"activado":"desactivado")); });
-    nextBtn.addEventListener('click', ()=> {
-      if(!playlist.length)return;
-      if(isShuffle) playTrack(Math.floor(Math.random()*playlist.length));
-      else if(currentTrackIndex+1<playlist.length) playTrack(currentTrackIndex+1);
-      else if(isRepeat) playTrack(0);
+    audio.addEventListener('loadedmetadata', () => {
+      total.textContent = formatTime(audio.duration);
     });
-    backBtn.addEventListener('click', ()=> {
-      if(!playlist.length)return;
-      if(isShuffle) playTrack(Math.floor(Math.random()*playlist.length));
-      else if(currentTrackIndex-1>=0) playTrack(currentTrackIndex-1);
-      else if(isRepeat) playTrack(playlist.length-1);
+    audio.addEventListener('timeupdate', () => {
+      if (audio.duration) {
+        progress.value = (audio.currentTime / audio.duration) * 100;
+        current.textContent = formatTime(audio.currentTime);
+      }
     });
-    audio.addEventListener('ended', ()=> { if(isRepeat){audio.currentTime=0;audio.play();} else nextBtn.click(); });
+    progress.addEventListener('input', () => {
+      if (audio.duration) audio.currentTime = (progress.value / 100) * audio.duration;
+    });
+    playBtn.addEventListener('click', () => {
+      if (audio.paused) {
+        audio.play();
+        playIcon.classList.replace('fa-play', 'fa-pause');
+      } else {
+        audio.pause();
+        playIcon.classList.replace('fa-pause', 'fa-play');
+      }
+    });
+    repeatBtn.addEventListener('click', () => {
+      isRepeat = !isRepeat;
+      audio.loop = isRepeat;
+      repeatBtn.classList.toggle('text-green-500', isRepeat);
+    });
+    shuffleBtn.addEventListener('click', () => {
+      isShuffle = !isShuffle;
+      shuffleBtn.classList.toggle('text-green-500', isShuffle);
+      alert("Modo aleatorio " + (isShuffle ? "activado" : "desactivado"));
+    });
+    nextBtn.addEventListener('click', () => {
+      if (!playlist.length) return;
+      if (isShuffle) playTrack(Math.floor(Math.random() * playlist.length));
+      else if (currentTrackIndex + 1 < playlist.length) playTrack(currentTrackIndex + 1);
+      else if (isRepeat) playTrack(0);
+    });
+    backBtn.addEventListener('click', () => {
+      if (!playlist.length) return;
+      if (isShuffle) playTrack(Math.floor(Math.random() * playlist.length));
+      else if (currentTrackIndex - 1 >= 0) playTrack(currentTrackIndex - 1);
+      else if (isRepeat) playTrack(playlist.length - 1);
+    });
+    audio.addEventListener('ended', () => {
+      if (isRepeat) {
+        audio.currentTime = 0;
+        audio.play();
+      } else nextBtn.click();
+    });
 
     searchBtn.addEventListener('click', searchArtist);
-    searchInput.addEventListener('keyup', e=>{ if(e.key==='Enter') searchArtist(); });
+    searchInput.addEventListener('keyup', e => {
+      if (e.key === 'Enter') searchArtist();
+    });
 
-    // Carga desde ?id=
-    window.addEventListener('DOMContentLoaded', async ()=>{
+    // Al cargar la página: si hay ?id= en la URL, cargar playlist desde Firebase y reproducir (opcional aquí)
+    window.addEventListener('DOMContentLoaded', async () => {
       const params = new URLSearchParams(location.search);
       const pid = params.get('id');
-      if(pid){
+      if (pid) {
         try {
           const dataSnap = await window.fbGet(window.fbChild(window.fbRef(window.db), `playlists/${pid}`));
-          if(dataSnap.exists()){
+          if (dataSnap.exists()) {
             playlist = dataSnap.val().playlist;
-            currentTrackIndex=0; playTrack(0);
+            currentTrackIndex = 0;
+            playTrack(0);
             generatedUrlContainer.textContent = location.href;
             generatedUrlContainer.classList.remove('hidden');
-          } else alert("Playlist no encontrada.");
-        } catch(e){
+          } else {
+            alert("Playlist no encontrada.");
+          }
+        } catch (e) {
           console.error("Error al cargar playlist:", e);
         }
       }
