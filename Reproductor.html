@@ -6,6 +6,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<style>
+* {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+</style>
 </head>
 <body class="bg-black text-white flex items-center justify-center min-h-screen p-4">
 
@@ -37,9 +43,10 @@
       <button id="next"><i class="fa-solid fa-forward-step"></i></button>
       <button id="repeatBtn" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-repeat"></i></button>
     </div>
+    <!-- Lista de canciones -->
+    <div id="songList" class="mt-6 space-y-2"></div>
   </div>
 
-  <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
@@ -70,6 +77,7 @@
     const albumCoverImg = document.getElementById('albumCover');
     const trackTitleElem = document.getElementById('trackTitle');
     const trackArtistElem = document.getElementById('trackArtist');
+    const songListElem = document.getElementById('songList');
 
     let playlist = [];
     let currentTrackIndex = 0;
@@ -83,6 +91,17 @@
       return `${m}:${s}`;
     }
 
+    function updateSongList() {
+      songListElem.innerHTML = '';
+      playlist.forEach((track, index) => {
+        const item = document.createElement('div');
+        item.className = `bg-white text-black px-4 py-2 rounded cursor-pointer hover:bg-gray-200 ${index === currentTrackIndex ? 'font-bold' : ''}`;
+        item.textContent = track.title;
+        item.onclick = () => playTrack(index);
+        songListElem.appendChild(item);
+      });
+    }
+
     function playTrack(index) {
       if (!playlist || playlist.length === 0 || index < 0 || index >= playlist.length) return;
 
@@ -92,10 +111,10 @@
       albumCoverImg.src = track.cover || 'https://via.placeholder.com/300';
       trackTitleElem.textContent = track.title || 'Título';
       trackArtistElem.textContent = track.artist || 'Artista';
-
       audio.src = track.url || '';
       audio.play();
       playIcon.classList.replace('fa-play', 'fa-pause');
+      updateSongList();
     }
 
     audio.addEventListener('loadedmetadata', () => {
@@ -182,22 +201,18 @@
         }
         const data = snapshot.val();
 
-        // Verificamos si la playlist es un array (como la guarda generadorMusica)
         if (!data.playlist || !Array.isArray(data.playlist)) {
           alert("Estructura de playlist inválida.");
           return;
         }
 
-        playlist = data.playlist.filter(track =>
-          track.title && track.artist && track.url && track.cover
-        );
-
+        playlist = data.playlist.filter(track => track.title && track.artist && track.url && track.cover);
         if (playlist.length === 0) {
           alert("La playlist no contiene canciones válidas.");
           return;
         }
-
         playTrack(0);
+        updateSongList();
       } catch (error) {
         alert("Error al cargar playlist: " + error.message);
         console.error(error);
@@ -214,6 +229,5 @@
       loadPlaylistFromFirebase(id);
     };
   </script>
-
 </body>
 </html>

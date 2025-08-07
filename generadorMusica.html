@@ -3,17 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Generador musica</title>
+  <title>Generador música</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-<style>
-
-* {
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
-
-</style>
+  <style>
+    * {
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+  </style>
 </head>
 <body class="bg-gradient-to-b from-[#2d1600] to-black text-white min-h-screen flex flex-col items-center p-4">
   <div class="w-full max-w-3xl">
@@ -32,46 +30,41 @@
       <button id="saveAlbumBtn" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-black font-semibold py-2 rounded-lg">Guardar álbum en playlist y generar URL</button>
     </div>
 
-    <!-- CONTENEDOR CENTRADO: URL, campo input (seleccionable) y botón copiar -->
     <div id="generatedContainer" class="hidden mt-4 flex flex-col items-center justify-center gap-3">
-      <!-- Campo input para que siempre puedas seleccionar/copiar manualmente -->
       <input id="generatedUrlInput" readonly class="hidden w-full max-w-full bg-gray-900 p-3 rounded-lg text-green-400 font-mono text-sm" />
-      <!-- También muestro un div con estilo (para compatibilidad visual) -->
       <div id="generatedUrlContainer" class="max-w-full bg-gray-900 p-3 rounded-lg break-words text-green-400 font-mono text-sm"></div>
 
       <div class="flex items-center gap-3">
         <button id="copyBtn" class="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-lg" aria-label="Copiar URL">
-          <!-- SVG inline icon copy -->
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
             <rect x="1" y="1" width="13" height="13" rx="2" ry="2"></rect>
           </svg>
           <span id="copyBtnText">Copiar</span>
         </button>
 
-        <button id="selectBtn" class="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-2 rounded-lg" title="Seleccionar URL">
-          Seleccionar
-        </button>
+        <button id="selectBtn" class="inline-flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-gray-200 px-3 py-2 rounded-lg" title="Seleccionar URL">Seleccionar</button>
       </div>
 
       <span id="copyMsg" class="hidden text-sm text-green-400 font-medium">¡Copiado!</span>
       <p id="copyError" class="hidden text-sm text-yellow-300 max-w-md text-center">
-        No se pudo copiar automáticamente. Asegúrate de que estás en HTTPS y no dentro de un iframe con restricciones, o selecciona la URL y cópiala manualmente (Ctrl+C / Cmd+C).
+        No se pudo copiar automáticamente. Asegúrate de HTTPS, o selecciona manualmente la URL (Ctrl+C / Cmd+C).
       </p>
     </div>
 
     <!-- REPRODUCTOR -->
     <div class="w-full max-w-sm mx-auto bg-gradient-to-b from-[#2d1600] to-black p-6 rounded-xl shadow-lg mt-8">
-      <div class="flex justify-center mb-6">
-        <img id="albumCover" src="https://via.placeholder.com/300" alt="Imagen del álbum" class="rounded-xl w-full max-w-xs shadow-lg" />
+      <div class="flex justify-center mb-4">
+        <img id="albumCover" src="https://via.placeholder.com/300" alt="Portada del álbum" class="rounded-xl w-full max-w-xs shadow-lg" />
       </div>
+
       <div class="text-center mb-2">
-        <h2 id="trackTitle" class="text-lg font-semibold">Título</h2>
+        <h2 id="albumName" class="text-xl font-bold text-white mb-1">Álbum</h2>
         <p id="trackArtist" class="text-sm text-gray-400">Artista</p>
       </div>
-      <div class="flex justify-center my-2">
-        <i class="fa-regular fa-heart text-xl opacity-70 hover:opacity-100"></i>
-      </div>
+
+      <ul id="playlistList" class="mb-4 text-sm bg-gray-800 p-3 rounded-lg space-y-1 max-h-40 overflow-y-auto"></ul>
+
       <audio id="audio" src=""></audio>
       <div class="mt-4">
         <input type="range" id="progress" value="0" class="w-full accent-green-500" />
@@ -92,7 +85,7 @@
     </div>
   </div>
 
-  <!-- Firebase -->
+  <!-- Firebase & Scripts -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getDatabase, ref, push, set, get, child } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
@@ -118,7 +111,6 @@
   </script>
 
   <script>
-    // --- Utilidades ---
     function jsonp(url) {
       return new Promise(resolve => {
         const cb = 'cb_' + Math.random().toString(36).substr(2, 9);
@@ -128,14 +120,15 @@
         document.body.appendChild(script);
       });
     }
+
     function formatTime(sec) {
       if (isNaN(sec)) return '0:00';
       const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60).toString().padStart(2, '0');
+      const s = String(Math.floor(sec % 60)).padStart(2, '0');
       return `${m}:${s}`;
     }
 
-    // --- DOM ---
+    // DOM
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
     const albumsContainer = document.getElementById('albumsContainer');
@@ -162,19 +155,16 @@
     const backBtn = document.getElementById('back');
     const nextBtn = document.getElementById('next');
     const albumCoverImg = document.getElementById('albumCover');
-    const trackTitleElem = document.getElementById('trackTitle');
+    const albumNameElem = document.getElementById('albumName');
     const trackArtistElem = document.getElementById('trackArtist');
 
     let playlist = [], currentTrackIndex = 0, isRepeat = false, isShuffle = false;
 
-    // --- Funciones principales (manteniendo tu lógica) ---
     async function searchArtist() {
       const q = searchInput.value.trim();
       if (!q) return alert("Escribe artista");
       albumsContainer.innerHTML = 'Buscando...';
       tracksSection.classList.add('hidden');
-      playlist = [];
-      currentTrackIndex = 0;
       resetPlayer();
       hideGeneratedUrl();
       try {
@@ -196,7 +186,7 @@
       albums.forEach(a => {
         const div = document.createElement('div');
         div.className = 'bg-gray-800 p-3 rounded cursor-pointer flex flex-col items-center hover:bg-gray-700';
-        div.innerHTML = `<img src="${a.cover_medium}" class="w-32 h-32 rounded mb-2"/> <h3 class="text-center font-semibold">${a.title}</h3>`;
+        div.innerHTML = `<img src="${a.cover_medium}" class="w-32 h-32 rounded mb-2"/><h3 class="text-center font-semibold">${a.title}</h3>`;
         div.onclick = () => loadTracks(a.id, a.cover_big, a.title);
         albumsContainer.appendChild(div);
       });
@@ -205,10 +195,10 @@
     async function loadTracks(albumId, coverUrl, albumTitle) {
       tracksContainer.innerHTML = 'Cargando canciones...';
       tracksSection.classList.remove('hidden');
-      playlist = [];
-      currentTrackIndex = 0;
       resetPlayer();
       hideGeneratedUrl();
+      playlist = [];
+      currentTrackIndex = 0;
       try {
         const d = await jsonp(`https://api.deezer.com/album/${albumId}`);
         tracksContainer.innerHTML = '';
@@ -237,122 +227,66 @@
 
           currentTrackIndex = 0;
           playTrack(0);
+          showPlaylist();
 
-          // Guardar en Firebase y generar URL que apunta a Reproductor.html?id=...
           try {
             const pr = window.fbPush(window.fbRef(window.db, 'playlists'));
             const id = pr.key;
-            await window.fbSet(pr, { createdAt: new Date().toISOString(), playlist });
+            await window.fbSet(pr, {
+              createdAt: new Date().toISOString(),
+              playlist,
+              album: albumTitle,
+              artist: d.artist.name,
+              cover: coverUrl
+            });
             const link = `${location.origin}/Flixplemusic/Reproductor.html?id=${id}`;
-
-            // Mostrar en ambos elementos (input y div)
             generatedUrlContainer.textContent = link;
             generatedUrlInput.value = link;
-
             showCopyUI();
             generatedContainer.scrollIntoView({ behavior: 'smooth' });
-
           } catch (err) {
             alert("Error al guardar: " + err.message);
           }
         };
+
       } catch {
         tracksContainer.innerHTML = '<p class="text-red-500 text-center">Error al cargar canciones</p>';
       }
     }
 
-    function showCopyUI() {
-      generatedContainer.classList.remove('hidden');
-      generatedUrlInput.classList.remove('hidden');
-      copyMsg.classList.add('hidden');
-      copyError.classList.add('hidden');
-    }
-    function hideGeneratedUrl() {
-      generatedContainer.classList.add('hidden');
-      generatedUrlContainer.textContent = '';
-      generatedUrlInput.value = '';
-      copyMsg.classList.add('hidden');
-      copyError.classList.add('hidden');
-    }
-
-    // --- Copiar con múltiples fallbacks y mensajes ---
-    async function tryCopyToClipboard(text) {
-      // Intenta el método moderno primero
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        try {
-          await navigator.clipboard.writeText(text);
-          return { ok: true, method: 'clipboard-api' };
-        } catch (err) {
-          // puede lanzar "NotAllowedError" o "SecurityError"
-          return { ok: false, error: err, method: 'clipboard-api' };
-        }
-      }
-
-      // Fallback clásico usando textarea + execCommand (funciona en la mayoría de navegadores)
-      try {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        // evitar que el textarea cambie el layout
-        ta.style.position = 'fixed';
-        ta.style.left = '-9999px';
-        document.body.appendChild(ta);
-        ta.focus();
-        ta.select();
-        const res = document.execCommand('copy');
-        ta.remove();
-        if (res) return { ok: true, method: 'execCommand' };
-        return { ok: false, error: new Error('execCommand returned false'), method: 'execCommand' };
-      } catch (err) {
-        return { ok: false, error: err, method: 'execCommand' };
-      }
+    function showPlaylist() {
+      const list = document.getElementById("playlistList");
+      list.innerHTML = '';
+      playlist.forEach((track, index) => {
+        const li = document.createElement('li');
+        li.className = 'cursor-pointer hover:text-green-400';
+        li.textContent = track.title;
+        li.onclick = () => playTrack(index);
+        list.appendChild(li);
+      });
+      if (albumNameElem.textContent !== '') albumNameElem.textContent = playlist[0]?.cover || albumNameElem.textContent;
     }
 
-    copyBtn.addEventListener('click', async () => {
-      const link = generatedUrlInput.value || generatedUrlContainer.textContent || '';
-      if (!link) return;
-
-      // Oculta mensajes previos
-      copyMsg.classList.add('hidden');
-      copyError.classList.add('hidden');
-
-      // Intentar copiar y manejar resultados
-      const result = await tryCopyToClipboard(link);
-      if (result.ok) {
-        copyMsg.classList.remove('hidden');
-        setTimeout(() => copyMsg.classList.add('hidden'), 1800);
-      } else {
-        // Si no pudimos, mostrar mensaje y dejar input seleccionado para copia manual
-        copyError.classList.remove('hidden');
-        // seleccionar el campo para que el usuario pueda Ctrl/Cmd+C fácilmente
-        generatedUrlInput.focus();
-        generatedUrlInput.select();
-        console.warn('Error al copiar:', result.method, result.error);
-      }
-    });
-
-    // Botón que selecciona el texto en el input para que el usuario pueda copiar manualmente
-    selectBtn.addEventListener('click', () => {
-      if (!generatedUrlInput.value) return;
-      generatedUrlInput.focus();
-      generatedUrlInput.select();
-    });
-
-    // --- Reproductor / player functions (mantengo tu lógica) ---
     function playTrack(idx) {
       if (idx < 0 || idx >= playlist.length) return;
       currentTrackIndex = idx;
       const t = playlist[idx];
       albumCoverImg.src = t.cover;
-      trackTitleElem.textContent = t.title;
+      albumNameElem.textContent = t.title; // Título actual como álbum si prefieres cambiar
       trackArtistElem.textContent = t.artist;
       audio.src = t.url;
       audio.play();
       if (playIcon.classList.contains('fa-play')) playIcon.classList.replace('fa-play', 'fa-pause');
+
+      document.querySelectorAll('#playlistList li').forEach((li, i) => {
+        li.classList.toggle('text-green-400', i === idx);
+        li.classList.toggle('font-bold', i === idx);
+      });
     }
 
     function resetPlayer() {
       albumCoverImg.src = 'https://via.placeholder.com/300';
-      trackTitleElem.textContent = 'Título';
+      albumNameElem.textContent = 'Álbum';
       trackArtistElem.textContent = 'Artista';
       audio.src = '';
       if (playIcon.classList.contains('fa-pause')) playIcon.classList.replace('fa-pause', 'fa-play');
@@ -373,60 +307,105 @@
     progress.addEventListener('input', () => {
       if (audio.duration) audio.currentTime = (progress.value / 100) * audio.duration;
     });
+
     playBtn.addEventListener('click', () => {
-      if (audio.paused) {
-        audio.play();
-        if (playIcon.classList.contains('fa-play')) playIcon.classList.replace('fa-play', 'fa-pause');
-      } else {
-        audio.pause();
-        if (playIcon.classList.contains('fa-pause')) playIcon.classList.replace('fa-pause', 'fa-play');
-      }
+      audio.paused ? audio.play() : audio.pause();
+      playIcon.classList.toggle('fa-play');
+      playIcon.classList.toggle('fa-pause');
     });
+
     repeatBtn.addEventListener('click', () => {
       isRepeat = !isRepeat;
       audio.loop = isRepeat;
       repeatBtn.classList.toggle('text-green-500', isRepeat);
     });
+
     shuffleBtn.addEventListener('click', () => {
       isShuffle = !isShuffle;
       shuffleBtn.classList.toggle('text-green-500', isShuffle);
       alert("Modo aleatorio " + (isShuffle ? "activado" : "desactivado"));
     });
+
     nextBtn.addEventListener('click', () => {
       if (!playlist.length) return;
-      if (isShuffle) playTrack(Math.floor(Math.random() * playlist.length));
-      else if (currentTrackIndex + 1 < playlist.length) playTrack(currentTrackIndex + 1);
-      else if (isRepeat) playTrack(0);
+      isShuffle
+        ? playTrack(Math.floor(Math.random() * playlist.length))
+        : currentTrackIndex + 1 < playlist.length
+          ? playTrack(currentTrackIndex + 1)
+          : isRepeat && playTrack(0);
     });
+
     backBtn.addEventListener('click', () => {
       if (!playlist.length) return;
-      if (isShuffle) playTrack(Math.floor(Math.random() * playlist.length));
-      else if (currentTrackIndex - 1 >= 0) playTrack(currentTrackIndex - 1);
-      else if (isRepeat) playTrack(playlist.length - 1);
+      isShuffle
+        ? playTrack(Math.floor(Math.random() * playlist.length))
+        : currentTrackIndex - 1 >= 0
+          ? playTrack(currentTrackIndex - 1)
+          : isRepeat && playTrack(playlist.length - 1);
     });
+
     audio.addEventListener('ended', () => {
-      if (isRepeat) {
-        audio.currentTime = 0;
-        audio.play();
-      } else nextBtn.click();
+      isRepeat ? (audio.currentTime = 0, audio.play()) : nextBtn.click();
+    });
+
+    async function tryCopyToClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        try {
+          await navigator.clipboard.writeText(text);
+          return { ok: true, method: 'clipboard-api' };
+        } catch (err) {
+          return { ok: false, error: err, method: 'clipboard-api' };
+        }
+      }
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const res = document.execCommand('copy');
+        ta.remove();
+        return res ? { ok: true, method: 'execCommand' } : { ok: false, error: new Error('execCommand returned false'), method: 'execCommand' };
+      } catch (err) {
+        return { ok: false, error: err, method: 'execCommand' };
+      }
+    }
+
+    copyBtn.addEventListener('click', async () => {
+      const link = generatedUrlInput.value || generatedUrlContainer.textContent || '';
+      if (!link) return;
+      copyMsg.classList.add('hidden');
+      copyError.classList.add('hidden');
+      const result = await tryCopyToClipboard(link);
+      result.ok
+        ? (copyMsg.classList.remove('hidden'), setTimeout(() => copyMsg.classList.add('hidden'), 1800))
+        : (copyError.classList.remove('hidden'), generatedUrlInput.focus(), generatedUrlInput.select(), console.warn('Error al copiar:', result.method, result.error));
+    });
+
+    selectBtn.addEventListener('click', () => {
+      generatedUrlInput.value && (generatedUrlInput.focus(), generatedUrlInput.select());
     });
 
     searchBtn.addEventListener('click', searchArtist);
-    searchInput.addEventListener('keyup', e => {
-      if (e.key === 'Enter') searchArtist();
-    });
+    searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') searchArtist(); });
 
-    // Al cargar la página: cargar playlist si hay ?id=
     window.addEventListener('DOMContentLoaded', async () => {
       const params = new URLSearchParams(location.search);
       const pid = params.get('id');
       if (pid) {
         try {
-          const dataSnap = await window.fbGet(window.fbChild(window.fbRef(window.db), `playlists/${pid}`));
-          if (dataSnap.exists()) {
-            playlist = dataSnap.val().playlist;
+          const snap = await window.fbGet(window.fbChild(window.fbRef(window.db), `playlists/${pid}`));
+          if (snap.exists()) {
+            const data = snap.val();
+            playlist = data.playlist;
             currentTrackIndex = 0;
             playTrack(0);
+            showPlaylist();
+            if (data.album) albumNameElem.textContent = data.album;
+            if (data.artist) trackArtistElem.textContent = data.artist;
+            if (data.cover) albumCoverImg.src = data.cover;
             const link = location.href;
             generatedUrlContainer.textContent = link;
             generatedUrlInput.value = link;
@@ -440,36 +419,37 @@
       }
     });
 
-      // Bloquear clic derecho
-  document.addEventListener('contextmenu', function (e) {
-    e.preventDefault();
-  });
-
-  // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
-  document.addEventListener('keydown', function (e) {
-    if (
-      e.key === 'F12' ||
-      (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
-      (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
-    ) {
-      e.preventDefault();
+    function showCopyUI() {
+      generatedContainer.classList.remove('hidden');
+      generatedUrlInput.classList.remove('hidden');
+      copyMsg.classList.add('hidden');
+      copyError.classList.add('hidden');
     }
-  });
+    function hideGeneratedUrl() {
+      generatedContainer.classList.add('hidden');
+      generatedUrlContainer.textContent = '';
+      generatedUrlInput.value = '';
+      copyMsg.classList.add('hidden');
+      copyError.classList.add('hidden');
+    }
 
-  // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
-  window.oncontextmenu = function () {
-    return false;
-  };
-
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('a').forEach(el => {
-      const url = el.getAttribute('href');
-      el.removeAttribute('href');
-      el.style.cursor = 'pointer';
-      el.onclick = () => window.location.href = url;
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+        (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
+      ) e.preventDefault();
     });
-  });
+    window.oncontextmenu = () => false;
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('a').forEach(el => {
+        const url = el.getAttribute('href');
+        el.removeAttribute('href');
+        el.style.cursor = 'pointer';
+        el.onclick = () => window.location.href = url;
+      });
+    });
   </script>
 </body>
 </html>
