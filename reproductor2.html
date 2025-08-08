@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Reproductor con lista de canciones del artista</title>
+  <title>Reproductor con lista y controles completos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -21,17 +21,16 @@
       padding: 1rem;
       font-family: system-ui, sans-serif;
     }
-    /* Contenedor transparente */
     #tracksListContainer {
       margin-top: 2rem;
       width: 100%;
       max-width: 400px;
-      background: transparent; /* Sin fondo visible */
+      background: transparent;
       border-radius: 0.75rem;
       padding: 1rem;
       max-height: 300px;
       overflow-y: auto;
-      box-shadow: none; /* Sin sombra */
+      box-shadow: none;
     }
     #tracksListContainer h3 {
       margin-bottom: 1rem;
@@ -39,8 +38,6 @@
       text-align: center;
       color: white;
     }
-
-    /* Cada item con título blanco y artista más pequeño a la izquierda */
     .track-item {
       cursor: pointer;
       padding: 0.4rem 0.5rem;
@@ -61,11 +58,11 @@
       background-color: #1a3a27;
     }
     .track-title {
-      color: white; /* Título en blanco */
+      color: white;
       font-weight: 500;
     }
     .track-artist {
-      color: #cccccc; /* Artista en gris claro */
+      color: #cccccc;
       font-size: 0.85rem;
       text-align: left;
       margin-top: 2px;
@@ -97,17 +94,16 @@
       </div>
     </div>
     <div class="flex justify-between items-center mt-4 px-6 text-2xl text-white">
-      <button id="shuffleBtn" class="opacity-60 hover:opacity-100" disabled><i class="fa-solid fa-shuffle"></i></button>
-      <button id="back" disabled><i class="fa-solid fa-backward-step"></i></button>
+      <button id="shuffleBtn" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-shuffle"></i></button>
+      <button id="back"><i class="fa-solid fa-backward-step"></i></button>
       <button id="playBtn" class="bg-white text-black w-14 h-14 rounded-full flex items-center justify-center shadow-lg">
         <i class="fa-solid fa-play" id="playIcon"></i>
       </button>
-      <button id="next" disabled><i class="fa-solid fa-forward-step"></i></button>
+      <button id="next"><i class="fa-solid fa-forward-step"></i></button>
       <button id="repeatBtn" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-repeat"></i></button>
     </div>
   </div>
 
-  <!-- Lista de canciones del artista -->
   <div id="tracksListContainer">
     <h3>Canciones de este artista</h3>
     <div id="tracksList"></div>
@@ -137,16 +133,19 @@
     const current = document.getElementById('current');
     const total = document.getElementById('total');
     const repeatBtn = document.getElementById('repeatBtn');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const backBtn = document.getElementById('back');
+    const nextBtn = document.getElementById('next');
 
     const albumCoverImg = document.getElementById('albumCover');
     const trackTitleElem = document.getElementById('trackTitle');
     const trackArtistElem = document.getElementById('trackArtist');
     const tracksListDiv = document.getElementById('tracksList');
 
-    let currentTrackId = null;
-    let currentArtist = null;
     let tracks = [];
+    let currentIndex = 0;
     let isRepeat = false;
+    let isShuffle = false;
 
     function formatTime(sec) {
       if (isNaN(sec)) return '0:00';
@@ -155,9 +154,9 @@
       return `${m}:${s}`;
     }
 
-    function highlightActiveTrack(trackId) {
-      [...tracksListDiv.children].forEach(div => {
-        if (div.dataset.id === trackId) {
+    function highlightActiveTrack(index) {
+      [...tracksListDiv.children].forEach((div, i) => {
+        if (i === index) {
           div.classList.add('active');
         } else {
           div.classList.remove('active');
@@ -165,11 +164,10 @@
       });
     }
 
-    function playTrackById(trackId) {
-      const track = tracks.find(t => t.id === trackId);
-      if (!track) return alert("Canción no encontrada en la lista.");
-
-      currentTrackId = track.id;
+    function playTrackByIndex(index) {
+      if (index < 0 || index >= tracks.length) return;
+      currentIndex = index;
+      const track = tracks[currentIndex];
       albumCoverImg.src = track.cover || 'https://via.placeholder.com/300';
       trackTitleElem.textContent = track.title || 'Título';
       trackArtistElem.textContent = track.artist || 'Artista';
@@ -178,7 +176,7 @@
         console.log('Auto-play bloqueado, esperando interacción.');
       });
       playIcon.classList.replace('fa-play', 'fa-pause');
-      highlightActiveTrack(track.id);
+      highlightActiveTrack(currentIndex);
     }
 
     async function loadMainTrack(trackId) {
@@ -189,14 +187,7 @@
           return null;
         }
         const track = snapshot.val();
-        currentArtist = track.artist || null;
-        return {
-          id: trackId,
-          title: track.title,
-          artist: track.artist,
-          cover: track.cover,
-          url: track.url
-        };
+        return { id: trackId, ...track };
       } catch (error) {
         alert("Error cargando la canción: " + error.message);
         console.error(error);
@@ -211,7 +202,7 @@
           tracksListDiv.innerHTML = '<p>No se encontraron canciones.</p>';
           return [];
         }
-        const allTracks = snapshot.val();
+        let allTracks = snapshot.val();
 
         let artistTracks = Object.entries(allTracks)
           .map(([id, t]) => ({ id, ...t }))
@@ -228,20 +219,23 @@
           [artistTracks[i], artistTracks[j]] = [artistTracks[j], artistTracks[i]];
         }
 
+        // Limitar a 20 canciones
         artistTracks = artistTracks.slice(0, 20);
 
         tracksListDiv.innerHTML = '';
-        artistTracks.forEach(track => {
+        artistTracks.forEach((track, idx) => {
           const div = document.createElement('div');
           div.classList.add('track-item');
-          div.dataset.id = track.id;
+          div.dataset.index = idx;
 
           div.innerHTML = `
             <div class="track-title">${track.title}</div>
             <div class="track-artist">${track.artist}</div>
           `;
 
-          div.onclick = () => playTrackById(track.id);
+          div.onclick = () => {
+            playTrackByIndex(idx);
+          };
 
           tracksListDiv.appendChild(div);
         });
@@ -254,6 +248,7 @@
       }
     }
 
+    // Eventos audio
     audio.addEventListener('loadedmetadata', () => {
       total.textContent = formatTime(audio.duration);
     });
@@ -263,11 +258,23 @@
         current.textContent = formatTime(audio.currentTime);
       }
     });
+    audio.addEventListener('ended', () => {
+      if (isRepeat) {
+        audio.currentTime = 0;
+        audio.play();
+      } else {
+        playNext();
+      }
+    });
+
+    // Control progreso manual
     progress.addEventListener('input', () => {
       if (audio.duration) {
         audio.currentTime = (progress.value / 100) * audio.duration;
       }
     });
+
+    // Botones controles
     playBtn.addEventListener('click', () => {
       if (audio.paused) {
         audio.play();
@@ -277,16 +284,47 @@
         playIcon.classList.replace('fa-pause', 'fa-play');
       }
     });
+
     repeatBtn.addEventListener('click', () => {
       isRepeat = !isRepeat;
-      audio.loop = isRepeat;
+      audio.loop = false; // Control manual del loop para el fin de canción
       repeatBtn.classList.toggle('text-green-500', isRepeat);
     });
-    audio.addEventListener('ended', () => {
-      if (!isRepeat) {
-        playIcon.classList.replace('fa-pause', 'fa-play');
-      }
+
+    shuffleBtn.addEventListener('click', () => {
+      isShuffle = !isShuffle;
+      shuffleBtn.classList.toggle('text-green-500', isShuffle);
     });
+
+    backBtn.addEventListener('click', () => {
+      playPrevious();
+    });
+
+    nextBtn.addEventListener('click', () => {
+      playNext();
+    });
+
+    function playPrevious() {
+      if (tracks.length === 0) return;
+      if (isShuffle) {
+        currentIndex = Math.floor(Math.random() * tracks.length);
+      } else {
+        currentIndex--;
+        if (currentIndex < 0) currentIndex = tracks.length - 1;
+      }
+      playTrackByIndex(currentIndex);
+    }
+
+    function playNext() {
+      if (tracks.length === 0) return;
+      if (isShuffle) {
+        currentIndex = Math.floor(Math.random() * tracks.length);
+      } else {
+        currentIndex++;
+        if (currentIndex >= tracks.length) currentIndex = 0;
+      }
+      playTrackByIndex(currentIndex);
+    }
 
     window.onload = async () => {
       const params = new URLSearchParams(window.location.search);
@@ -299,19 +337,17 @@
       const mainTrack = await loadMainTrack(trackId);
       if (!mainTrack) return;
 
-      currentTrackId = mainTrack.id;
-      albumCoverImg.src = mainTrack.cover || 'https://via.placeholder.com/300';
-      trackTitleElem.textContent = mainTrack.title || 'Título';
-      trackArtistElem.textContent = mainTrack.artist || 'Artista';
-      audio.src = mainTrack.url || '';
-      audio.play().catch(() => {
-        console.log('Auto-play bloqueado, esperando interacción.');
-      });
-      playIcon.classList.replace('fa-play', 'fa-pause');
-
       tracks = await loadArtistTracks(mainTrack.artist);
+      // Si el track inicial no está en la lista (por alguna razón), insertarlo al principio:
+      const initialIndex = tracks.findIndex(t => t.id === mainTrack.id);
+      if (initialIndex === -1) {
+        tracks.unshift(mainTrack);
+        currentIndex = 0;
+      } else {
+        currentIndex = initialIndex;
+      }
 
-      highlightActiveTrack(currentTrackId);
+      playTrackByIndex(currentIndex);
     };
 
     // Bloquear clic derecho y teclas de inspección
