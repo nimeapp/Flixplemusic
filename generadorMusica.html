@@ -3,50 +3,80 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Generador música</title>
+  <title>Generador y Reproductor de Música</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     * { -webkit-user-select: none; -webkit-touch-callout: none; }
+    .track-item {
+      cursor: pointer;
+      padding: 0.5rem 0.25rem;
+      border-radius: 0.375rem;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .track-item:hover {
+      background-color: #2d1600;
+    }
+    .track-item.active {
+      color: #a3f7bf;
+      font-weight: 600;
+      background-color: #1a3a27;
+    }
+    #individualUrlsContainer {
+      margin-top: 1rem;
+      max-width: 100%;
+      background-color: #1f2937;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      font-family: monospace;
+      font-size: 0.875rem;
+      color: #9ee6a8;
+      overflow-wrap: break-word;
+    }
   </style>
 </head>
 <body class="bg-gradient-to-b from-[#2d1600] to-black text-white min-h-screen flex flex-col items-center p-4">
-  <div class="w-full max-w-3xl">
-    <h1 class="text-3xl font-bold mb-6 text-center">Buscador de Artistas</h1>
 
+  <div class="w-full max-w-3xl">
+    <h1 class="text-3xl font-bold mb-6 text-center">Buscador y Reproductor de Música</h1>
+
+    <!-- Buscador -->
     <div class="mb-6 max-w-sm mx-auto">
       <input id="searchInput" type="text" placeholder="Escribe un artista (ej: Shakira)" class="w-full p-3 rounded-lg text-black" />
       <button id="searchBtn" class="w-full mt-3 bg-green-500 hover:bg-green-600 text-black font-semibold py-2 rounded-lg">Buscar</button>
     </div>
 
+    <!-- Álbumes -->
     <div id="albumsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
 
+    <!-- Canciones + Inputs URL -->
     <div id="tracksSection" class="hidden mb-8">
       <h2 class="text-2xl font-semibold mb-4 text-center">Canciones del Álbum</h2>
       <div id="tracksContainer" class="space-y-3 max-h-[400px] overflow-y-auto bg-gray-800 p-4 rounded-lg"></div>
-      <button id="saveAlbumBtn" class="mt-4 w-full bg-green-600 hover:bg-green-700 text-black font-semibold py-2 rounded-lg">Guardar álbum en playlist y generar URL</button>
+      <button id="saveAlbumBtn" disabled class="mt-4 w-full bg-green-600 hover:bg-green-700 text-black font-semibold py-2 rounded-lg">Guardar álbum en playlist y cargar para reproducir</button>
     </div>
 
+    <!-- URL generada -->
     <div id="generatedContainer" class="hidden mt-4 flex flex-col items-center justify-center gap-3">
       <div id="generatedUrlContainer" class="max-w-full bg-gray-900 p-3 rounded-lg break-words text-green-400 font-mono text-sm"></div>
+      <div id="individualUrlsContainer" class="max-w-full hidden"></div>
       <div class="flex items-center gap-3">
         <button id="copyBtn" class="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-lg">
-          <i class="fa-solid fa-copy"></i><span id="copyBtnText">Copiar</span>
+          <i class="fa-solid fa-copy"></i><span id="copyBtnText">Copiar todo</span>
         </button>
       </div>
       <span id="copyMsg" class="hidden text-sm text-green-400 font-medium">¡Copiado!</span>
     </div>
 
-    <!-- REPRODUCTOR -->
-    <div class="w-full max-w-sm mx-auto bg-gradient-to-b from-[#2d1600] to-black p-6 rounded-xl shadow-lg mt-8">
-      <div class="flex justify-center mb-4">
-        <img id="albumCover" src="https://via.placeholder.com/300" alt="Portada del álbum" class="rounded-xl w-full max-w-xs shadow-lg" />
+    <!-- Reproductor -->
+    <div class="w-full max-w-sm mx-auto bg-gradient-to-b from-[#2d1600] to-black p-6 rounded-xl shadow-lg mt-12">
+      <div class="flex justify-center mb-6">
+        <img id="albumCover" src="https://via.placeholder.com/300" alt="Imagen del álbum" class="rounded-xl w-full max-w-xs shadow-lg" />
       </div>
       <div class="text-center mb-2">
-        <h2 id="albumName" class="text-xl font-bold text-white mb-1">Álbum</h2>
+        <h2 id="trackTitle" class="text-lg font-semibold">Título</h2>
         <p id="trackArtist" class="text-sm text-gray-400">Artista</p>
       </div>
-      <ul id="playlistList" class="mb-4 text-sm bg-gray-800 p-3 rounded-lg space-y-1 max-h-40 overflow-y-auto"></ul>
       <audio id="audio" src=""></audio>
       <div class="mt-4">
         <input type="range" id="progress" value="0" class="w-full accent-green-500" />
@@ -64,13 +94,14 @@
         <button id="next"><i class="fa-solid fa-forward-step"></i></button>
         <button id="repeatBtn" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-repeat"></i></button>
       </div>
+      <div id="playlistContainer" class="mt-6 max-h-60 overflow-y-auto text-left px-2"></div>
     </div>
   </div>
 
   <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getDatabase, ref, push, set, get, child } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+    import { getDatabase, ref, push, set, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
@@ -84,33 +115,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    window.db = db;
-    window.fbRef = ref;
-    window.fbPush = push;
-    window.fbSet = set;
-    window.fbGet = get;
-    window.fbChild = child;
-  </script>
 
-  <script>
-    function jsonp(url) {
-      return new Promise(resolve => {
-        const cb = 'cb_' + Math.random().toString(36).substr(2, 9);
-        window[cb] = data => { delete window[cb]; script.remove(); resolve(data); };
-        const script = document.createElement('script');
-        script.src = `${url}&output=jsonp&callback=${cb}`;
-        document.body.appendChild(script);
-      });
-    }
-
-    function formatTime(sec) {
-      if (isNaN(sec)) return '0:00';
-      const m = Math.floor(sec / 60);
-      const s = String(Math.floor(sec % 60)).padStart(2, '0');
-      return `${m}:${s}`;
-    }
-
-    // DOM refs
     const searchInput = document.getElementById('searchInput');
     const searchBtn = document.getElementById('searchBtn');
     const albumsContainer = document.getElementById('albumsContainer');
@@ -119,8 +124,10 @@
     const saveAlbumBtn = document.getElementById('saveAlbumBtn');
     const generatedContainer = document.getElementById('generatedContainer');
     const generatedUrlContainer = document.getElementById('generatedUrlContainer');
+    const individualUrlsContainer = document.getElementById('individualUrlsContainer');
     const copyBtn = document.getElementById('copyBtn');
     const copyMsg = document.getElementById('copyMsg');
+
     const audio = document.getElementById('audio');
     const playBtn = document.getElementById('playBtn');
     const playIcon = document.getElementById('playIcon');
@@ -132,17 +139,39 @@
     const backBtn = document.getElementById('back');
     const nextBtn = document.getElementById('next');
     const albumCoverImg = document.getElementById('albumCover');
-    const albumNameElem = document.getElementById('albumName');
+    const trackTitleElem = document.getElementById('trackTitle');
     const trackArtistElem = document.getElementById('trackArtist');
+    const playlistContainer = document.getElementById('playlistContainer');
 
-    let playlist = [], currentTrackIndex = 0, isRepeat = false, isShuffle = false, currentAlbumTitle = "", currentArtist = "";
+    let playlist = [];
+    let currentTrackIndex = 0;
+    let isRepeat = false;
+    let isShuffle = false;
+
+    let currentAlbumTitle = "";
+    let currentArtist = "";
+
+    function jsonp(url) {
+      return new Promise(resolve => {
+        const cb = 'cb_' + Math.random().toString(36).substring(2, 9);
+        window[cb] = data => {
+          delete window[cb];
+          script.remove();
+          resolve(data);
+        };
+        const script = document.createElement('script');
+        script.src = `${url}&output=jsonp&callback=${cb}`;
+        document.body.appendChild(script);
+      });
+    }
 
     async function searchArtist() {
       const q = searchInput.value.trim();
-      if (!q) return alert("Escribe artista");
+      if (!q) return alert("Escribe un artista");
       albumsContainer.innerHTML = 'Buscando...';
       tracksSection.classList.add('hidden');
-      resetPlayer();
+      generatedContainer.classList.add('hidden');
+      saveAlbumBtn.disabled = true;
       try {
         const d = await jsonp(`https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}`);
         const artist = d.data?.[0];
@@ -171,19 +200,24 @@
     async function loadTracks(albumId, coverUrl, albumTitle) {
       tracksContainer.innerHTML = 'Cargando canciones...';
       tracksSection.classList.remove('hidden');
-      resetPlayer();
+      generatedContainer.classList.add('hidden');
+      saveAlbumBtn.disabled = true;
       playlist = [];
-      currentTrackIndex = 0;
       try {
         const d = await jsonp(`https://api.deezer.com/album/${albumId}`);
         tracksContainer.innerHTML = '';
         currentAlbumTitle = albumTitle;
         currentArtist = d.artist.name;
+        if (!d.tracks?.data?.length) {
+          tracksContainer.innerHTML = '<p class="text-red-500 text-center">No se encontraron canciones</p>';
+          return;
+        }
         d.tracks.data.forEach(t => {
           const div = document.createElement('div');
           div.className = 'bg-gray-700 p-2 rounded flex justify-between items-center';
           const titleDiv = document.createElement('div');
           titleDiv.textContent = t.title;
+          titleDiv.className = 'truncate max-w-[40%]';
           const input = document.createElement('input');
           input.type = 'url';
           input.placeholder = `URL MP3 para "${t.title}"`;
@@ -192,47 +226,59 @@
           div.appendChild(input);
           tracksContainer.appendChild(div);
         });
+        saveAlbumBtn.disabled = false;
 
         saveAlbumBtn.onclick = async () => {
           playlist = [];
           for (const div of tracksContainer.children) {
             const title = div.children[0].textContent;
             const url = div.children[1].value.trim();
-            if (url) playlist.push({ title, artist: d.artist.name, url, cover: coverUrl });
+            if (url) playlist.push({ title, artist: currentArtist, url, cover: coverUrl });
           }
           if (!playlist.length) return alert("Ingresa al menos una URL válida.");
-          currentTrackIndex = 0;
-          playTrack(0);
-          showPlaylist();
 
           try {
             // Guardar playlist completa
-            const pr = window.fbPush(window.fbRef(window.db, 'playlists'));
-            const id = pr.key;
-            await window.fbSet(pr, {
+            const pr = push(ref(db, 'playlists'));
+            const playlistId = pr.key;
+            await set(pr, {
               createdAt: new Date().toISOString(),
               playlist,
-              album: albumTitle,
-              artist: d.artist.name,
+              album: currentAlbumTitle,
+              artist: currentArtist,
               cover: coverUrl
             });
 
-            // Guardar canciones individuales
+            // Guardar canciones individualmente en "tracks" y guardar sus IDs
+            const individualUrls = [];
             for (const track of playlist) {
-              const trackRef = window.fbPush(window.fbRef(window.db, 'tracks'));
-              await window.fbSet(trackRef, {
+              const trackRef = push(ref(db, 'tracks'));
+              const trackId = trackRef.key;
+              await set(trackRef, {
                 title: track.title,
                 artist: track.artist,
                 url: track.url,
                 cover: track.cover,
-                album: albumTitle,
-                createdAt: new Date().toISOString()
+                album: currentAlbumTitle,
+                createdAt: new Date().toISOString(),
+                playlistId: playlistId
               });
+              // Construir URL individual
+              individualUrls.push(`${location.origin}/reproductor2.html?track=${trackId}`);
             }
 
-            const link = `${location.origin}/Flixplemusic/Reproductor.html?id=${id}`;
+            // Mostrar URL generada para compartir
+            const link = `${location.origin}${location.pathname}?playlist=${playlistId}`;
             generatedUrlContainer.textContent = link;
+
+            // Mostrar URLs individuales
+            individualUrlsContainer.innerHTML = '<strong>URLs individuales para cada canción:</strong><br>' + individualUrls.map(u => `<a href="${u}" target="_blank" class="underline text-green-300">${u}</a>`).join('<br>');
+            individualUrlsContainer.classList.remove('hidden');
+
             generatedContainer.classList.remove('hidden');
+
+            // Cargar y reproducir esa playlist
+            loadPlaylistFromFirebase(playlistId);
           } catch (err) {
             alert("Error al guardar: " + err.message);
           }
@@ -243,95 +289,148 @@
       }
     }
 
-    function showPlaylist() {
-      const list = document.getElementById("playlistList");
-      list.innerHTML = '';
+    function renderPlaylist() {
+      playlistContainer.innerHTML = '';
       playlist.forEach((track, index) => {
-        const li = document.createElement('li');
-        li.className = 'cursor-pointer hover:text-green-400';
-        li.textContent = track.title;
-        li.onclick = () => playTrack(index);
-        list.appendChild(li);
+        const div = document.createElement('div');
+        div.classList.add('track-item');
+        if (index === currentTrackIndex) div.classList.add('active');
+        div.textContent = `${track.title} - ${track.artist}`;
+        div.title = `${track.title} - ${track.artist}`;
+        div.onclick = () => playTrack(index);
+        playlistContainer.appendChild(div);
       });
     }
 
-    function playTrack(idx) {
-      if (idx < 0 || idx >= playlist.length) return;
-      currentTrackIndex = idx;
-      const t = playlist[idx];
-      albumCoverImg.src = t.cover;
-      albumNameElem.textContent = currentAlbumTitle;
-      trackArtistElem.textContent = currentArtist;
-      audio.src = t.url;
+    function playTrack(index) {
+      if (!playlist.length || index < 0 || index >= playlist.length) return;
+      currentTrackIndex = index;
+      const track = playlist[index];
+
+      albumCoverImg.src = track.cover || 'https://via.placeholder.com/300';
+      trackTitleElem.textContent = track.title || 'Título';
+      trackArtistElem.textContent = track.artist || 'Artista';
+
+      audio.src = track.url || '';
       audio.play();
-      if (playIcon.classList.contains('fa-play')) playIcon.classList.replace('fa-play', 'fa-pause');
+      playIcon.classList.replace('fa-play', 'fa-pause');
 
-      document.querySelectorAll('#playlistList li').forEach((li, i) => {
-        li.classList.toggle('text-green-400', i === idx);
-        li.classList.toggle('font-bold', i === idx);
-      });
+      renderPlaylist();
     }
 
-    function resetPlayer() {
-      albumCoverImg.src = 'https://via.placeholder.com/300';
-      albumNameElem.textContent = 'Álbum';
-      trackArtistElem.textContent = 'Artista';
-      audio.src = '';
-      if (playIcon.classList.contains('fa-pause')) playIcon.classList.replace('fa-pause', 'fa-play');
-      progress.value = 0;
-      current.textContent = '0:00';
-      total.textContent = '0:00';
+    function formatTime(sec) {
+      if (isNaN(sec)) return '0:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
     }
 
     audio.addEventListener('loadedmetadata', () => {
       total.textContent = formatTime(audio.duration);
     });
+
     audio.addEventListener('timeupdate', () => {
       if (audio.duration) {
         progress.value = (audio.currentTime / audio.duration) * 100;
         current.textContent = formatTime(audio.currentTime);
       }
     });
+
     progress.addEventListener('input', () => {
-      if (audio.duration) audio.currentTime = (progress.value / 100) * audio.duration;
+      if (audio.duration) {
+        audio.currentTime = (progress.value / 100) * audio.duration;
+      }
     });
+
     playBtn.addEventListener('click', () => {
-      audio.paused ? audio.play() : audio.pause();
-      playIcon.classList.toggle('fa-play');
-      playIcon.classList.toggle('fa-pause');
+      if (audio.paused) {
+        audio.play();
+        playIcon.classList.replace('fa-play', 'fa-pause');
+      } else {
+        audio.pause();
+        playIcon.classList.replace('fa-pause', 'fa-play');
+      }
     });
+
     repeatBtn.addEventListener('click', () => {
       isRepeat = !isRepeat;
       audio.loop = isRepeat;
       repeatBtn.classList.toggle('text-green-500', isRepeat);
     });
+
     shuffleBtn.addEventListener('click', () => {
       isShuffle = !isShuffle;
       shuffleBtn.classList.toggle('text-green-500', isShuffle);
     });
+
     nextBtn.addEventListener('click', () => {
       if (!playlist.length) return;
-      isShuffle
-        ? playTrack(Math.floor(Math.random() * playlist.length))
-        : currentTrackIndex + 1 < playlist.length
-          ? playTrack(currentTrackIndex + 1)
-          : isRepeat && playTrack(0);
+      if (isShuffle) {
+        const randomIndex = Math.floor(Math.random() * playlist.length);
+        playTrack(randomIndex);
+      } else {
+        if (currentTrackIndex + 1 < playlist.length) {
+          playTrack(currentTrackIndex + 1);
+        } else if (isRepeat) {
+          playTrack(0);
+        }
+      }
     });
+
     backBtn.addEventListener('click', () => {
       if (!playlist.length) return;
-      isShuffle
-        ? playTrack(Math.floor(Math.random() * playlist.length))
-        : currentTrackIndex - 1 >= 0
-          ? playTrack(currentTrackIndex - 1)
-          : isRepeat && playTrack(playlist.length - 1);
+      if (isShuffle) {
+        const randomIndex = Math.floor(Math.random() * playlist.length);
+        playTrack(randomIndex);
+      } else {
+        if (currentTrackIndex - 1 >= 0) {
+          playTrack(currentTrackIndex - 1);
+        } else if (isRepeat) {
+          playTrack(playlist.length - 1);
+        }
+      }
     });
+
     audio.addEventListener('ended', () => {
-      isRepeat ? (audio.currentTime = 0, audio.play()) : nextBtn.click();
+      if (isRepeat) {
+        audio.currentTime = 0;
+        audio.play();
+      } else {
+        nextBtn.click();
+      }
     });
+
+    async function loadPlaylistFromFirebase(id) {
+      try {
+        const snapshot = await get(ref(db, `playlists/${id}`));
+        if (!snapshot.exists()) {
+          alert("Playlist no encontrada.");
+          return;
+        }
+        const data = snapshot.val();
+        if (!data.playlist || !Array.isArray(data.playlist)) {
+          alert("Estructura de playlist inválida.");
+          return;
+        }
+        playlist = data.playlist.filter(t => t.title && t.artist && t.url && t.cover);
+        if (playlist.length === 0) {
+          alert("La playlist no contiene canciones válidas.");
+          return;
+        }
+        playTrack(0);
+      } catch (error) {
+        alert("Error al cargar playlist: " + error.message);
+        console.error(error);
+      }
+    }
+
+    searchBtn.addEventListener('click', searchArtist);
+    searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') searchArtist(); });
 
     copyBtn.addEventListener('click', async () => {
       try {
-        await navigator.clipboard.writeText(generatedUrlContainer.textContent);
+        const textToCopy = generatedUrlContainer.textContent + "\n\n" + individualUrlsContainer.textContent;
+        await navigator.clipboard.writeText(textToCopy);
         copyMsg.classList.remove('hidden');
         setTimeout(() => copyMsg.classList.add('hidden'), 1800);
       } catch {
@@ -339,8 +438,24 @@
       }
     });
 
-    searchBtn.addEventListener('click', searchArtist);
-    searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') searchArtist(); });
+    window.onload = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const playlistId = urlParams.get('playlist');
+      if (playlistId) {
+        loadPlaylistFromFirebase(playlistId);
+      }
+    };
+
+    // Bloquear clic derecho y teclas de inspección
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+        (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
+      ) e.preventDefault();
+    });
   </script>
+
 </body>
 </html>

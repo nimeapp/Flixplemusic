@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reproductor</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    * {
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    .track-item {
+      cursor: pointer;
+      padding: 0.5rem 0.25rem;
+      border-radius: 0.375rem;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .track-item:hover {
+      background-color: #2d1600;
+    }
+    .track-item.active {
+      color: #a3f7bf;
+      font-weight: 600;
+      background-color: #1a3a27;
+    }
+  </style>
+</head>
+<body class="bg-black text-white flex flex-col items-center justify-center min-h-screen p-4">
+
+  <div class="w-full max-w-sm mx-auto bg-gradient-to-b from-[#2d1600] to-black p-6 rounded-xl shadow-lg">
+    <div class="flex justify-center mb-6">
+      <img id="albumCover" src="https://via.placeholder.com/300" alt="Imagen del álbum" class="rounded-xl w-full max-w-xs shadow-lg" />
+    </div>
+    <div class="text-center mb-2">
+      <h2 id="trackTitle" class="text-lg font-semibold">Título</h2>
+      <p id="trackArtist" class="text-sm text-gray-400">Artista</p>
+    </div>
+    <div class="flex justify-center my-2">
+      <i class="fa-regular fa-heart text-xl opacity-70 hover:opacity-100"></i>
+    </div>
+    <audio id="audio" src=""></audio>
+    <div class="mt-4">
+      <input type="range" id="progress" value="0" class="w-full accent-green-500" />
+      <div class="flex justify-between text-xs text-gray-400 mt-1">
+        <span id="current">0:00</span>
+        <span id="total">0:00</span>
+      </div>
+    </div>
+    <div class="flex justify-between items-center mt-4 px-6 text-2xl text-white">
+      <button id="shuffleBtn" class="opacity-60 hover:opacity-100" disabled><i class="fa-solid fa-shuffle"></i></button>
+      <button id="back" disabled><i class="fa-solid fa-backward-step"></i></button>
+      <button id="playBtn" class="bg-white text-black w-14 h-14 rounded-full flex items-center justify-center shadow-lg">
+        <i class="fa-solid fa-play" id="playIcon"></i>
+      </button>
+      <button id="next" disabled><i class="fa-solid fa-forward-step"></i></button>
+      <button id="repeatBtn" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-repeat"></i></button>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+      authDomain: "flixplemusic.firebaseapp.com",
+      databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+      projectId: "flixplemusic",
+      storageBucket: "flixplemusic.appspot.com",
+      messagingSenderId: "792301053512",
+      appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const audio = document.getElementById('audio');
+    const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
+    const progress = document.getElementById('progress');
+    const current = document.getElementById('current');
+    const total = document.getElementById('total');
+    const repeatBtn = document.getElementById('repeatBtn');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const backBtn = document.getElementById('back');
+    const nextBtn = document.getElementById('next');
+    const albumCoverImg = document.getElementById('albumCover');
+    const trackTitleElem = document.getElementById('trackTitle');
+    const trackArtistElem = document.getElementById('trackArtist');
+
+    let isRepeat = false;
+
+    function formatTime(sec) {
+      if (isNaN(sec)) return '0:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function loadTrack(trackId) {
+      get(ref(db, `tracks/${trackId}`))
+        .then(snapshot => {
+          if (!snapshot.exists()) {
+            alert("Canción no encontrada.");
+            return;
+          }
+          const track = snapshot.val();
+          if (!track.url) {
+            alert("La canción no tiene URL válida.");
+            return;
+          }
+          albumCoverImg.src = track.cover || 'https://via.placeholder.com/300';
+          trackTitleElem.textContent = track.title || 'Título';
+          trackArtistElem.textContent = track.artist || 'Artista';
+          audio.src = track.url;
+          audio.play();
+          playIcon.classList.replace('fa-play', 'fa-pause');
+        })
+        .catch(error => {
+          alert("Error al cargar la canción: " + error.message);
+          console.error(error);
+        });
+    }
+
+    audio.addEventListener('loadedmetadata', () => {
+      total.textContent = formatTime(audio.duration);
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      if (audio.duration) {
+        progress.value = (audio.currentTime / audio.duration) * 100;
+        current.textContent = formatTime(audio.currentTime);
+      }
+    });
+
+    progress.addEventListener('input', () => {
+      if (audio.duration) {
+        audio.currentTime = (progress.value / 100) * audio.duration;
+      }
+    });
+
+    playBtn.addEventListener('click', () => {
+      if (audio.paused) {
+        audio.play();
+        playIcon.classList.replace('fa-play', 'fa-pause');
+      } else {
+        audio.pause();
+        playIcon.classList.replace('fa-pause', 'fa-play');
+      }
+    });
+
+    repeatBtn.addEventListener('click', () => {
+      isRepeat = !isRepeat;
+      audio.loop = isRepeat;
+      repeatBtn.classList.toggle('text-green-500', isRepeat);
+    });
+
+    // Deshabilitar shuffle, back, next porque es solo un track
+    shuffleBtn.disabled = true;
+    backBtn.disabled = true;
+    nextBtn.disabled = true;
+
+    window.onload = () => {
+      const params = new URLSearchParams(window.location.search);
+      const trackId = params.get('track');
+      if (!trackId) {
+        alert("No se indicó ID de canción en la URL. Usa ?track=ID_DEL_TRACK");
+        return;
+      }
+      loadTrack(trackId);
+    };
+  </script>
+</body>
+</html>
