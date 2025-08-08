@@ -47,7 +47,7 @@
     }
 
     /* Estilos para los álbumes */
-    #artistAlbums {
+    #artistAlbums, #randomAlbums {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
       gap: 1rem;
@@ -76,6 +76,19 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    /* Contenedor aleatorio adicional */
+    #randomAlbumsContainer {
+      max-w-md;
+      width: 100%;
+      margin-top: 2rem;
+      padding: 1rem;
+      background-color: #27272a; /* bg-zinc-800 */
+      border-radius: 1rem;
+      box-shadow: 0 4px 12px rgb(0 0 0 / 0.7);
+      color: white;
+      max-width: 400px;
     }
   </style>
 </head>
@@ -114,6 +127,12 @@
     <div id="artistAlbums"></div>
   </div>
 
+  <!-- Contenedor para álbumes aleatorios -->
+  <div id="randomAlbumsContainer" class="max-w-md w-full mt-8 p-4 bg-zinc-800 rounded-xl shadow-lg text-white">
+    <h3 id="randomAlbumsTitle" class="text-xl font-semibold mb-4">Álbumes aleatorios</h3>
+    <div id="randomAlbums"></div>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
@@ -148,6 +167,7 @@
 
     const artistAlbumsTitle = document.getElementById('artistAlbumsTitle');
     const artistAlbumsDiv = document.getElementById('artistAlbums');
+    const randomAlbumsDiv = document.getElementById('randomAlbums');
 
     let playlist = [];
     let currentTrackIndex = 0;
@@ -178,7 +198,6 @@
 
       audio.src = track.url || '';
       audio.play().catch(() => {
-        // Auto-play puede fallar por política del navegador
         console.log('Auto-reproducción bloqueada, esperando acción del usuario.');
       });
       playIcon.classList.replace('fa-play', 'fa-pause');
@@ -330,10 +349,7 @@
           `;
 
           albumDiv.onclick = () => {
-            // Navegar a la url del álbum si está definida
-            if (album.url) {
-              window.location.href = album.url;
-            }
+            if (album.url) window.location.href = album.url;
           };
 
           artistAlbumsDiv.appendChild(albumDiv);
@@ -341,6 +357,56 @@
 
       } catch (error) {
         artistAlbumsDiv.innerHTML = 'Error al cargar álbumes.';
+        console.error(error);
+      }
+    }
+
+    // Nueva función para cargar álbumes aleatorios
+    async function loadRandomAlbums() {
+      randomAlbumsDiv.innerHTML = 'Cargando álbumes aleatorios...';
+
+      try {
+        const albumsSnapshot = await get(ref(db, 'albums'));
+        if (!albumsSnapshot.exists()) {
+          randomAlbumsDiv.innerHTML = 'No se encontraron álbumes.';
+          return;
+        }
+        const albumsData = albumsSnapshot.val();
+
+        const albumsArray = Object.values(albumsData);
+        if (albumsArray.length === 0) {
+          randomAlbumsDiv.innerHTML = 'No hay álbumes disponibles.';
+          return;
+        }
+
+        // Mezclar array (Fisher-Yates shuffle)
+        for (let i = albumsArray.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [albumsArray[i], albumsArray[j]] = [albumsArray[j], albumsArray[i]];
+        }
+
+        // Mostrar solo primeros 6 álbumes aleatorios para no saturar
+        const randomSelection = albumsArray.slice(0, 6);
+
+        randomAlbumsDiv.innerHTML = '';
+        randomSelection.forEach(album => {
+          const albumDiv = document.createElement('div');
+          albumDiv.classList.add('album-item');
+
+          albumDiv.innerHTML = `
+            <img src="${album.cover}" alt="${album.title}" />
+            <p>${album.title}</p>
+          `;
+
+          albumDiv.onclick = () => {
+            if (album.url) window.location.href = album.url;
+          };
+
+          randomAlbumsDiv.appendChild(albumDiv);
+        });
+
+      } catch (error) {
+        randomAlbumsDiv.innerHTML = 'Error al cargar álbumes.';
         console.error(error);
       }
     }
@@ -358,7 +424,8 @@
         alert("No se proporcionó playlist en la URL.");
       }
 
-      // Intentar reproducir audio si ya está cargado (puede fallar por políticas)
+      loadRandomAlbums();
+
       audio.play().catch(() => {
         console.log('Auto-play bloqueado por navegador.');
       });
