@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor administrador</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-6">
+  <h1 class="text-3xl font-bold mb-6">Editor administrador</h1>
+  <div id="albumList" class="space-y-6"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+      authDomain: "flixplemusic.firebaseapp.com",
+      databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+      projectId: "flixplemusic",
+      storageBucket: "flixplemusic.appspot.com",
+      messagingSenderId: "792301053512",
+      appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const albumsRef = ref(db, 'albums');
+
+    const categorias = [
+      "Álbumes y Sencillos Populares",
+      "Sencillos Populares",
+      "Reciente",
+      "Nuevos Lanzamientos Para Ti",
+      "Top 10",
+      "Lo Más Sonado",
+      "Recomendados",
+      "Tendencias",
+      "Éxitos del Momento",
+      "Descubrir Nuevos Talentos"
+    ];
+
+    const albumList = document.getElementById('albumList');
+
+    onValue(albumsRef, snapshot => {
+      const data = snapshot.val();
+      if (!data) return;
+      albumList.innerHTML = '';
+
+      Object.entries(data).forEach(([id, album]) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'bg-gray-800 p-4 rounded-lg shadow';
+
+        wrapper.innerHTML = `
+          <div class="flex flex-col md:flex-row gap-4 items-center">
+            <img src="${album.cover}" alt="${album.title}" class="w-32 h-32 rounded-lg object-cover" />
+            <div class="flex-1 space-y-2">
+              <h2 class="text-xl font-bold">${album.title}</h2>
+              <p class="text-gray-300">${album.artista}</p>
+              <label class="block text-sm font-medium">Categoría</label>
+              <select id="categoria-${id}" class="w-full p-2 rounded text-black">
+                ${categorias.map(cat => `<option value="${cat}" ${album.categoria === cat ? 'selected' : ''}>${cat}</option>`).join('')}
+              </select>
+              <label class="flex items-center mt-2 gap-2">
+                <input type="checkbox" id="mostrar-${id}" ${album.mostrar_en_index ? 'checked' : ''} /> Mostrar en el index
+              </label>
+              <label class="flex items-center mt-2 gap-2">
+                <input type="checkbox" id="mostrarCover-${id}" ${album.mostrar_portada_artista_en_index ? 'checked' : ''} /> Mostrar portada del artista
+              </label>
+              <div class="flex gap-2 mt-3">
+                <button onclick="actualizar('${id}')" class="bg-green-500 hover:bg-green-600 px-3 py-1 rounded">Actualizar</button>
+                <button onclick="eliminar('${id}')" class="bg-red-500 hover:bg-red-600 px-3 py-1 rounded">Eliminar</button>
+              </div>
+            </div>
+          </div>
+        `;
+
+        albumList.appendChild(wrapper);
+      });
+    });
+
+    window.actualizar = (id) => {
+      const categoria = document.getElementById(`categoria-${id}`).value;
+      const mostrar = document.getElementById(`mostrar-${id}`).checked;
+      const mostrarCover = document.getElementById(`mostrarCover-${id}`).checked;
+
+      update(ref(db, `albums/${id}`), {
+        categoria,
+        mostrar_en_index: mostrar,
+        mostrar_portada_artista_en_index: mostrarCover
+      });
+      alert('Álbum actualizado');
+    };
+
+    window.eliminar = (id) => {
+      if (confirm('¿Estás seguro de eliminar este álbum?')) {
+        remove(ref(db, `albums/${id}`));
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Generador Feed</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: linear-gradient(135deg, #e0ffe0 0%, #f9f9f9 100%);
+      padding: 1.5rem;
+    }
+    input, button, select {
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    input:focus, select:focus {
+      border-color: #8a2be2;
+      box-shadow: 0 0 8px #8a2be2aa;
+    }
+    button {
+      font-weight: 700;
+      box-shadow: 0 4px 10px #8a2be299;
+      cursor: pointer;
+      user-select: none;
+    }
+    button:hover {
+      box-shadow: 0 6px 15px #7329b599;
+    }
+    .lucide {
+      stroke: #8a2be2;
+      stroke-width: 2.5;
+      transition: stroke 0.3s ease;
+    }
+    .lucide:hover {
+      stroke: #4ade80;
+    }
+    .album-card:hover {
+      box-shadow: 0 0 20px #8a2be2cc;
+      transform: translateY(-4px);
+    }
+    #modalGuardado {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 1000;
+    }
+    #modalGuardado.show {
+      visibility: visible;
+      opacity: 1;
+    }
+    #modalGuardado .modal-content {
+      background: white;
+      padding: 2rem 3rem;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #4ade80;
+      text-align: center;
+      user-select: none;
+    }
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+      authDomain: "flixplemusic.firebaseapp.com",
+      databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+      projectId: "flixplemusic",
+      storageBucket: "flixplemusic.appspot.com",
+      messagingSenderId: "792301053512",
+      appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    window.saveToFirebase = (album) => {
+      const albumsRef = ref(db, 'albums');
+      push(albumsRef, album);
+    }
+
+    // Guarda la portada del artista en artist_covers usando la id del artista como key
+    window.saveArtistCoverToFirebase = (artistId, coverUrl) => {
+      const artistCoverRef = ref(db, `artist_covers/${artistId}`);
+      return set(artistCoverRef, coverUrl);
+    }
+  </script>
+</head>
+<body>
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-4xl font-extrabold text-center mb-8 select-none text-purple-700">🎧 Generador Feed</h1>
+
+    <div class="flex flex-col md:flex-row gap-4 mb-8">
+      <input id="artistInput" placeholder="Escribe el nombre del artista..." class="flex-grow p-4 rounded-lg border border-gray-300 shadow-sm" />
+      <button onclick="buscarArtista()" class="rounded-lg px-6 py-4 text-white bg-gradient-to-r from-purple-700 to-green-400 hover:from-purple-800 hover:to-green-500 shadow-md">
+        Buscar
+      </button>
+    </div>
+
+    <div id="resultados" class="grid gap-6"></div>
+  </div>
+
+  <div id="modalGuardado">
+    <div class="modal-content">
+      Guardado correctamente ✅
+    </div>
+  </div>
+
+  <script>
+    let nombreArtistaGlobal = "";
+    let idArtistaGlobal = "";
+    let portadaArtistaGlobal = "";
+
+    function jsonp(url) {
+      return new Promise(resolve => {
+        const callback = 'cb_' + Math.random().toString(36).substr(2, 9);
+        window[callback] = data => {
+          delete window[callback];
+          script.remove();
+          resolve(data);
+        };
+        const script = document.createElement('script');
+        script.src = url + `&output=jsonp&callback=${callback}`;
+        document.body.appendChild(script);
+      });
+    }
+
+    async function buscarArtista() {
+      const q = artistInput.value.trim();
+      if (!q) return alert("Escribe el nombre del artista");
+
+      resultados.innerHTML = '<p class="text-purple-700 font-semibold text-center text-lg animate-pulse">🔍 Buscando artista...</p>';
+
+      const artistRes = await jsonp(`https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}`);
+      if (!artistRes.data?.length) {
+        resultados.innerHTML = "<p class='text-red-600 font-semibold text-center'>Artista no encontrado.</p>";
+        return;
+      }
+
+      const artista = artistRes.data[0];
+      nombreArtistaGlobal = artista.name;
+      idArtistaGlobal = artista.id;
+      portadaArtistaGlobal = artista.picture_xl;
+
+      resultados.innerHTML = `
+        <div class="text-center">
+          <h3 class="text-2xl font-bold text-purple-700 mb-2">🎤 ${artista.name}</h3>
+          <img src="${artista.picture_xl}" alt="${artista.name}" onclick="cargarAlbums(${artista.id}, '${artista.name.replace(/'/g, "\\'")}')"
+            class="mx-auto rounded-full shadow-lg w-48 h-48 object-cover cursor-pointer hover:scale-105 transition"/>
+          <label class="flex items-center justify-center gap-2 mt-3 cursor-pointer select-none">
+            <input type="checkbox" id="mostrarIndexArtista" class="w-5 h-5 rounded" checked>
+            <span class="text-gray-700 font-medium">Mostrar artista en index.html</span>
+          </label>
+          <button onclick="guardarArtista('${artista.id}', '${artista.name.replace(/'/g, "\\'")}', '${artista.picture_xl}')"
+            class="mt-4 bg-gradient-to-r from-purple-700 to-green-400 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-800 hover:to-green-500">
+            Guardar artista
+          </button>
+          <p class="mt-2 text-gray-600 text-sm">Haz clic en la imagen para ver los álbumes</p>
+        </div>`;
+    }
+
+    function guardarArtista(id, nombre, cover) {
+      const mostrar = document.getElementById('mostrarIndexArtista').checked;
+      const artista = {
+        id,
+        nombre,
+        cover,
+        mostrar_en_index: mostrar
+      };
+      // Guarda portada del artista en artist_covers
+      window.saveArtistCoverToFirebase(id, cover)
+        .then(() => {
+          console.log("Portada artista guardada en artist_covers");
+        })
+        .catch(err => {
+          console.error("Error guardando portada artista:", err);
+        });
+
+      mostrarModalGuardado();
+    }
+
+    async function cargarAlbums(idArt, nombreArtista) {
+      const albumsRes = await jsonp(`https://api.deezer.com/artist/${idArt}/albums`);
+      resultados.innerHTML += `<h3 class="text-xl font-bold text-purple-700 mt-8 mb-4">Álbumes de ${nombreArtista}</h3>`;
+
+      const contenedor = document.createElement('div');
+      contenedor.className = "grid grid-cols-1 md:grid-cols-2 gap-6";
+
+      albumsRes.data.forEach(alb => {
+        const div = document.createElement('div');
+        div.className = 'album-card bg-white p-6 rounded-xl shadow-lg transition-transform';
+        div.innerHTML = `
+          <img src="${alb.cover_medium}" alt="${alb.title}" class="rounded-lg w-full mb-4"/>
+          <h3 class="text-xl font-semibold text-purple-800 mb-1">${alb.title}</h3>
+          <p class="text-gray-700 mb-1">Artista: <strong>${nombreArtista}</strong></p>
+          <p class="text-gray-600 mb-3">Fecha: ${alb.release_date || '–'}</p>
+          <input id="url-${alb.id}" placeholder="URL del reproductor" class="w-full p-3 border border-gray-300 rounded-lg mb-2"/>
+
+          <label class="block mb-2 text-sm font-medium text-gray-700">Categoría</label>
+          <select id="categoria-${alb.id}" class="w-full mb-3 p-3 border border-gray-300 rounded-lg">
+            <option value="Álbumes">Álbumes y Sencillos Populares</option>
+            <option value="Sencillos Populares">Sencillos Populares</option>
+            <option value="Reciente">Reciente</option>
+            <option value="Nuevos Lanzamientos Para Ti">Nuevos Lanzamientos Para Ti</option>
+            <option value="Top 10">Top 10</option>
+            <option value="Lo Más Sonado">Lo Más Sonado</option>
+            <option value="Recomendados">Recomendados</option>
+            <option value="Tendencias">Tendencias</option>
+            <option value="Éxitos del Momento">Éxitos del Momento</option>
+            <option value="Descubrir Nuevos Talentos">Descubrir Nuevos Talentos</option>
+          </select>
+
+          <label class="flex items-center gap-2 mb-3 cursor-pointer select-none">
+            <input type="checkbox" id="mostrarIndex-${alb.id}" class="w-5 h-5 rounded" checked>
+            <span class="text-gray-700 font-medium">Mostrar en index.html</span>
+          </label>
+          <button onclick="guardarAlbum('${alb.id}','${alb.title.replace(/'/g, "\\'")}','${alb.cover_medium}','${alb.release_date||''}','${nombreArtista.replace(/'/g, "\\'")}', ${alb.id})"
+            class="bg-gradient-to-r from-purple-700 to-green-400 text-white px-4 py-2 rounded-lg font-semibold hover:from-purple-800 hover:to-green-500">
+            Guardar álbum
+          </button>`;
+        contenedor.appendChild(div);
+      });
+
+      resultados.appendChild(contenedor);
+    }
+
+    function mostrarModalGuardado() {
+      const modal = document.getElementById('modalGuardado');
+      modal.classList.add('show');
+      setTimeout(() => modal.classList.remove('show'), 2500);
+    }
+
+    function guardarAlbum(id, title, cover, fecha, artista, albId) {
+      const urlInput = document.getElementById(`url-${id}`);
+      const categoriaSelect = document.getElementById(`categoria-${id}`);
+      const mostrarIndexCheckbox = document.getElementById(`mostrarIndex-${id}`);
+
+      const url = urlInput.value.trim();
+      const categoria = categoriaSelect.value;
+      const mostrarEnIndex = mostrarIndexCheckbox ? mostrarIndexCheckbox.checked : false;
+
+      if (!url) return alert("Debes ingresar una URL válida");
+
+      const album = {
+        id,
+        title,
+        cover,
+        fecha,
+        url,
+        artista,
+        categoria,
+        artistaCover: portadaArtistaGlobal,
+        mostrar_en_index: mostrarEnIndex
+      };
+
+      saveToFirebase(album);
+      urlInput.value = "";
+      if (mostrarIndexCheckbox) mostrarIndexCheckbox.checked = true;
+      mostrarModalGuardado();
+    }
+
+    const artistInput = document.getElementById('artistInput');
+    const resultados = document.getElementById('resultados');
+  </script>
+</body>
+</html>

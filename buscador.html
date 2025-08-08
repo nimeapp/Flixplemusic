@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Buscador Musical</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap"
+    rel="stylesheet" />
+  <style>
+    body {
+      font-family: "Montserrat", sans-serif;
+      background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+      color: #eee;
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    h1.main-title {
+      font-weight: 700;
+      font-size: 2.25rem; /* 36px */
+      color: #a0f0a0;
+      text-align: center;
+      margin-bottom: 1rem;
+      user-select: none;
+    }
+    .carousel::-webkit-scrollbar,
+    .album-carousel::-webkit-scrollbar {
+      display: none;
+    }
+    .carousel,
+    .album-carousel {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .artist-cover {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 4px 8px #000;
+      transition: transform 0.3s ease;
+      cursor: pointer;
+    }
+    .artist-cover:hover {
+      transform: scale(1.05);
+    }
+    .album-card {
+      width: 160px;
+      flex: none;
+      background: #222;
+      border-radius: 16px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+    .album-card:hover {
+      box-shadow: 0 0 15px #4ade80;
+      transform: translateY(-3px);
+    }
+    .album-cover {
+      width: 100%;
+      aspect-ratio: 1/1;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px #000;
+    }
+    .album-cover img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .album-info {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.8rem;
+    }
+    h3.category-title {
+      color: #a0f0a0;
+      margin: 0 0 0.25rem 0;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+    input#searchInput {
+      width: 100%;
+      max-width: 400px;
+      padding: 0.5rem 1rem;
+      border-radius: 9999px;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+      background: #333;
+      color: #eee;
+      box-shadow: 0 0 8px #4ade80;
+      margin: 0 auto 1.5rem auto;
+      display: block;
+    }
+    input#searchInput::placeholder {
+      color: #aaa;
+    }
+    #filterButtons {
+      display: none;
+    }
+    #filterButtons button {
+      background-color: #d1d5db;
+      color: #111827;
+      transition: background-color 0.3s ease;
+    }
+    #filterButtons button:hover {
+      background-color: #9ca3af;
+      color: #000;
+    }
+    /* Lista vertical artistas */
+    .artist-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .artist-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: #222;
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .artist-item:hover {
+      background-color: #4ade80;
+      color: #000;
+    }
+    .artist-item img {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      object-fit: cover;
+      box-shadow: 0 2px 6px #000;
+      flex-shrink: 0;
+    }
+    .artist-name {
+      font-weight: 600;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    /* Lista tracks vertical */
+    .track-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+    .track-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      background: #222;
+      padding: 0.5rem 1rem;
+      border-radius: 12px;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+    .track-item:hover {
+      background-color: #4ade80;
+      color: #000;
+    }
+    .track-cover {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      object-fit: cover;
+      box-shadow: 0 2px 6px #000;
+      flex-shrink: 0;
+    }
+    .track-info {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .track-title {
+      font-weight: 600;
+      font-size: 1rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .track-artist {
+      font-size: 0.85rem;
+      color: #aaa;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .no-music-msg {
+      font-size: 1.25rem;
+      color: #a0f0a0;
+      font-weight: 600;
+      margin-top: 1rem;
+      text-align: center;
+      user-select: none;
+    }
+  </style>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import {
+      getDatabase,
+      ref,
+      onValue,
+    } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+      authDomain: "flixplemusic.firebaseapp.com",
+      databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+      projectId: "flixplemusic",
+      storageBucket: "flixplemusic.appspot.com",
+      messagingSenderId: "792301053512",
+      appId: "1:792301053512:web:13878703d081f1a7b3da7d",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const albumsRef = ref(db, "albums");
+    const tracksRef = ref(db, "tracks");
+
+    const searchInput = document.getElementById("searchInput");
+    const resultsContainer = document.getElementById("searchResults");
+    const filterButtons = document.getElementById("filterButtons");
+
+    let allAlbums = [];
+    let allTracks = [];
+    let filterType = "all";
+
+    function mostrarTodosArtistas() {
+      resultsContainer.innerHTML = "";
+      filterButtons.style.display = "flex";
+
+      const artistasUnicos = new Map();
+      allAlbums.forEach((album) => {
+        if (album.artista && album.artistaCover) {
+          artistasUnicos.set(album.artista, album.artistaCover);
+        }
+      });
+
+      const artistasArray = Array.from(artistasUnicos.entries()).slice(0, 10);
+
+      const list = document.createElement("div");
+      list.className = "artist-list";
+
+      artistasArray.forEach(([name, cover]) => {
+        const item = document.createElement("div");
+        item.className = "artist-item";
+        item.onclick = () => mostrarTracksDeArtista(name);
+
+        const img = document.createElement("img");
+        img.src = cover;
+        img.alt = name;
+
+        const span = document.createElement("span");
+        span.textContent = name;
+        span.className = "artist-name";
+
+        item.appendChild(img);
+        item.appendChild(span);
+        list.appendChild(item);
+      });
+
+      resultsContainer.appendChild(list);
+    }
+
+    function mostrarTracksDeArtista(artista) {
+      resultsContainer.innerHTML = "";
+      filterButtons.style.display = "flex";
+
+      const artistaCover =
+        allAlbums.find((a) => a.artista === artista)?.artistaCover || "";
+      const artistHeader = document.createElement("div");
+      artistHeader.className = "flex flex-col items-center mb-4";
+
+      if (artistaCover) {
+        const img = document.createElement("img");
+        img.src = artistaCover;
+        img.alt = artista;
+        img.className = "artist-cover";
+        artistHeader.appendChild(img);
+      }
+
+      const nameTitle = document.createElement("h3");
+      nameTitle.textContent = artista;
+      nameTitle.className = "category-title mt-2";
+      artistHeader.appendChild(nameTitle);
+
+      resultsContainer.appendChild(artistHeader);
+
+      const tracksDelArtista = allTracks.filter(
+        (track) => track.artist === artista
+      );
+
+      if (tracksDelArtista.length === 0) {
+        const noTracksMsg = document.createElement("p");
+        noTracksMsg.textContent = `No hay música ${artista}`;
+        noTracksMsg.className = "no-music-msg";
+        resultsContainer.appendChild(noTracksMsg);
+        return;
+      }
+
+      const list = document.createElement("div");
+      list.className = "track-list";
+
+      tracksDelArtista.forEach((track) => {
+        const link = document.createElement("a");
+        link.href = track.url || "#";
+        link.target = "_blank";
+        link.className = "track-item";
+
+        const img = document.createElement("img");
+        img.src = track.cover;
+        img.alt = track.title;
+        img.className = "track-cover";
+
+        const info = document.createElement("div");
+        info.className = "track-info";
+
+        const titleTrack = document.createElement("span");
+        titleTrack.textContent = track.title;
+        titleTrack.className = "track-title";
+
+        const artistName = document.createElement("span");
+        artistName.textContent = track.artist;
+        artistName.className = "track-artist";
+
+        info.appendChild(titleTrack);
+        info.appendChild(artistName);
+
+        link.appendChild(img);
+        link.appendChild(info);
+        list.appendChild(link);
+      });
+
+      resultsContainer.appendChild(list);
+    }
+
+    function renderSearchResults(results) {
+      resultsContainer.innerHTML = "";
+
+      const hasResults =
+        results.artists.length + results.albums.length + results.tracks.length > 0;
+      filterButtons.style.display = hasResults ? "flex" : "none";
+
+      if (filterType === "artists") {
+        if (results.artists.length) {
+          const titleArtists = document.createElement("h3");
+          titleArtists.textContent = "Artistas";
+          titleArtists.className = "category-title";
+          resultsContainer.appendChild(titleArtists);
+
+          const wrapperArtists = document.createElement("div");
+          wrapperArtists.className =
+            "carousel flex overflow-x-auto gap-4 px-1 py-2";
+          results.artists.forEach((artist) => {
+            const card = document.createElement("div");
+            card.className = "flex flex-col items-center gap-1 flex-none";
+            const img = document.createElement("img");
+            img.src = artist.cover;
+            img.alt = artist.name;
+            img.className = "artist-cover";
+            img.onclick = () => mostrarTracksDeArtista(artist.name);
+            const name = document.createElement("span");
+            name.textContent = artist.name;
+            name.className = "text-xs text-center text-gray-300 mt-1";
+            card.appendChild(img);
+            card.appendChild(name);
+            wrapperArtists.appendChild(card);
+          });
+          resultsContainer.appendChild(wrapperArtists);
+        }
+      } else if (filterType === "albums") {
+        if (results.albums.length) {
+          const titleAlbums = document.createElement("h3");
+          titleAlbums.textContent = "Álbumes";
+          titleAlbums.className = "category-title mt-6";
+          resultsContainer.appendChild(titleAlbums);
+
+          const wrapperAlbums = document.createElement("div");
+          wrapperAlbums.className =
+            "album-carousel flex overflow-x-auto gap-4 px-1 py-2";
+          results.albums.forEach((album) => {
+            const card = document.createElement("a");
+            card.href = album.url || "#";
+            card.target = "_blank";
+            card.className = "album-card";
+            card.innerHTML = `
+              <div class="album-cover"><img src="${album.cover}" alt="${album.title}"></div>
+              <div class="album-info">
+                <div class="font-bold text-white truncate">${album.title}</div>
+                <div class="text-sm text-gray-400 truncate">${album.artista}</div>
+              </div>`;
+            wrapperAlbums.appendChild(card);
+          });
+          resultsContainer.appendChild(wrapperAlbums);
+        }
+      } else if (filterType === "tracks") {
+        if (results.tracks.length) {
+          const titleTracks = document.createElement("h3");
+          titleTracks.textContent = "Canciones";
+          titleTracks.className = "category-title mt-6";
+          resultsContainer.appendChild(titleTracks);
+
+          const wrapperTracks = document.createElement("div");
+          wrapperTracks.className = "track-list";
+          results.tracks.forEach((track) => {
+            const link = document.createElement("a");
+            link.href = track.url || "#";
+            link.target = "_blank";
+            link.className = "track-item";
+            link.innerHTML = `
+              <img src="${track.cover}" alt="${track.title}" class="track-cover" />
+              <div class="track-info">
+                <span class="track-title">${track.title}</span>
+                <span class="track-artist">${track.artist}</span>
+              </div>`;
+            wrapperTracks.appendChild(link);
+          });
+          resultsContainer.appendChild(wrapperTracks);
+        }
+      } else if (filterType === "all") {
+        if (results.artists.length) {
+          const titleArtists = document.createElement("h3");
+          titleArtists.textContent = "Artistas";
+          titleArtists.className = "category-title";
+          resultsContainer.appendChild(titleArtists);
+
+          const wrapperArtists = document.createElement("div");
+          wrapperArtists.className =
+            "carousel flex overflow-x-auto gap-4 px-1 py-2";
+          results.artists.forEach((artist) => {
+            const card = document.createElement("div");
+            card.className = "flex flex-col items-center gap-1 flex-none";
+            const img = document.createElement("img");
+            img.src = artist.cover;
+            img.alt = artist.name;
+            img.className = "artist-cover";
+            img.onclick = () => mostrarTracksDeArtista(artist.name);
+            const name = document.createElement("span");
+            name.textContent = artist.name;
+            name.className = "text-xs text-center text-gray-300 mt-1";
+            card.appendChild(img);
+            card.appendChild(name);
+            wrapperArtists.appendChild(card);
+          });
+          resultsContainer.appendChild(wrapperArtists);
+        }
+
+        if (results.tracks.length) {
+          const titleTracks = document.createElement("h3");
+          titleTracks.textContent = "Canciones";
+          titleTracks.className = "category-title mt-6";
+          resultsContainer.appendChild(titleTracks);
+
+          const wrapperTracks = document.createElement("div");
+          wrapperTracks.className = "track-list";
+          results.tracks.forEach((track) => {
+            const link = document.createElement("a");
+            link.href = track.url || "#";
+            link.target = "_blank";
+            link.className = "track-item";
+            link.innerHTML = `
+              <img src="${track.cover}" alt="${track.title}" class="track-cover" />
+              <div class="track-info">
+                <span class="track-title">${track.title}</span>
+                <span class="track-artist">${track.artist}</span>
+              </div>`;
+            wrapperTracks.appendChild(link);
+          });
+          resultsContainer.appendChild(wrapperTracks);
+        }
+      }
+    }
+
+    function buscar(query) {
+      const q = query.toLowerCase();
+      const resultados = { albums: [], artists: [], tracks: [] };
+
+      const artistasUnicos = new Map();
+      allAlbums.forEach((album) => {
+        if (album.artista?.toLowerCase().includes(q) && album.artistaCover) {
+          artistasUnicos.set(album.artista, album.artistaCover);
+        }
+      });
+      artistasUnicos.forEach((cover, name) =>
+        resultados.artists.push({ name, cover })
+      );
+
+      allAlbums.forEach((album) => {
+        if (
+          album.title?.toLowerCase().includes(q) ||
+          album.artista?.toLowerCase().includes(q) ||
+          album.categoria?.toLowerCase().includes(q)
+        ) {
+          resultados.albums.push({
+            title: album.title,
+            artista: album.artista,
+            cover: album.cover,
+            url: album.url,
+          });
+        }
+      });
+
+      allTracks.forEach((track) => {
+        if (
+          track.title?.toLowerCase().includes(q) ||
+          track.artist?.toLowerCase().includes(q)
+        ) {
+          resultados.tracks.push({
+            title: track.title,
+            artist: track.artist,
+            cover: track.cover,
+            url: track.url,
+          });
+        }
+      });
+
+      renderSearchResults(resultados);
+    }
+
+    onValue(albumsRef, (snapshot) => {
+      allAlbums = snapshot.val() ? Object.values(snapshot.val()) : [];
+    });
+    onValue(tracksRef, (snapshot) => {
+      allTracks = snapshot.val() ? Object.values(snapshot.val()) : [];
+    });
+
+    searchInput.addEventListener("input", (e) => {
+      const value = e.target.value.trim();
+      if (value === "") {
+        resultsContainer.innerHTML = "";
+        filterButtons.style.display = "none";
+      } else {
+        buscar(value);
+      }
+    });
+
+    window.setFilter = function (type) {
+      filterType = type;
+      if (type === "artists") {
+        mostrarTodosArtistas();
+      } else if (searchInput.value.trim() !== "") {
+        buscar(searchInput.value.trim());
+      } else {
+        resultsContainer.innerHTML = "";
+        filterButtons.style.display = "none";
+      }
+    };
+  </script>
+</head>
+<body>
+  <h1 class="main-title">Buscar</h1>
+
+  <div id="filterButtons" class="flex justify-center gap-3 mb-6">
+    <button
+      onclick="setFilter('artists')"  class="px-4 py-2 rounded-full" >
+      Artistas
+    </button>
+    <button  onclick="setFilter('tracks')" class="px-4 py-2 rounded-full" >
+      Canciones
+    </button>
+    <button onclick="setFilter('albums')" class="px-4 py-2 rounded-full" >
+      Álbumes
+    </button>
+  </div>
+
+  <input id="searchInput" type="text" placeholder="¿Qué quieres escuchar?"/>
+  <div id="searchResults"></div>
+</body>
+</html>
