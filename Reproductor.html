@@ -16,17 +16,6 @@
       align-items: center;
       padding: 1rem;
       font-family: system-ui, sans-serif;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-    }
-    #playlistContainer {
-      max-height: 240px;
-      overflow-y: auto;
-      margin-top: 1rem;
-      width: 100%;
-      max-width: 400px;
-      padding: 0 0.5rem;
     }
     .track-item {
       cursor: pointer;
@@ -45,12 +34,19 @@
       font-weight: 600;
       background-color: #1a3a27;
     }
+    .carousel {
+      display: flex;
+      gap: 1rem;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .carousel::-webkit-scrollbar {
+      display: none;
+    }
   </style>
 </head>
 <body>
-
-  <h1 class="text-3xl font-bold mb-6 text-center">Reproductor de Playlist</h1>
-
+  <!-- Reproductor -->
   <div class="bg-gray-900 p-6 rounded-xl shadow-lg w-full max-w-md">
     <div class="flex justify-center mb-6">
       <img id="albumCover" src="https://via.placeholder.com/300" alt="Imagen del álbum" class="rounded-xl w-full max-w-xs shadow-lg" />
@@ -59,7 +55,7 @@
       <h2 id="trackTitle" class="text-lg font-semibold">Título</h2>
       <p id="trackArtist" class="text-sm text-gray-400">Artista</p>
     </div>
-    <audio id="audio" src=""></audio>
+    <audio id="audio"></audio>
     <div class="mt-4">
       <input type="range" id="progress" value="0" class="w-full accent-green-500" />
       <div class="flex justify-between text-xs text-gray-400 mt-1">
@@ -76,12 +72,21 @@
       <button id="next"><i class="fa-solid fa-forward-step"></i></button>
       <button id="repeatBtn" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-repeat"></i></button>
     </div>
-    <div id="playlistContainer" class="mt-6"></div>
+    <div id="playlistContainer" class="mt-6 max-h-48 overflow-y-auto"></div>
   </div>
+
+  <!-- Más del artista -->
+  <div id="moreFromArtist" class="mt-8 w-full max-w-4xl hidden">
+    <h3 id="artistAlbumsTitle" class="text-lg font-semibold mb-4"></h3>
+    <div id="artistAlbumsContainer" class="carousel"></div>
+  </div>
+
+  <!-- Álbumes aleatorios -->
+  <div id="randomAlbumsSection" class="mt-8 w-full max-w-4xl"></div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+    import { getDatabase, ref, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
@@ -110,6 +115,10 @@
     const trackTitleElem = document.getElementById('trackTitle');
     const trackArtistElem = document.getElementById('trackArtist');
     const playlistContainer = document.getElementById('playlistContainer');
+    const moreFromArtist = document.getElementById('moreFromArtist');
+    const artistAlbumsTitle = document.getElementById('artistAlbumsTitle');
+    const artistAlbumsContainer = document.getElementById('artistAlbumsContainer');
+    const randomAlbumsSection = document.getElementById('randomAlbumsSection');
 
     let playlist = [];
     let currentTrackIndex = 0;
@@ -123,155 +132,108 @@
         div.classList.add('track-item');
         if (index === currentTrackIndex) div.classList.add('active');
         div.textContent = `${track.title} - ${track.artist}`;
-        div.title = `${track.title} - ${track.artist}`;
         div.onclick = () => playTrack(index);
         playlistContainer.appendChild(div);
       });
     }
 
     function playTrack(index) {
-      if (!playlist.length || index < 0 || index >= playlist.length) return;
+      if (!playlist.length) return;
       currentTrackIndex = index;
       const track = playlist[index];
-
       albumCoverImg.src = track.cover || 'https://via.placeholder.com/300';
-      trackTitleElem.textContent = track.title || 'Título';
-      trackArtistElem.textContent = track.artist || 'Artista';
-
-      audio.src = track.url || '';
-      audio.play();
-      playIcon.classList.replace('fa-play', 'fa-pause');
-
+      trackTitleElem.textContent = track.title;
+      trackArtistElem.textContent = track.artist;
+      audio.src = track.url;
+      audio.play().catch(e=>console.warn("Autoplay bloqueado:", e));
+      playIcon.classList.replace('fa-play','fa-pause');
       renderPlaylist();
+      loadAlbumsByArtist(track.artist);
+    }
+
+    async function loadAlbumsByArtist(artistName) {
+      const albumsRef = query(ref(db, 'albums'), orderByChild('artist'), equalTo(artistName));
+      const snapshot = await get(albumsRef);
+      artistAlbumsContainer.innerHTML = '';
+      if (snapshot.exists()) {
+        artistAlbumsTitle.textContent = `Más de ${artistName}`;
+        snapshot.forEach(albumSnap => {
+          const album = albumSnap.val();
+          const albumDiv = document.createElement('div');
+          albumDiv.className = 'min-w-[150px] bg-gray-800 p-2 rounded-lg cursor-pointer hover:bg-gray-700';
+          albumDiv.innerHTML = `<img src="${album.cover}" class="rounded-lg mb-2"><p class="text-sm font-semibold">${album.title}</p>`;
+          albumDiv.onclick = () => {
+            if (album.playlistId) loadPlaylistFromFirebase(album.playlistId, true);
+          };
+          artistAlbumsContainer.appendChild(albumDiv);
+        });
+        moreFromArtist.classList.remove('hidden');
+      } else {
+        moreFromArtist.classList.add('hidden');
+      }
+      loadRandomAlbums();
+    }
+
+    async function loadRandomAlbums() {
+      const albumsRef = ref(db, 'albums');
+      const snapshot = await get(albumsRef);
+      if (!snapshot.exists()) return;
+      const albumsArray = Object.values(snapshot.val());
+      randomAlbumsSection.innerHTML = '';
+      for (let i = 0; i < 2; i++) {
+        const shuffled = [...albumsArray].sort(()=>0.5-Math.random()).slice(0,6);
+        const section = document.createElement('div');
+        section.className = 'mb-6';
+        section.innerHTML = `<h3 class="text-lg font-semibold mb-4">Recomendados</h3>`;
+        const carousel = document.createElement('div');
+        carousel.className = 'carousel';
+        shuffled.forEach(album=>{
+          const div = document.createElement('div');
+          div.className = 'min-w-[150px] bg-gray-800 p-2 rounded-lg cursor-pointer hover:bg-gray-700';
+          div.innerHTML = `<img src="${album.cover}" class="rounded-lg mb-2"><p class="text-sm font-semibold">${album.title}</p>`;
+          div.onclick = ()=>{ if(album.playlistId) loadPlaylistFromFirebase(album.playlistId,true); };
+          carousel.appendChild(div);
+        });
+        section.appendChild(carousel);
+        randomAlbumsSection.appendChild(section);
+      }
+    }
+
+    async function loadPlaylistFromFirebase(id, autoPlay=false) {
+      const snapshot = await get(ref(db, `playlists/${id}`));
+      if (!snapshot.exists()) return;
+      playlist = snapshot.val().playlist || [];
+      currentTrackIndex = 0;
+      renderPlaylist();
+      if (autoPlay) playTrack(0);
     }
 
     function formatTime(sec) {
-      if (isNaN(sec)) return '0:00';
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60).toString().padStart(2, '0');
+      const m = Math.floor(sec/60);
+      const s = Math.floor(sec%60).toString().padStart(2,'0');
       return `${m}:${s}`;
     }
 
-    audio.addEventListener('loadedmetadata', () => {
-      total.textContent = formatTime(audio.duration);
-    });
-
-    audio.addEventListener('timeupdate', () => {
+    audio.addEventListener('loadedmetadata', ()=> total.textContent=formatTime(audio.duration));
+    audio.addEventListener('timeupdate', ()=>{
       if (audio.duration) {
-        progress.value = (audio.currentTime / audio.duration) * 100;
+        progress.value = (audio.currentTime/audio.duration)*100;
         current.textContent = formatTime(audio.currentTime);
       }
     });
+    progress.addEventListener('input', ()=>{ if(audio.duration) audio.currentTime = (progress.value/100)*audio.duration; });
+    playBtn.onclick = ()=>{ if(audio.paused){audio.play();playIcon.classList.replace('fa-play','fa-pause');}else{audio.pause();playIcon.classList.replace('fa-pause','fa-play');} };
+    repeatBtn.onclick = ()=>{ isRepeat=!isRepeat; audio.loop=isRepeat; repeatBtn.classList.toggle('text-green-500',isRepeat); };
+    shuffleBtn.onclick = ()=>{ isShuffle=!isShuffle; shuffleBtn.classList.toggle('text-green-500',isShuffle); };
+    nextBtn.onclick = ()=>{ if(isShuffle) playTrack(Math.floor(Math.random()*playlist.length)); else playTrack((currentTrackIndex+1)%playlist.length); };
+    backBtn.onclick = ()=>{ if(isShuffle) playTrack(Math.floor(Math.random()*playlist.length)); else playTrack((currentTrackIndex-1+playlist.length)%playlist.length); };
+    audio.addEventListener('ended', ()=>{ if(!isRepeat) nextBtn.click(); });
 
-    progress.addEventListener('input', () => {
-      if (audio.duration) {
-        audio.currentTime = (progress.value / 100) * audio.duration;
-      }
-    });
-
-    playBtn.addEventListener('click', () => {
-      if (audio.paused) {
-        audio.play();
-        playIcon.classList.replace('fa-play', 'fa-pause');
-      } else {
-        audio.pause();
-        playIcon.classList.replace('fa-pause', 'fa-play');
-      }
-    });
-
-    repeatBtn.addEventListener('click', () => {
-      isRepeat = !isRepeat;
-      audio.loop = isRepeat;
-      repeatBtn.classList.toggle('text-green-500', isRepeat);
-    });
-
-    shuffleBtn.addEventListener('click', () => {
-      isShuffle = !isShuffle;
-      shuffleBtn.classList.toggle('text-green-500', isShuffle);
-    });
-
-    nextBtn.addEventListener('click', () => {
-      if (!playlist.length) return;
-      if (isShuffle) {
-        const randomIndex = Math.floor(Math.random() * playlist.length);
-        playTrack(randomIndex);
-      } else {
-        if (currentTrackIndex + 1 < playlist.length) {
-          playTrack(currentTrackIndex + 1);
-        } else if (isRepeat) {
-          playTrack(0);
-        }
-      }
-    });
-
-    backBtn.addEventListener('click', () => {
-      if (!playlist.length) return;
-      if (isShuffle) {
-        const randomIndex = Math.floor(Math.random() * playlist.length);
-        playTrack(randomIndex);
-      } else {
-        if (currentTrackIndex - 1 >= 0) {
-          playTrack(currentTrackIndex - 1);
-        } else if (isRepeat) {
-          playTrack(playlist.length - 1);
-        }
-      }
-    });
-
-    audio.addEventListener('ended', () => {
-      if (isRepeat) {
-        audio.currentTime = 0;
-        audio.play();
-      } else {
-        nextBtn.click();
-      }
-    });
-
-    async function loadPlaylistFromFirebase(id) {
-      try {
-        const snapshot = await get(ref(db, `playlists/${id}`));
-        if (!snapshot.exists()) {
-          alert("Playlist no encontrada.");
-          return;
-        }
-        const data = snapshot.val();
-        if (!data.playlist || !Array.isArray(data.playlist)) {
-          alert("Playlist inválida.");
-          return;
-        }
-        playlist = data.playlist;
-        currentTrackIndex = 0;
-        renderPlaylist();
-        playTrack(0);
-      } catch (err) {
-        alert("Error cargando playlist: " + err.message);
-        console.error(err);
-      }
-    }
-
-    function getQueryParam(param) {
-      const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get(param);
-    }
-
-    window.onload = () => {
+    function getQueryParam(param){ return new URLSearchParams(window.location.search).get(param); }
+    window.onload = ()=>{
       const playlistId = getQueryParam('playlist');
-      if (playlistId) {
-        loadPlaylistFromFirebase(playlistId);
-      } else {
-        alert("No se proporcionó playlist en la URL.");
-      }
+      if (playlistId) loadPlaylistFromFirebase(playlistId,true);
     };
-
-    // Bloquear clic derecho y teclas de inspección
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('keydown', e => {
-      if (
-        e.key === 'F12' ||
-        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
-        (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
-      ) e.preventDefault();
-    });
   </script>
 </body>
 </html>
