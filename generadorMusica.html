@@ -263,12 +263,12 @@
                 createdAt: new Date().toISOString(),
                 playlistId: playlistId
               });
-              // Construir URL individual
-              individualUrls.push(`${location.origin}/reproductor2.html?track=${trackId}`);
+              // Construir URL individual (reproductor2.html)
+              individualUrls.push(`${location.origin}/Flixplemusic/reproductor2.html?track=${trackId}`);
             }
 
-            // Mostrar URL generada para compartir
-            const link = `${location.origin}${location.pathname}?playlist=${playlistId}`;
+            // Mostrar URL generada para compartir con Reproductor.html para playlist
+            const link = `${location.origin}/Flixplemusic/Reproductor.html?playlist=${playlistId}`;
             generatedUrlContainer.textContent = link;
 
             // Mostrar URLs individuales
@@ -409,52 +409,41 @@
         }
         const data = snapshot.val();
         if (!data.playlist || !Array.isArray(data.playlist)) {
-          alert("Estructura de playlist inválida.");
+          alert("Playlist inválida.");
           return;
         }
-        playlist = data.playlist.filter(t => t.title && t.artist && t.url && t.cover);
-        if (playlist.length === 0) {
-          alert("La playlist no contiene canciones válidas.");
-          return;
-        }
+        playlist = data.playlist;
+        currentTrackIndex = 0;
+        renderPlaylist();
         playTrack(0);
-      } catch (error) {
-        alert("Error al cargar playlist: " + error.message);
-        console.error(error);
+      } catch (err) {
+        alert("Error cargando playlist: " + err.message);
       }
     }
 
-    searchBtn.addEventListener('click', searchArtist);
-    searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') searchArtist(); });
-
-    copyBtn.addEventListener('click', async () => {
-      try {
-        const textToCopy = generatedUrlContainer.textContent + "\n\n" + individualUrlsContainer.textContent;
-        await navigator.clipboard.writeText(textToCopy);
+    copyBtn.onclick = () => {
+      const textToCopy = `${generatedUrlContainer.textContent}\n\n${individualUrlsContainer.textContent}`;
+      navigator.clipboard.writeText(textToCopy).then(() => {
         copyMsg.classList.remove('hidden');
-        setTimeout(() => copyMsg.classList.add('hidden'), 1800);
-      } catch {
-        alert("No se pudo copiar");
-      }
-    });
-
-    window.onload = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const playlistId = urlParams.get('playlist');
-      if (playlistId) {
-        loadPlaylistFromFirebase(playlistId);
-      }
+        setTimeout(() => copyMsg.classList.add('hidden'), 2000);
+      }).catch(() => alert("No se pudo copiar al portapapeles"));
     };
 
-    // Bloquear clic derecho y teclas de inspección
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('keydown', e => {
-      if (
-        e.key === 'F12' ||
-        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
-        (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
-      ) e.preventDefault();
-    });
+    searchBtn.onclick = searchArtist;
+
+    // Si hay playlist en URL, cargarla automáticamente
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    window.onload = () => {
+      const playlistId = getQueryParam('playlist');
+      if (playlistId) {
+        loadPlaylistFromFirebase(playlistId);
+        tracksSection.classList.add('hidden');
+      }
+    };
   </script>
 
 </body>
