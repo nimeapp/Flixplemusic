@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Reproductor</title>
+  <title>Reproductor con lista de canciones del artista</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -11,11 +11,24 @@
       -webkit-user-select: none;
       -webkit-touch-callout: none;
     }
+    body {
+      background: black;
+      color: white;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem;
+      font-family: system-ui, sans-serif;
+    }
     .track-item {
       cursor: pointer;
-      padding: 0.5rem 0.25rem;
+      padding: 0.5rem 0.5rem;
       border-radius: 0.375rem;
       transition: background-color 0.3s, color 0.3s;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .track-item:hover {
       background-color: #2d1600;
@@ -25,9 +38,26 @@
       font-weight: 600;
       background-color: #1a3a27;
     }
+    #tracksListContainer {
+      margin-top: 2rem;
+      width: 100%;
+      max-width: 400px;
+      background: #1f2937; /* bg-gray-800 */
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 12px rgb(0 0 0 / 0.7);
+      padding: 1rem;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    #tracksListContainer h3 {
+      margin-bottom: 1rem;
+      font-weight: 700;
+      text-align: center;
+      color: #a3f7bf;
+    }
   </style>
 </head>
-<body class="bg-black text-white flex flex-col items-center justify-center min-h-screen p-4">
+<body>
 
   <div class="w-full max-w-sm mx-auto bg-gradient-to-b from-[#2d1600] to-black p-6 rounded-xl shadow-lg">
     <div class="flex justify-center mb-6">
@@ -59,7 +89,12 @@
     </div>
   </div>
 
-  <!-- Firebase -->
+  <!-- Lista de canciones aleatorias del artista -->
+  <div id="tracksListContainer">
+    <h3>Canciones de este artista</h3>
+    <div id="tracksList"></div>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
@@ -84,13 +119,15 @@
     const current = document.getElementById('current');
     const total = document.getElementById('total');
     const repeatBtn = document.getElementById('repeatBtn');
-    const shuffleBtn = document.getElementById('shuffleBtn');
-    const backBtn = document.getElementById('back');
-    const nextBtn = document.getElementById('next');
+
     const albumCoverImg = document.getElementById('albumCover');
     const trackTitleElem = document.getElementById('trackTitle');
     const trackArtistElem = document.getElementById('trackArtist');
+    const tracksListDiv = document.getElementById('tracksList');
 
+    let currentTrackId = null;
+    let currentArtist = null;
+    let tracks = []; // Array con tracks cargados
     let isRepeat = false;
 
     function formatTime(sec) {
@@ -100,48 +137,122 @@
       return `${m}:${s}`;
     }
 
-    function loadTrack(trackId) {
-      get(ref(db, `tracks/${trackId}`))
-        .then(snapshot => {
-          if (!snapshot.exists()) {
-            alert("Canción no encontrada.");
-            return;
-          }
-          const track = snapshot.val();
-          if (!track.url) {
-            alert("La canción no tiene URL válida.");
-            return;
-          }
-          albumCoverImg.src = track.cover || 'https://via.placeholder.com/300';
-          trackTitleElem.textContent = track.title || 'Título';
-          trackArtistElem.textContent = track.artist || 'Artista';
-          audio.src = track.url;
-          audio.play();
-          playIcon.classList.replace('fa-play', 'fa-pause');
-        })
-        .catch(error => {
-          alert("Error al cargar la canción: " + error.message);
-          console.error(error);
-        });
+    function highlightActiveTrack(trackId) {
+      [...tracksListDiv.children].forEach(div => {
+        if (div.dataset.id === trackId) {
+          div.classList.add('active');
+        } else {
+          div.classList.remove('active');
+        }
+      });
     }
 
+    function playTrackById(trackId) {
+      const track = tracks.find(t => t.id === trackId);
+      if (!track) return alert("Canción no encontrada en la lista.");
+
+      currentTrackId = track.id;
+      albumCoverImg.src = track.cover || 'https://via.placeholder.com/300';
+      trackTitleElem.textContent = track.title || 'Título';
+      trackArtistElem.textContent = track.artist || 'Artista';
+      audio.src = track.url || '';
+      audio.play().catch(() => {
+        console.log('Auto-play bloqueado, esperando interacción.');
+      });
+      playIcon.classList.replace('fa-play', 'fa-pause');
+      highlightActiveTrack(track.id);
+    }
+
+    // Carga la info del track principal por ID
+    async function loadMainTrack(trackId) {
+      try {
+        const snapshot = await get(ref(db, `tracks/${trackId}`));
+        if (!snapshot.exists()) {
+          alert("Canción no encontrada.");
+          return null;
+        }
+        const track = snapshot.val();
+        currentArtist = track.artist || null;
+        return {
+          id: trackId,
+          title: track.title,
+          artist: track.artist,
+          cover: track.cover,
+          url: track.url
+        };
+      } catch (error) {
+        alert("Error cargando la canción: " + error.message);
+        console.error(error);
+        return null;
+      }
+    }
+
+    // Carga canciones aleatorias del mismo artista desde Firebase
+    async function loadArtistTracks(artist) {
+      try {
+        const snapshot = await get(ref(db, 'tracks'));
+        if (!snapshot.exists()) {
+          tracksListDiv.innerHTML = '<p>No se encontraron canciones.</p>';
+          return [];
+        }
+        const allTracks = snapshot.val();
+
+        // Filtrar por artista (igual exacto)
+        let artistTracks = Object.entries(allTracks)
+          .map(([id, t]) => ({ id, ...t }))
+          .filter(t => t.artist === artist);
+
+        if (artistTracks.length === 0) {
+          tracksListDiv.innerHTML = '<p>No hay canciones para este artista.</p>';
+          return [];
+        }
+
+        // Mezclar aleatoriamente la lista
+        for (let i = artistTracks.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [artistTracks[i], artistTracks[j]] = [artistTracks[j], artistTracks[i]];
+        }
+
+        // Limitar a máximo 20 canciones para no saturar la UI
+        artistTracks = artistTracks.slice(0, 20);
+
+        // Renderizar lista
+        tracksListDiv.innerHTML = '';
+        artistTracks.forEach(track => {
+          const div = document.createElement('div');
+          div.classList.add('track-item');
+          div.textContent = track.title;
+          div.title = `${track.title} - ${track.artist}`;
+          div.dataset.id = track.id;
+          div.onclick = () => {
+            playTrackById(track.id);
+          };
+          tracksListDiv.appendChild(div);
+        });
+
+        return artistTracks;
+      } catch (error) {
+        tracksListDiv.innerHTML = '<p>Error cargando canciones.</p>';
+        console.error(error);
+        return [];
+      }
+    }
+
+    // Eventos audio
     audio.addEventListener('loadedmetadata', () => {
       total.textContent = formatTime(audio.duration);
     });
-
     audio.addEventListener('timeupdate', () => {
       if (audio.duration) {
         progress.value = (audio.currentTime / audio.duration) * 100;
         current.textContent = formatTime(audio.currentTime);
       }
     });
-
     progress.addEventListener('input', () => {
       if (audio.duration) {
         audio.currentTime = (progress.value / 100) * audio.duration;
       }
     });
-
     playBtn.addEventListener('click', () => {
       if (audio.paused) {
         audio.play();
@@ -151,27 +262,59 @@
         playIcon.classList.replace('fa-pause', 'fa-play');
       }
     });
-
     repeatBtn.addEventListener('click', () => {
       isRepeat = !isRepeat;
       audio.loop = isRepeat;
       repeatBtn.classList.toggle('text-green-500', isRepeat);
     });
 
-    // Deshabilitar shuffle, back, next porque es solo un track
-    shuffleBtn.disabled = true;
-    backBtn.disabled = true;
-    nextBtn.disabled = true;
+    // Al terminar canción, si no es repeat, no pasa a siguiente (porque no hay lista secuencial)
+    audio.addEventListener('ended', () => {
+      if (!isRepeat) {
+        playIcon.classList.replace('fa-pause', 'fa-play');
+      }
+    });
 
-    window.onload = () => {
+    window.onload = async () => {
       const params = new URLSearchParams(window.location.search);
       const trackId = params.get('track');
       if (!trackId) {
         alert("No se indicó ID de canción en la URL. Usa ?track=ID_DEL_TRACK");
         return;
       }
-      loadTrack(trackId);
+
+      const mainTrack = await loadMainTrack(trackId);
+      if (!mainTrack) return;
+
+      // Ponemos el track inicial en el reproductor
+      currentTrackId = mainTrack.id;
+      albumCoverImg.src = mainTrack.cover || 'https://via.placeholder.com/300';
+      trackTitleElem.textContent = mainTrack.title || 'Título';
+      trackArtistElem.textContent = mainTrack.artist || 'Artista';
+      audio.src = mainTrack.url || '';
+      audio.play().catch(() => {
+        console.log('Auto-play bloqueado, esperando interacción.');
+      });
+      playIcon.classList.replace('fa-play', 'fa-pause');
+
+      // Cargar canciones aleatorias del artista
+      tracks = await loadArtistTracks(mainTrack.artist);
+
+      // Resaltar canción actual
+      highlightActiveTrack(currentTrackId);
     };
+
+    // Bloquear clic derecho e inspección (igual que antes)
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown',
+      e => {
+        if (
+          e.key === 'F12' ||
+          (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+          (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
+        ) e.preventDefault();
+      });
   </script>
+
 </body>
 </html>
