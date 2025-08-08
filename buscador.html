@@ -238,8 +238,10 @@
 
     let allAlbums = [];
     let allTracks = [];
+    let allTracksMap = new Map(); // Para id + datos track
     let filterType = "all";
 
+    // Mostrar todos artistas
     function mostrarTodosArtistas() {
       resultsContainer.innerHTML = "";
       filterButtons.style.display = "flex";
@@ -277,6 +279,7 @@
       resultsContainer.appendChild(list);
     }
 
+    // Mostrar tracks de un artista específico
     function mostrarTracksDeArtista(artista) {
       resultsContainer.innerHTML = "";
       filterButtons.style.display = "flex";
@@ -307,7 +310,7 @@
 
       if (tracksDelArtista.length === 0) {
         const noTracksMsg = document.createElement("p");
-        noTracksMsg.textContent = `No hay música ${artista}`;
+        noTracksMsg.textContent = `No hay música de ${artista}`;
         noTracksMsg.className = "no-music-msg";
         resultsContainer.appendChild(noTracksMsg);
         return;
@@ -317,8 +320,13 @@
       list.className = "track-list";
 
       tracksDelArtista.forEach((track) => {
+        const id = track._id || track.id || null;
+        const href = id
+          ? `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${encodeURIComponent(id)}`
+          : track.url || "#";
+
         const link = document.createElement("a");
-        link.href = track.url || "#";
+        link.href = href;
         link.target = "_blank";
         link.className = "track-item";
 
@@ -349,6 +357,7 @@
       resultsContainer.appendChild(list);
     }
 
+    // Renderizar resultados de búsqueda con enlaces a reproductor individual para canciones
     function renderSearchResults(results) {
       resultsContainer.innerHTML = "";
 
@@ -418,8 +427,14 @@
           const wrapperTracks = document.createElement("div");
           wrapperTracks.className = "track-list";
           results.tracks.forEach((track) => {
+            // Encontrar el id real de track para crear enlace al reproductor
+            const id = track._id || track.id || null;
+            const href = id
+              ? `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${encodeURIComponent(id)}`
+              : track.url || "#";
+
             const link = document.createElement("a");
-            link.href = track.url || "#";
+            link.href = href;
             link.target = "_blank";
             link.className = "track-item";
             link.innerHTML = `
@@ -469,8 +484,13 @@
           const wrapperTracks = document.createElement("div");
           wrapperTracks.className = "track-list";
           results.tracks.forEach((track) => {
+            const id = track._id || track.id || null;
+            const href = id
+              ? `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${encodeURIComponent(id)}`
+              : track.url || "#";
+
             const link = document.createElement("a");
-            link.href = track.url || "#";
+            link.href = href;
             link.target = "_blank";
             link.className = "track-item";
             link.innerHTML = `
@@ -486,6 +506,7 @@
       }
     }
 
+    // Búsqueda que devuelve los resultados
     function buscar(query) {
       const q = query.toLowerCase();
       const resultados = { albums: [], artists: [], tracks: [] };
@@ -525,6 +546,8 @@
             artist: track.artist,
             cover: track.cover,
             url: track.url,
+            _id: track._id,  // también pasamos id para enlace reproductor
+            id: track.id,
           });
         }
       });
@@ -532,11 +555,20 @@
       renderSearchResults(resultados);
     }
 
+    // Firebase listeners para obtener datos y guardar el id para cada track
     onValue(albumsRef, (snapshot) => {
       allAlbums = snapshot.val() ? Object.values(snapshot.val()) : [];
     });
+
     onValue(tracksRef, (snapshot) => {
-      allTracks = snapshot.val() ? Object.values(snapshot.val()) : [];
+      const data = snapshot.val() || {};
+      allTracks = [];
+      allTracksMap.clear();
+      for (const [id, track] of Object.entries(data)) {
+        const trackWithId = { ...track, _id: id };
+        allTracks.push(trackWithId);
+        allTracksMap.set(id, trackWithId);
+      }
     });
 
     searchInput.addEventListener("input", (e) => {
@@ -562,8 +594,7 @@
     };
   </script>
 </head>
-<bo
-dy>
+<body>
   <h1 class="main-title">Buscar</h1>
 
   <div id="filterButtons" class="flex justify-center gap-3 mb-6">
