@@ -6,16 +6,39 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-<style>
-* {
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
-</style>
+  <style>
+    * {
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    /* Scroll para la lista */
+    #trackList {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-bottom: 1rem;
+    }
+    #trackList button {
+      width: 100%;
+      text-align: left;
+      padding: 0.5rem;
+      border: none;
+      background: transparent;
+      color: white;
+      cursor: pointer;
+      border-bottom: 1px solid #444;
+    }
+    #trackList button:hover {
+      background: #333;
+    }
+  </style>
 </head>
-<body class="bg-black text-white flex items-center justify-center min-h-screen p-4">
+<body class="bg-black text-white flex flex-col items-center justify-center min-h-screen p-4">
 
   <div class="w-full max-w-sm mx-auto bg-gradient-to-b from-[#2d1600] to-black p-6 rounded-xl shadow-lg">
+
+    <!-- Lista de canciones -->
+    <div id="trackList" class="mb-4"></div>
+
     <div class="flex justify-center mb-6">
       <img id="albumCover" src="https://via.placeholder.com/300" alt="Imagen del álbum" class="rounded-xl w-full max-w-xs shadow-lg" />
     </div>
@@ -76,6 +99,7 @@
     const albumCoverImg = document.getElementById('albumCover');
     const trackTitleElem = document.getElementById('trackTitle');
     const trackArtistElem = document.getElementById('trackArtist');
+    const trackListDiv = document.getElementById('trackList');
 
     let playlist = [];
     let currentTrackIndex = 0;
@@ -105,11 +129,6 @@
       }).catch(e => {
         console.warn('Autoplay falló:', e);
       });
-    }
-
-    function playSingleTrack(track) {
-      playlist = [track];
-      playTrack(0);
     }
 
     audio.addEventListener('loadedmetadata', () => {
@@ -188,37 +207,43 @@
       }
     });
 
-    async function loadPlaylistFromFirebase(id) {
+    // Cargar toda la lista de tracks desde Firebase y mostrarla en la UI
+    async function loadAllTracks() {
       try {
-        const snapshot = await get(ref(db, `playlists/${id}`));
+        const snapshot = await get(ref(db, `tracks`));
         if (!snapshot.exists()) {
-          alert("Playlist no encontrada.");
+          alert("No hay canciones en la base de datos.");
           return;
         }
         const data = snapshot.val();
 
-        if (!data.playlist || !Array.isArray(data.playlist)) {
-          alert("Estructura de playlist inválida.");
-          return;
+        // data es un objeto con claves trackId
+        playlist = [];
+        trackListDiv.innerHTML = '';
+
+        for (const [trackId, track] of Object.entries(data)) {
+          if (!track.title || !track.artist || !track.url || !track.cover) continue;
+
+          playlist.push({ ...track, id: trackId });
+
+          // Crear botón para cada track
+          const btn = document.createElement('button');
+          btn.textContent = `${track.title} - ${track.artist}`;
+          btn.onclick = () => playTrackById(trackId);
+          trackListDiv.appendChild(btn);
         }
 
-        playlist = data.playlist.filter(track =>
-          track.title && track.artist && track.url && track.cover
-        );
-
-        if (playlist.length === 0) {
-          alert("La playlist no contiene canciones válidas.");
-          return;
+        if (playlist.length > 0) {
+          playTrack(0);
         }
-
-        playTrack(0);
       } catch (error) {
-        alert("Error al cargar playlist: " + error.message);
+        alert("Error al cargar canciones: " + error.message);
         console.error(error);
       }
     }
 
-    async function loadTrackFromFirebase(trackId) {
+    // Cargar y reproducir un track dado su ID
+    async function playTrackById(trackId) {
       try {
         const snapshot = await get(ref(db, `tracks/${trackId}`));
         if (!snapshot.exists()) {
@@ -232,7 +257,15 @@
           return;
         }
 
-        playSingleTrack(track);
+        // Buscar índice en playlist
+        const index = playlist.findIndex(t => t.id === trackId);
+        if (index !== -1) {
+          playTrack(index);
+        } else {
+          // Si no está en playlist, poner playlist solo con esta canción
+          playlist = [track];
+          playTrack(0);
+        }
       } catch (error) {
         alert("Error al cargar canción: " + error.message);
         console.error(error);
@@ -240,48 +273,20 @@
     }
 
     window.onload = () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const playlistId = urlParams.get("id");
-      const trackId = urlParams.get("track");
-
-      if (trackId) {
-        loadTrackFromFirebase(trackId);
-      } else if (playlistId) {
-        loadPlaylistFromFirebase(playlistId);
-      } else {
-        alert("No se proporcionó un ID de playlist ni un ID de canción.");
-      }
+      loadAllTracks();
     };
 
-    // Bloquear clic derecho
-    document.addEventListener('contextmenu', function (e) {
-      e.preventDefault();
-    });
-
-    // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
-    document.addEventListener('keydown', function (e) {
+    // Bloqueos para evitar copiar y debugging (igual que en tu código)
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
       if (
         e.key === 'F12' ||
         (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
         (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
-      ) {
-        e.preventDefault();
-      }
+      ) e.preventDefault();
     });
+    window.oncontextmenu = () => false;
 
-    // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
-    window.oncontextmenu = function () {
-      return false;
-    };
-
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('a').forEach(el => {
-        const url = el.getAttribute('href');
-        el.removeAttribute('href');
-        el.style.cursor = 'pointer';
-        el.onclick = () => window.location.href = url;
-      });
-    });
   </script>
 
 </body>
