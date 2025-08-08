@@ -171,13 +171,26 @@
 
   async function loadAlbumsByArtist(artistName) {
     try {
-      const albumsRef = query(ref(db, 'albums'), orderByChild('artist'), equalTo(artistName));
+      // Aquí cambiamos 'artist' por 'artista' para que coincida con tu base de datos
+      const albumsRef = query(ref(db, 'albums'), orderByChild('artista'), equalTo(artistName));
       const snapshot = await get(albumsRef);
       artistAlbumsContainer.innerHTML = '';
       if (snapshot.exists()) {
         artistAlbumsTitle.textContent = `Más de ${artistName}`;
         snapshot.forEach(albumSnap => {
           const album = albumSnap.val();
+
+          // Extraemos playlistId desde la URL si está presente
+          let playlistId = null;
+          if (album.url) {
+            try {
+              const urlObj = new URL(album.url);
+              playlistId = urlObj.searchParams.get('playlist');
+            } catch {
+              playlistId = null;
+            }
+          }
+
           const albumDiv = document.createElement('div');
           albumDiv.className = 'album-card';
           albumDiv.innerHTML = `
@@ -185,7 +198,8 @@
             <p class="text-sm font-semibold">${album.title}</p>
           `;
           albumDiv.onclick = () => {
-            if (album.playlistId) loadPlaylistFromFirebase(album.playlistId, true);
+            if (playlistId) loadPlaylistFromFirebase(playlistId, true);
+            else alert('No hay playlist disponible para este álbum');
           };
           artistAlbumsContainer.appendChild(albumDiv);
         });
@@ -209,8 +223,10 @@
       randomAlbumsSection.innerHTML = '';
 
       for (let i = 0; i < 2; i++) {
-        // Selecciona 6 álbumes aleatorios
-        const shuffled = [...albumsArray].sort(() => 0.5 - Math.random()).slice(0, 6);
+        // Filtramos solo álbumes con url para evitar errores
+        const filteredAlbums = albumsArray.filter(a => !!a.url);
+
+        const shuffled = [...filteredAlbums].sort(() => 0.5 - Math.random()).slice(0, 6);
 
         const section = document.createElement('div');
         section.className = 'mb-6';
@@ -220,6 +236,16 @@
         carousel.className = 'carousel';
 
         shuffled.forEach(album => {
+          let playlistId = null;
+          if (album.url) {
+            try {
+              const urlObj = new URL(album.url);
+              playlistId = urlObj.searchParams.get('playlist');
+            } catch {
+              playlistId = null;
+            }
+          }
+
           const div = document.createElement('div');
           div.className = 'album-card';
           div.innerHTML = `
@@ -227,7 +253,8 @@
             <p class="text-sm font-semibold">${album.title}</p>
           `;
           div.onclick = () => {
-            if (album.playlistId) loadPlaylistFromFirebase(album.playlistId, true);
+            if (playlistId) loadPlaylistFromFirebase(playlistId, true);
+            else alert('No hay playlist disponible para este álbum');
           };
           carousel.appendChild(div);
         });
