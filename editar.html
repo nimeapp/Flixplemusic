@@ -32,6 +32,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getDatabase, ref, onValue, update, remove } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
@@ -45,7 +46,12 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
-    const albumsRef = ref(db, 'albums');
+    const auth = getAuth(app);
+
+    const albumList = document.getElementById('albumList');
+    const modal = document.getElementById('modal');
+    const modalBg = document.getElementById('modalBg');
+    const closeModalBtn = document.getElementById('closeModalBtn');
 
     const categorias = [
       "Álbumes y Sencillos Populares",
@@ -60,61 +66,64 @@
       "Descubrir Nuevos Talentos"
     ];
 
-    const albumList = document.getElementById('albumList');
-    const modal = document.getElementById('modal');
-    const modalBg = document.getElementById('modalBg');
-    const closeModalBtn = document.getElementById('closeModalBtn');
+    let currentUser = null;
+    let isAdmin = false;
 
-    // Función para cerrar modal
-    function closeModal() {
+    closeModalBtn.addEventListener('click', () => {
       modal.classList.add('hidden');
-    }
-
-    closeModalBtn.addEventListener('click', closeModal);
-    modalBg.addEventListener('click', closeModal);
-
-    // Cargar álbumes y mostrar en modo lectura
-    onValue(albumsRef, snapshot => {
-      const data = snapshot.val();
-      if (!data) {
-        albumList.innerHTML = '<p class="text-gray-400">No hay álbumes disponibles.</p>';
-        return;
-      }
-      albumList.innerHTML = '';
-
-      Object.entries(data).forEach(([id, album]) => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'bg-gray-800 p-4 rounded-lg shadow';
-
-        // Modo lectura (sin inputs, solo texto)
-        wrapper.innerHTML = `
-          <div class="flex flex-col md:flex-row gap-4 items-center">
-            <img src="${album.cover}" alt="${album.title}" class="w-32 h-32 rounded-lg object-cover" />
-            <div class="flex-1 space-y-2">
-              <h2 class="text-xl font-bold">${album.title}</h2>
-              <p class="text-gray-300">${album.artista}</p>
-              <p><strong>Categoría:</strong> <span id="categoria-text-${id}">${album.categoria}</span></p>
-              <p><input type="checkbox" disabled ${album.mostrar_en_index ? 'checked' : ''}/> Mostrar en el index</p>
-              <p><input type="checkbox" disabled ${album.mostrar_portada_artista_en_index ? 'checked' : ''}/> Mostrar portada del artista</p>
-              <div class="flex gap-2 mt-3">
-                <button id="editBtn-${id}" class="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded">Editar</button>
-              </div>
-            </div>
-          </div>
-        `;
-
-        albumList.appendChild(wrapper);
-
-        // Añadir listener al botón editar para cambiar a modo edición
-        const editBtn = wrapper.querySelector(`#editBtn-${id}`);
-        editBtn.addEventListener('click', () => {
-          activarEdicion(id, album, wrapper);
-        });
-      });
+    });
+    modalBg.addEventListener('click', () => {
+      modal.classList.add('hidden');
     });
 
+    function redirectToLogin() {
+      // Redirigir a login appcreator24 URL
+      window.location.href = "go:login";
+    }
+
+    // Función para cargar álbumes
+    function cargarAlbums() {
+      const albumsRef = ref(db, 'albums');
+      onValue(albumsRef, snapshot => {
+        const data = snapshot.val();
+        if (!data) {
+          albumList.innerHTML = '<p class="text-gray-400">No hay álbumes disponibles.</p>';
+          return;
+        }
+        albumList.innerHTML = '';
+        Object.entries(data).forEach(([id, album]) => {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'bg-gray-800 p-4 rounded-lg shadow';
+
+          wrapper.innerHTML = `
+            <div class="flex flex-col md:flex-row gap-4 items-center" data-album-id="${id}">
+              <img src="${album.cover}" alt="${album.title}" class="w-32 h-32 rounded-lg object-cover" />
+              <div class="flex-1 space-y-2">
+                <h2 class="text-xl font-bold">${album.title}</h2>
+                <p class="text-gray-300">${album.artista}</p>
+                <p><strong>Categoría:</strong> <span id="categoria-text-${id}">${album.categoria}</span></p>
+                <p><input type="checkbox" disabled ${album.mostrar_en_index ? 'checked' : ''}/> Mostrar en el index</p>
+                <p><input type="checkbox" disabled ${album.mostrar_portada_artista_en_index ? 'checked' : ''}/> Mostrar portada del artista</p>
+                <div class="flex gap-2 mt-3">
+                  ${isAdmin ? `<button id="editBtn-${id}" class="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded">Editar</button>` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+
+          albumList.appendChild(wrapper);
+
+          if (isAdmin) {
+            const editBtn = wrapper.querySelector(`#editBtn-${id}`);
+            editBtn.addEventListener('click', () => {
+              activarEdicion(id, album, wrapper);
+            });
+          }
+        });
+      });
+    }
+
     function activarEdicion(id, album, wrapper) {
-      // Cambiar el innerHTML para mostrar inputs editables y botones Actualizar y Eliminar
       wrapper.innerHTML = `
         <div class="flex flex-col md:flex-row gap-4 items-center">
           <img src="${album.cover}" alt="${album.title}" class="w-32 h-32 rounded-lg object-cover" />
@@ -140,21 +149,17 @@
         </div>
       `;
 
-      // Añadir eventos botones
-      wrapper.querySelector(`#actualizarBtn-${id}`).addEventListener('click', async () => {
-        await actualizar(id);
-      });
-      wrapper.querySelector(`#eliminarBtn-${id}`).addEventListener('click', () => {
-        eliminar(id);
-      });
-      wrapper.querySelector(`#cancelarBtn-${id}`).addEventListener('click', () => {
-        // Recargar el álbum para regresar a modo lectura sin cambios
-        reloadAlbum(id, wrapper);
-      });
+      wrapper.querySelector(`#actualizarBtn-${id}`).addEventListener('click', () => actualizar(id));
+      wrapper.querySelector(`#eliminarBtn-${id}`).addEventListener('click', () => eliminar(id));
+      wrapper.querySelector(`#cancelarBtn-${id}`).addEventListener('click', () => reloadAlbum(id, wrapper));
     }
 
-    // Función para actualizar Firebase y mostrar modal
     async function actualizar(id) {
+      if (!currentUser || !isAdmin) {
+        alert("No autorizado para editar.");
+        redirectToLogin();
+        return;
+      }
       const categoria = document.getElementById(`categoria-${id}`).value;
       const mostrar = document.getElementById(`mostrar-${id}`).checked;
       const mostrarCover = document.getElementById(`mostrarCover-${id}`).checked;
@@ -165,52 +170,53 @@
           mostrar_en_index: mostrar,
           mostrar_portada_artista_en_index: mostrarCover
         });
-        // Mostrar modal éxito
         modal.classList.remove('hidden');
-        // Recargar el álbum para volver a modo lectura actualizado
+
         const albumSnapshot = await new Promise((resolve) => {
           onValue(ref(db, `albums/${id}`), snap => {
             resolve(snap.val());
-          }, {onlyOnce: true});
+          }, { onlyOnce: true });
         });
         const wrapper = document.querySelector(`[data-album-id="${id}"]`);
-        if(wrapper){
+        if (wrapper) {
           reloadAlbum(id, wrapper, albumSnapshot);
         } else {
-          // Si no encuentra wrapper (caso raro) recarga toda la lista
-          onValue(albumsRef, () => {});
+          cargarAlbums();
         }
       } catch (error) {
         alert('Error al actualizar: ' + error.message);
       }
     }
 
-    // Función para eliminar álbum
     function eliminar(id) {
+      if (!currentUser || !isAdmin) {
+        alert("No autorizado para eliminar.");
+        redirectToLogin();
+        return;
+      }
       if (confirm('¿Estás seguro de eliminar este álbum?')) {
-        remove(ref(db, `albums/${id}`));
+        remove(ref(db, `albums/${id}`))
+          .catch(error => {
+            alert("Error al eliminar: " + error.message);
+          });
       }
     }
 
-    // Recarga el álbum en modo lectura, con datos actuales o pasados
     function reloadAlbum(id, wrapper, albumData = null) {
-      if(!albumData){
-        // Obtener datos de firebase y recargar
+      if (!albumData) {
         onValue(ref(db, `albums/${id}`), snapshot => {
           const album = snapshot.val();
-          if(!album) {
-            // Si no existe el álbum, remover el wrapper
+          if (!album) {
             wrapper.remove();
             return;
           }
           setReadOnlyView(id, album, wrapper);
-        }, {onlyOnce: true});
+        }, { onlyOnce: true });
       } else {
         setReadOnlyView(id, albumData, wrapper);
       }
     }
 
-    // Cambia wrapper a vista solo lectura
     function setReadOnlyView(id, album, wrapper) {
       wrapper.innerHTML = `
         <div class="flex flex-col md:flex-row gap-4 items-center" data-album-id="${id}">
@@ -222,18 +228,39 @@
             <p><input type="checkbox" disabled ${album.mostrar_en_index ? 'checked' : ''}/> Mostrar en el index</p>
             <p><input type="checkbox" disabled ${album.mostrar_portada_artista_en_index ? 'checked' : ''}/> Mostrar portada del artista</p>
             <div class="flex gap-2 mt-3">
-              <button id="editBtn-${id}" class="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded">Editar</button>
+              ${isAdmin ? `<button id="editBtn-${id}" class="bg-blue-500 hover:bg-blue-600 px-3 py-1 rounded">Editar</button>` : ''}
             </div>
           </div>
         </div>
       `;
 
-      // Reasignar listener para el botón editar
-      const editBtn = wrapper.querySelector(`#editBtn-${id}`);
-      editBtn.addEventListener('click', () => {
-        activarEdicion(id, album, wrapper);
-      });
+      if (isAdmin) {
+        const editBtn = wrapper.querySelector(`#editBtn-${id}`);
+        editBtn.addEventListener('click', () => {
+          activarEdicion(id, album, wrapper);
+        });
+      }
     }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        // Verificar rol admin
+        const adminRef = ref(db, `admins/${user.uid}`);
+        onValue(adminRef, (snapshot) => {
+          const adminData = snapshot.val();
+          if (adminData && adminData.role === 'admin') {
+            isAdmin = true;
+            cargarAlbums();
+          } else {
+            alert("No tienes permisos de administrador.");
+            redirectToLogin();
+          }
+        }, { onlyOnce: true });
+      } else {
+        redirectToLogin();
+      }
+    });
 
     // Bloquear clic derecho
     document.addEventListener('contextmenu', e => e.preventDefault());
@@ -251,7 +278,6 @@
 
     // Bloquear menú click derecho largo
     window.oncontextmenu = () => false;
-
   </script>
 </body>
 </html>
