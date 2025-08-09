@@ -163,7 +163,7 @@
         if (snapshot.exists() && snapshot.val().role === "admin") {
           successMsg.textContent = '¡Inicio de sesión correcto! Redirigiendo...';
           setTimeout(() => {
-            window.location.href = 'go:admin';
+            window.location.href = 'https://nimeapp.github.io/Flixplemusic/admin.html';
           }, 1500);
         } else {
           errorMsg.textContent = 'No tienes permisos de administrador.';
@@ -184,7 +184,7 @@
         });
         successMsg.textContent = 'Cuenta creada como administrador. Redirigiendo...';
         setTimeout(() => {
-          window.location.href = 'go:admin';
+          window.location.href = 'https://nimeapp.github.io/Flixplemusic/admin.html';
         }, 1500);
       } catch (error) {
         errorMsg.textContent = 'Error: ' + error.message;
