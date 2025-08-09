@@ -191,22 +191,20 @@
       }
     }
 
-    // Alternar favorito al hacer click en el corazón
+    // Alternar favorito al hacer click en el corazón SIN ALERTAS
     favoriteHeart.addEventListener('click', () => {
       if (currentTrackIndex === -1) return;
       const currentId = tracks[currentTrackIndex].id;
       let favs = getFavorites();
 
       if (favs.includes(currentId)) {
-        // Quitar de favoritos
         favs = favs.filter(id => id !== currentId);
       } else {
-        // Agregar a favoritos
         favs.push(currentId);
       }
       saveFavorites(favs);
       updateHeartIcon();
-      alert(favs.includes(currentId) ? 'Canción agregada a favoritos' : 'Canción eliminada de favoritos');
+      // ALERTA REMOVIDA
     });
 
     function formatTime(sec) {
@@ -259,7 +257,7 @@
       try {
         const snapshot = await get(ref(db, `tracks/${trackId}`));
         if (!snapshot.exists()) {
-          alert("Canción no encontrada.");
+          // alert removido
           return null;
         }
         const track = snapshot.val();
@@ -271,7 +269,7 @@
           url: track.url
         };
       } catch (error) {
-        alert("Error cargando la canción: " + error.message);
+        // alert removido
         console.error(error);
         return null;
       }
@@ -396,17 +394,15 @@
       const params = new URLSearchParams(window.location.search);
       const trackId = params.get('track');
       if (!trackId) {
-        alert("No se indicó ID de canción en la URL. Usa ?track=ID_DEL_TRACK");
+        // alert removido
         return;
       }
 
       const mainTrack = await loadMainTrack(trackId);
       if (!mainTrack) return;
 
-      // Cargamos todas las canciones del artista, aleatorias
       await loadArtistTracks(mainTrack.artist);
 
-      // Buscamos índice de la canción inicial en el arreglo cargado
       currentTrackIndex = tracks.findIndex(t => t.id === trackId);
       if (currentTrackIndex === -1) currentTrackIndex = 0;
 
