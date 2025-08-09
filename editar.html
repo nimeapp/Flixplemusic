@@ -69,6 +69,7 @@
     let currentUser = null;
     let isAdmin = false;
 
+    // Cerrar modal
     closeModalBtn.addEventListener('click', () => {
       modal.classList.add('hidden');
     });
@@ -76,12 +77,7 @@
       modal.classList.add('hidden');
     });
 
-    function redirectToLogin() {
-      // Redirigir a login appcreator24 URL
-      window.location.href = "go:login";
-    }
-
-    // Función para cargar álbumes
+    // Función para cargar álbumes modo lectura
     function cargarAlbums() {
       const albumsRef = ref(db, 'albums');
       onValue(albumsRef, snapshot => {
@@ -123,6 +119,7 @@
       });
     }
 
+    // Cambiar a modo edición con inputs
     function activarEdicion(id, album, wrapper) {
       wrapper.innerHTML = `
         <div class="flex flex-col md:flex-row gap-4 items-center">
@@ -154,10 +151,10 @@
       wrapper.querySelector(`#cancelarBtn-${id}`).addEventListener('click', () => reloadAlbum(id, wrapper));
     }
 
+    // Actualizar álbum
     async function actualizar(id) {
       if (!currentUser || !isAdmin) {
         alert("No autorizado para editar.");
-        redirectToLogin();
         return;
       }
       const categoria = document.getElementById(`categoria-${id}`).value;
@@ -188,10 +185,10 @@
       }
     }
 
+    // Eliminar álbum
     function eliminar(id) {
       if (!currentUser || !isAdmin) {
         alert("No autorizado para eliminar.");
-        redirectToLogin();
         return;
       }
       if (confirm('¿Estás seguro de eliminar este álbum?')) {
@@ -202,6 +199,7 @@
       }
     }
 
+    // Recargar álbum modo lectura
     function reloadAlbum(id, wrapper, albumData = null) {
       if (!albumData) {
         onValue(ref(db, `albums/${id}`), snapshot => {
@@ -217,6 +215,7 @@
       }
     }
 
+    // Vista solo lectura
     function setReadOnlyView(id, album, wrapper) {
       wrapper.innerHTML = `
         <div class="flex flex-col md:flex-row gap-4 items-center" data-album-id="${id}">
@@ -242,23 +241,24 @@
       }
     }
 
+    // Verificar usuario autenticado y rol admin
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         currentUser = user;
-        // Verificar rol admin
         const adminRef = ref(db, `admins/${user.uid}`);
         onValue(adminRef, (snapshot) => {
           const adminData = snapshot.val();
           if (adminData && adminData.role === 'admin') {
             isAdmin = true;
-            cargarAlbums();
           } else {
             alert("No tienes permisos de administrador.");
-            redirectToLogin();
+            window.location.href = "https://nimeapp.github.io/Flixplemusic/login.html";
           }
+          cargarAlbums();
         }, { onlyOnce: true });
       } else {
-        redirectToLogin();
+        alert("No estás autenticado. Por favor, inicia sesión.");
+        window.location.href = "https://nimeapp.github.io/Flixplemusic/login.html";
       }
     });
 
@@ -278,6 +278,7 @@
 
     // Bloquear menú click derecho largo
     window.oncontextmenu = () => false;
+
   </script>
 </body>
 </html>
