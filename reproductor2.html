@@ -73,16 +73,6 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-
-    #favoritesLink {
-      margin-top: 1rem;
-      text-align: center;
-    }
-    #favoritesLink a {
-      color: #4ade80; /* verde */
-      font-weight: 600;
-      text-decoration: underline;
-    }
   
   </style>
 </head>
@@ -97,8 +87,7 @@
       <p id="trackArtist" class="text-sm text-gray-400">Artista</p>
     </div>
     <div class="flex justify-center my-2">
-      <!-- Corazón con id para control -->
-      <i id="favoriteBtn" class="fa-regular fa-heart text-xl opacity-70 hover:opacity-100 cursor-pointer"></i>
+      <i id="favoriteIcon" class="fa-regular fa-heart text-xl opacity-70 hover:opacity-100 cursor-pointer"></i>
     </div>
     <audio id="audio" src=""></audio>
     <div class="mt-4">
@@ -123,10 +112,6 @@
   <div id="tracksListContainer">
     <h3>Canciones de este artista</h3>
     <div id="tracksList"></div>
-  </div>
-
-  <div id="favoritesLink">
-    <a href="lista.html" target="_blank" rel="noopener">Ver lista de favoritos</a>
   </div>
 
   <script type="module">
@@ -156,72 +141,17 @@
     const shuffleBtn = document.getElementById('shuffleBtn');
     const backBtn = document.getElementById('back');
     const nextBtn = document.getElementById('next');
+    const favoriteIcon = document.getElementById('favoriteIcon');
 
     const albumCoverImg = document.getElementById('albumCover');
     const trackTitleElem = document.getElementById('trackTitle');
     const trackArtistElem = document.getElementById('trackArtist');
     const tracksListDiv = document.getElementById('tracksList');
 
-    const favoriteBtn = document.getElementById('favoriteBtn');
-
     let currentTrackIndex = -1;
     let tracks = [];
     let isRepeat = false;
     let isShuffle = false;
-
-    // Guarda favoritos en localStorage bajo esta clave
-    const STORAGE_KEY = 'favoritosCanciones';
-
-    // Carga lista de favoritos de localStorage
-    function loadFavorites() {
-      const fav = localStorage.getItem(STORAGE_KEY);
-      if (!fav) return [];
-      try {
-        return JSON.parse(fav);
-      } catch {
-        return [];
-      }
-    }
-
-    // Guarda lista de favoritos en localStorage
-    function saveFavorites(favorites) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
-    }
-
-    // Comprueba si la canción actual está en favoritos
-    function isCurrentFavorite() {
-      const favorites = loadFavorites();
-      if (currentTrackIndex < 0 || currentTrackIndex >= tracks.length) return false;
-      return favorites.some(fav => fav.id === tracks[currentTrackIndex].id);
-    }
-
-    // Actualiza el icono del corazón según favorito
-    function updateFavoriteIcon() {
-      if (isCurrentFavorite()) {
-        favoriteBtn.classList.remove('fa-regular');
-        favoriteBtn.classList.add('fa-solid', 'text-red-500');
-      } else {
-        favoriteBtn.classList.add('fa-regular');
-        favoriteBtn.classList.remove('fa-solid', 'text-red-500');
-      }
-    }
-
-    favoriteBtn.addEventListener('click', () => {
-      if (currentTrackIndex < 0 || currentTrackIndex >= tracks.length) return;
-      const favorites = loadFavorites();
-      const track = tracks[currentTrackIndex];
-
-      const indexInFav = favorites.findIndex(fav => fav.id === track.id);
-      if (indexInFav === -1) {
-        // Agregar
-        favorites.push(track);
-      } else {
-        // Quitar
-        favorites.splice(indexInFav, 1);
-      }
-      saveFavorites(favorites);
-      updateFavoriteIcon();
-    });
 
     function formatTime(sec) {
       if (isNaN(sec)) return '0:00';
@@ -268,6 +198,66 @@
       renderTracks();
       updateFavoriteIcon();
     }
+
+    // Funciones para manejar favoritos en localStorage
+    function getFavoritos() {
+      try {
+        const fav = localStorage.getItem('favoritos');
+        return fav ? JSON.parse(fav) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    function saveFavoritos(favs) {
+      localStorage.setItem('favoritos', JSON.stringify(favs));
+    }
+
+    function isFavorito(trackId) {
+      const favs = getFavoritos();
+      return favs.some(t => t.id === trackId);
+    }
+
+    function addFavorito(track) {
+      let favs = getFavoritos();
+      if (!isFavorito(track.id)) {
+        favs.push(track);
+        saveFavoritos(favs);
+      }
+    }
+
+    function removeFavorito(trackId) {
+      let favs = getFavoritos();
+      favs = favs.filter(t => t.id !== trackId);
+      saveFavoritos(favs);
+    }
+
+    function updateFavoriteIcon() {
+      if (currentTrackIndex === -1) {
+        favoriteIcon.classList.replace('fa-solid', 'fa-regular');
+        favoriteIcon.style.color = '';
+        return;
+      }
+      const currentTrack = tracks[currentTrackIndex];
+      if (isFavorito(currentTrack.id)) {
+        favoriteIcon.classList.replace('fa-regular', 'fa-solid');
+        favoriteIcon.style.color = 'red';
+      } else {
+        favoriteIcon.classList.replace('fa-solid', 'fa-regular');
+        favoriteIcon.style.color = '';
+      }
+    }
+
+    favoriteIcon.addEventListener('click', () => {
+      if (currentTrackIndex === -1) return;
+      const currentTrack = tracks[currentTrackIndex];
+      if (isFavorito(currentTrack.id)) {
+        removeFavorito(currentTrack.id);
+      } else {
+        addFavorito(currentTrack);
+      }
+      updateFavoriteIcon();
+    });
 
     async function loadMainTrack(trackId) {
       try {
@@ -428,6 +418,7 @@
 
       playTrack(currentTrackIndex);
     };
+
   </script>
 
 </body>
