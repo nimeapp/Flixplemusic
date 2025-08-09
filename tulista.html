@@ -87,15 +87,6 @@
       font-weight: 600;
       align-self: flex-start;
     }
-    #audioPlayer {
-      margin-top: 1rem;
-      width: 100%;
-      max-width: 600px;
-      outline: none;
-      border-radius: 0.5rem;
-      background: #222;
-      box-shadow: 0 0 8px #a3f7bf;
-    }
   </style>
 </head>
 <body>
@@ -107,26 +98,8 @@
     <!-- Aquí irán las canciones -->
   </div>
 
-  <audio id="audioPlayer" controls></audio>
-
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
-      authDomain: "flixplemusic.firebaseapp.com",
-      databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
-      projectId: "flixplemusic",
-      storageBucket: "flixplemusic.firebasestorage.app",
-      messagingSenderId: "792301053512",
-      appId: "1:792301053512:web:13878703d081f1a7b3da7d"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-
-    // Trae la lista completa con objetos: {id, title, cover}
+  <script>
+    // Trae la lista guardada con objetos {id, title, cover, artist}
     function getTulista() {
       const lista = localStorage.getItem('tulista');
       if (!lista) return [];
@@ -137,34 +110,17 @@
       }
     }
 
-    // Guarda la lista completa
     function saveTulista(lista) {
       localStorage.setItem('tulista', JSON.stringify(lista));
     }
 
-    // Elimina canción por id
     function eliminarID(id) {
       let lista = getTulista();
       lista = lista.filter(t => t.id !== id);
       saveTulista(lista);
     }
 
-    // Carga datos actualizados desde Firebase (title, artist, url) manteniendo cover local
-    async function cargarDatosActualizados(id) {
-      try {
-        const dbRef = ref(db);
-        const snapshot = await get(child(dbRef, `tracks/${id}`));
-        if (snapshot.exists()) {
-          return snapshot.val();
-        }
-        return null;
-      } catch (e) {
-        console.error("Error cargando track:", id, e);
-        return null;
-      }
-    }
-
-    async function renderLista() {
+    function renderLista() {
       const listaDiv = document.getElementById('listaCanciones');
       listaDiv.innerHTML = '';
 
@@ -175,56 +131,27 @@
         return;
       }
 
-      // Cargamos datos actualizados para cada canción (title, artist, url)
-      const promesas = tulista.map(async trackLocal => {
-        const dataActual = await cargarDatosActualizados(trackLocal.id);
-        if (!dataActual) return null;
-
-        return {
-          id: trackLocal.id,
-          title: dataActual.title || trackLocal.title || "Sin título",
-          artist: dataActual.artist || "Sin artista",
-          url: dataActual.url || "",
-          cover: trackLocal.cover || "https://via.placeholder.com/64"
-        };
-      });
-
-      const tracks = (await Promise.all(promesas)).filter(Boolean);
-
-      if (tracks.length === 0) {
-        listaDiv.innerHTML = '<p>No tienes canciones guardadas o hubo un error cargando.</p>';
-        return;
-      }
-
-      const audioPlayer = document.getElementById('audioPlayer');
-
-      tracks.forEach(track => {
+      tulista.forEach(track => {
         const div = document.createElement('div');
         div.classList.add('cancion');
         div.title = "Clic para reproducir";
 
         div.innerHTML = `
-          <img src="${track.cover}" alt="Portada ${track.title}" class="cover" />
+          <img src="${track.cover || 'https://via.placeholder.com/64'}" alt="Portada ${track.title}" class="cover" />
           <div class="info">
-            <div class="titulo">${track.title}</div>
-            <div class="artista">${track.artist}</div>
+            <div class="titulo">${track.title || 'Sin título'}</div>
+            <div class="artista">${track.artist || 'Sin artista'}</div>
           </div>
           <button class="btnEliminar" title="Quitar de mi lista" aria-label="Quitar canción">
             <i class="fa-solid fa-trash"></i>
           </button>
         `;
 
-        // Reproducir al hacer clic en el div (excepto el botón eliminar)
+        // Al hacer clic en la canción (no botón eliminar) abre reproductor en nueva pestaña con el trackId
         div.addEventListener('click', (e) => {
-          if (e.target.closest('.btnEliminar')) return; // no reproducir si clic en eliminar
-          if (track.url) {
-            audioPlayer.src = track.url;
-            audioPlayer.play().catch(() => {
-              console.log('Autoplay bloqueado, espera interacción.');
-            });
-          } else {
-            alert("No hay URL de audio para esta canción.");
-          }
+          if (e.target.closest('.btnEliminar')) return; // no abrir reproductor si clic en eliminar
+          // Abrir reproductor con trackId en URL
+          window.open(`https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${encodeURIComponent(track.id)}`, '_blank');
         });
 
         // Botón eliminar
