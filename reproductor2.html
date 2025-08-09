@@ -21,16 +21,17 @@
       padding: 1rem;
       font-family: system-ui, sans-serif;
     }
+    
     #tracksListContainer {
       margin-top: 2rem;
       width: 100%;
       max-width: 400px;
-      background: transparent;
+      background: transparent; 
       border-radius: 0.75rem;
       padding: 1rem;
       max-height: 300px;
       overflow-y: auto;
-      box-shadow: none;
+      box-shadow: none; 
     }
     #tracksListContainer h3 {
       margin-bottom: 1rem;
@@ -38,6 +39,8 @@
       text-align: center;
       color: white;
     }
+
+    
     .track-item {
       cursor: pointer;
       padding: 0.4rem 0.5rem;
@@ -58,11 +61,11 @@
       background-color: #1a3a27;
     }
     .track-title {
-      color: white;
+      color: white; 
       font-weight: 500;
     }
     .track-artist {
-      color: #cccccc;
+      color: #cccccc; 
       font-size: 0.85rem;
       text-align: left;
       margin-top: 2px;
@@ -70,6 +73,10 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+  * {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
   </style>
 </head>
 <body>
@@ -83,8 +90,7 @@
       <p id="trackArtist" class="text-sm text-gray-400">Artista</p>
     </div>
     <div class="flex justify-center my-2">
-      <!-- Corazón que cambia color y guarda canción -->
-      <i id="heartBtn" class="fa-regular fa-heart text-xl opacity-70 hover:opacity-100 cursor-pointer"></i>
+      <i class="fa-regular fa-heart text-xl opacity-70 hover:opacity-100"></i>
     </div>
     <audio id="audio" src=""></audio>
     <div class="mt-4">
@@ -144,67 +150,10 @@
     const trackArtistElem = document.getElementById('trackArtist');
     const tracksListDiv = document.getElementById('tracksList');
 
-    const heartBtn = document.getElementById('heartBtn');
-
     let currentTrackIndex = -1;
     let tracks = [];
     let isRepeat = false;
     let isShuffle = false;
-
-    // Función para obtener tulista desde localStorage (array de objetos)
-    function getTulista() {
-      const lista = localStorage.getItem('tulista');
-      return lista ? JSON.parse(lista) : [];
-    }
-
-    // Función para guardar tulista en localStorage
-    function saveTulista(lista) {
-      localStorage.setItem('tulista', JSON.stringify(lista));
-    }
-
-    // Verificar si la canción actual está en tulista
-    function isInTulista(trackId) {
-      const lista = getTulista();
-      return lista.some(t => t.id === trackId);
-    }
-
-    // Actualizar icono corazón según si está en tulista o no
-    function updateHeartIcon() {
-      if (currentTrackIndex < 0 || !tracks[currentTrackIndex]) {
-        heartBtn.classList.remove('fa-heart');
-        heartBtn.classList.remove('fa-solid');
-        heartBtn.classList.add('fa-regular');
-        heartBtn.style.color = '';
-        return;
-      }
-      const currentTrack = tracks[currentTrackIndex];
-      if (isInTulista(currentTrack.id)) {
-        heartBtn.classList.remove('fa-regular');
-        heartBtn.classList.add('fa-solid');
-        heartBtn.style.color = 'red';
-      } else {
-        heartBtn.classList.remove('fa-solid');
-        heartBtn.classList.add('fa-regular');
-        heartBtn.style.color = '';
-      }
-    }
-
-    // Al tocar corazón, agregar o quitar canción de tulista
-    heartBtn.addEventListener('click', () => {
-      if (currentTrackIndex < 0) return;
-      const currentTrack = tracks[currentTrackIndex];
-      let lista = getTulista();
-
-      if (isInTulista(currentTrack.id)) {
-        // Quitar canción de tulista
-        lista = lista.filter(t => t.id !== currentTrack.id);
-      } else {
-        // Agregar canción a tulista
-        lista.push(currentTrack);
-      }
-      saveTulista(lista);
-      updateHeartIcon();
-    });
 
     function formatTime(sec) {
       if (isNaN(sec)) return '0:00';
@@ -249,7 +198,6 @@
       playIcon.classList.replace('fa-play', 'fa-pause');
 
       renderTracks();
-      updateHeartIcon(); // Actualizar corazón al cambiar canción
     }
 
     async function loadMainTrack(trackId) {
@@ -292,13 +240,14 @@
           return [];
         }
 
-        // Mezclar aleatoriamente
+       
         for (let i = artistTracks.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [artistTracks[i], artistTracks[j]] = [artistTracks[j], artistTracks[i]];
         }
 
-        artistTracks = artistTracks.slice(0, 50);
+        
+        artistTracks = artistTracks.slice(0, 15);
 
         tracks = artistTracks;
 
@@ -401,24 +350,41 @@
       const mainTrack = await loadMainTrack(trackId);
       if (!mainTrack) return;
 
+      // Cargamos todas las canciones del artista, aleatorias
       await loadArtistTracks(mainTrack.artist);
 
+      // Buscamos índice de la canción inicial en el arreglo cargado
       currentTrackIndex = tracks.findIndex(t => t.id === trackId);
       if (currentTrackIndex === -1) currentTrackIndex = 0;
 
       playTrack(currentTrackIndex);
     };
 
-    // Bloquear clic derecho y teclas de inspección
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('keydown',
-      e => {
-        if (
-          e.key === 'F12' ||
-          (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
-          (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
-        ) e.preventDefault();
-      });
+    // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
+  document.addEventListener('keydown', function (e) {
+    if (
+      e.key === 'F12' ||
+      (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+      (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
+    ) {
+      e.preventDefault();
+    }
+  });
+
+  // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
+  window.oncontextmenu = function () {
+    return false;
+  };
+
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('a').forEach(el => {
+      const url = el.getAttribute('href');
+      el.removeAttribute('href');
+      el.style.cursor = 'pointer';
+      el.onclick = () => window.location.href = url;
+    });
+  });
   </script>
 
 </body>

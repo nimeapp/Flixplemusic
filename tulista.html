@@ -87,15 +87,20 @@
       font-weight: 600;
       align-self: flex-start;
     }
+   * {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
   </style>
 </head>
 <body>
 
-  <a href="index.html" class="volver"><i class="fa-solid fa-arrow-left"></i> Volver al reproductor</a>
+  <a href="index.html" class="volver"><i class="fa-solid fa-arrow-left"></i></a>
 
   <h1>Mi Lista de Canciones Guardadas</h1>
+<br>
   <div id="listaCanciones">
-    <!-- Aquí irán las canciones -->
+  
   </div>
 
   <script>
@@ -146,7 +151,7 @@
           </button>
         `;
 
-        // Cambio aquí: usar location.href para cargar reproductor en misma pestaña (carga inmediata)
+     
         div.addEventListener('click', (e) => {
           if (e.target.closest('.btnEliminar')) return;
           location.href = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${encodeURIComponent(track.id)}`;
@@ -166,6 +171,31 @@
     window.onload = () => {
       renderLista();
     };
+// Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
+  document.addEventListener('keydown', function (e) {
+    if (
+      e.key === 'F12' ||
+      (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+      (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
+    ) {
+      e.preventDefault();
+    }
+  });
+
+  // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
+  window.oncontextmenu = function () {
+    return false;
+  };
+
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('a').forEach(el => {
+      const url = el.getAttribute('href');
+      el.removeAttribute('href');
+      el.style.cursor = 'pointer';
+      el.onclick = () => window.location.href = url;
+    });
+  });
   </script>
 
 </body>

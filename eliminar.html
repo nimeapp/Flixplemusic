@@ -86,13 +86,18 @@
       background: transparent;
       border: none;
       cursor: pointer;
-      color: #f87171; /* red-400 */
+      color: #f87171; 
       transition: color 0.3s ease;
       padding: 0;
     }
     button.delete-btn:hover {
-      color: #b91c1c; /* red-700 */
+      color: #b91c1c;
     }
+
+* {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
   </style>
 </head>
 <body>
@@ -227,7 +232,6 @@
       });
     }
 
-    // Escuchar cambios en tracks y actualizar lista
     onValue(tracksRef, (snapshot) => {
       allTracks = snapshot.val() || {};
       if(currentArtist) {
@@ -241,6 +245,36 @@
       songListUl.innerHTML = "";
       console.error("Error leyendo datos:", error);
     });
+     // Bloquear clic derecho
+  document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+  });
+
+  // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
+  document.addEventListener('keydown', function (e) {
+    if (
+      e.key === 'F12' ||
+      (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+      (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
+    ) {
+      e.preventDefault();
+    }
+  });
+
+  // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
+  window.oncontextmenu = function () {
+    return false;
+  };
+
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('a').forEach(el => {
+      const url = el.getAttribute('href');
+      el.removeAttribute('href');
+      el.style.cursor = 'pointer';
+      el.onclick = () => window.location.href = url;
+    });
+  });
   </script>
 </body>
 </html>

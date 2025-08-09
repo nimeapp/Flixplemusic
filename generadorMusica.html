@@ -33,6 +33,11 @@
       color: #9ee6a8;
       overflow-wrap: break-word;
     }
+ * {
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
   </style>
 </head>
 <body class="bg-gradient-to-b from-[#2d1600] to-black text-white min-h-screen flex flex-col items-center p-4">
@@ -49,7 +54,7 @@
     <!-- Álbumes -->
     <div id="albumsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
 
-    <!-- Canciones + Inputs URL -->
+
     <div id="tracksSection" class="hidden mb-8">
       <h2 class="text-2xl font-semibold mb-4 text-center">Canciones del Álbum</h2>
       <div id="tracksContainer" class="space-y-3 max-h-[400px] overflow-y-auto bg-gray-800 p-4 rounded-lg"></div>
@@ -238,7 +243,7 @@
           if (!playlist.length) return alert("Ingresa al menos una URL válida.");
 
           try {
-            // Guardar playlist completa
+       
             const pr = push(ref(db, 'playlists'));
             const playlistId = pr.key;
             await set(pr, {
@@ -249,7 +254,7 @@
               cover: coverUrl
             });
 
-            // Guardar canciones individualmente en "tracks" y guardar sus IDs
+           
             const individualUrls = [];
             for (const track of playlist) {
               const trackRef = push(ref(db, 'tracks'));
@@ -263,21 +268,20 @@
                 createdAt: new Date().toISOString(),
                 playlistId: playlistId
               });
-              // Construir URL individual (reproductor2.html)
+         
               individualUrls.push(`${location.origin}/Flixplemusic/reproductor2.html?track=${trackId}`);
             }
 
-            // Mostrar URL generada para compartir con Reproductor.html para playlist
+           
             const link = `${location.origin}/Flixplemusic/Reproductor.html?playlist=${playlistId}`;
             generatedUrlContainer.textContent = link;
 
-            // Mostrar URLs individuales
+      
             individualUrlsContainer.innerHTML = '<strong>URLs individuales para cada canción:</strong><br>' + individualUrls.map(u => `<a href="${u}" target="_blank" class="underline text-green-300">${u}</a>`).join('<br>');
             individualUrlsContainer.classList.remove('hidden');
 
             generatedContainer.classList.remove('hidden');
 
-            // Cargar y reproducir esa playlist
             loadPlaylistFromFirebase(playlistId);
           } catch (err) {
             alert("Error al guardar: " + err.message);
@@ -431,7 +435,6 @@
 
     searchBtn.onclick = searchArtist;
 
-    // Si hay playlist en URL, cargarla automáticamente
     function getQueryParam(param) {
       const urlParams = new URLSearchParams(window.location.search);
       return urlParams.get(param);
@@ -444,6 +447,36 @@
         tracksSection.classList.add('hidden');
       }
     };
+     // Bloquear clic derecho
+  document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+  });
+
+  // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
+  document.addEventListener('keydown', function (e) {
+    if (
+      e.key === 'F12' ||
+      (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+      (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
+    ) {
+      e.preventDefault();
+    }
+  });
+
+  // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
+  window.oncontextmenu = function () {
+    return false;
+  };
+
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('a').forEach(el => {
+      const url = el.getAttribute('href');
+      el.removeAttribute('href');
+      el.style.cursor = 'pointer';
+      el.onclick = () => window.location.href = url;
+    });
+  });
   </script>
 
 </body>
