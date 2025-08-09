@@ -102,6 +102,7 @@
   <div id="listaCanciones"></div>
 
   <script>
+    // Obtiene el arreglo guardado en localStorage
     function getTulista() {
       const lista = localStorage.getItem('tulista');
       if (!lista) return [];
@@ -112,16 +113,19 @@
       }
     }
 
+    // Guarda el arreglo en localStorage
     function saveTulista(lista) {
       localStorage.setItem('tulista', JSON.stringify(lista));
     }
 
+    // Elimina canción por id
     function eliminarID(id) {
       let lista = getTulista();
       lista = lista.filter(t => t.id !== id);
       saveTulista(lista);
     }
 
+    // Renderiza la lista en el DOM
     function renderLista() {
       const listaDiv = document.getElementById('listaCanciones');
       listaDiv.innerHTML = '';
@@ -149,11 +153,14 @@
           </button>
         `;
 
+        // Click para reproducir (salvo si clic en eliminar)
         div.addEventListener('click', (e) => {
           if (e.target.closest('.btnEliminar')) return;
+          // Aquí va la URL del reproductor con el id de la canción
           location.href = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${encodeURIComponent(track.id)}`;
         });
 
+        // Botón eliminar
         const btnEliminar = div.querySelector('.btnEliminar');
         btnEliminar.onclick = (e) => {
           e.stopPropagation();
@@ -165,11 +172,12 @@
       });
     }
 
+    // Ejecutar al cargar la página
     window.onload = () => {
       renderLista();
     };
 
-    // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
+    // Bloqueos para evitar ver código (opcional)
     document.addEventListener('keydown', function (e) {
       if (
         e.key === 'F12' ||
@@ -180,7 +188,6 @@
       }
     });
 
-    // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
     window.oncontextmenu = function () {
       return false;
     };
