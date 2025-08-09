@@ -21,7 +21,6 @@
       padding: 1rem;
       font-family: system-ui, sans-serif;
     }
-    
     #tracksListContainer {
       margin-top: 2rem;
       width: 100%;
@@ -39,8 +38,6 @@
       text-align: center;
       color: white;
     }
-
-    
     .track-item {
       cursor: pointer;
       padding: 0.4rem 0.5rem;
@@ -73,7 +70,6 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-  
   </style>
 </head>
 <body>
@@ -87,7 +83,7 @@
       <p id="trackArtist" class="text-sm text-gray-400">Artista</p>
     </div>
     <div class="flex justify-center my-2">
-      <i id="favoriteIcon" class="fa-regular fa-heart text-xl opacity-70 hover:opacity-100 cursor-pointer"></i>
+      <i id="favoriteHeart" class="fa-regular fa-heart text-xl opacity-70 hover:opacity-100 cursor-pointer"></i>
     </div>
     <audio id="audio" src=""></audio>
     <div class="mt-4">
@@ -141,17 +137,77 @@
     const shuffleBtn = document.getElementById('shuffleBtn');
     const backBtn = document.getElementById('back');
     const nextBtn = document.getElementById('next');
-    const favoriteIcon = document.getElementById('favoriteIcon');
 
     const albumCoverImg = document.getElementById('albumCover');
     const trackTitleElem = document.getElementById('trackTitle');
     const trackArtistElem = document.getElementById('trackArtist');
     const tracksListDiv = document.getElementById('tracksList');
+    const favoriteHeart = document.getElementById('favoriteHeart');
 
     let currentTrackIndex = -1;
     let tracks = [];
     let isRepeat = false;
     let isShuffle = false;
+
+    // Llave para localStorage
+    const FAVORITES_KEY = 'flixplemusic_favorites';
+
+    // Leer favoritos desde localStorage
+    function getFavorites() {
+      try {
+        const fav = localStorage.getItem(FAVORITES_KEY);
+        return fav ? JSON.parse(fav) : [];
+      } catch {
+        return [];
+      }
+    }
+
+    // Guardar favoritos en localStorage
+    function saveFavorites(favs) {
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs));
+    }
+
+    // Verificar si la canción actual está en favoritos
+    function isFavorite(trackId) {
+      const favs = getFavorites();
+      return favs.includes(trackId);
+    }
+
+    // Actualizar ícono corazón según estado favorito
+    function updateHeartIcon() {
+      if (currentTrackIndex === -1) {
+        favoriteHeart.classList.replace('fa-heart', 'fa-heart'); // reset
+        favoriteHeart.classList.remove('fa-solid');
+        favoriteHeart.classList.add('fa-regular');
+        return;
+      }
+      const currentId = tracks[currentTrackIndex].id;
+      if (isFavorite(currentId)) {
+        favoriteHeart.classList.remove('fa-regular');
+        favoriteHeart.classList.add('fa-solid');
+      } else {
+        favoriteHeart.classList.remove('fa-solid');
+        favoriteHeart.classList.add('fa-regular');
+      }
+    }
+
+    // Alternar favorito al hacer click en el corazón
+    favoriteHeart.addEventListener('click', () => {
+      if (currentTrackIndex === -1) return;
+      const currentId = tracks[currentTrackIndex].id;
+      let favs = getFavorites();
+
+      if (favs.includes(currentId)) {
+        // Quitar de favoritos
+        favs = favs.filter(id => id !== currentId);
+      } else {
+        // Agregar a favoritos
+        favs.push(currentId);
+      }
+      saveFavorites(favs);
+      updateHeartIcon();
+      alert(favs.includes(currentId) ? 'Canción agregada a favoritos' : 'Canción eliminada de favoritos');
+    });
 
     function formatTime(sec) {
       if (isNaN(sec)) return '0:00';
@@ -196,68 +252,8 @@
       playIcon.classList.replace('fa-play', 'fa-pause');
 
       renderTracks();
-      updateFavoriteIcon();
+      updateHeartIcon();
     }
-
-    // Funciones para manejar favoritos en localStorage
-    function getFavoritos() {
-      try {
-        const fav = localStorage.getItem('favoritos');
-        return fav ? JSON.parse(fav) : [];
-      } catch {
-        return [];
-      }
-    }
-
-    function saveFavoritos(favs) {
-      localStorage.setItem('favoritos', JSON.stringify(favs));
-    }
-
-    function isFavorito(trackId) {
-      const favs = getFavoritos();
-      return favs.some(t => t.id === trackId);
-    }
-
-    function addFavorito(track) {
-      let favs = getFavoritos();
-      if (!isFavorito(track.id)) {
-        favs.push(track);
-        saveFavoritos(favs);
-      }
-    }
-
-    function removeFavorito(trackId) {
-      let favs = getFavoritos();
-      favs = favs.filter(t => t.id !== trackId);
-      saveFavoritos(favs);
-    }
-
-    function updateFavoriteIcon() {
-      if (currentTrackIndex === -1) {
-        favoriteIcon.classList.replace('fa-solid', 'fa-regular');
-        favoriteIcon.style.color = '';
-        return;
-      }
-      const currentTrack = tracks[currentTrackIndex];
-      if (isFavorito(currentTrack.id)) {
-        favoriteIcon.classList.replace('fa-regular', 'fa-solid');
-        favoriteIcon.style.color = 'red';
-      } else {
-        favoriteIcon.classList.replace('fa-solid', 'fa-regular');
-        favoriteIcon.style.color = '';
-      }
-    }
-
-    favoriteIcon.addEventListener('click', () => {
-      if (currentTrackIndex === -1) return;
-      const currentTrack = tracks[currentTrackIndex];
-      if (isFavorito(currentTrack.id)) {
-        removeFavorito(currentTrack.id);
-      } else {
-        addFavorito(currentTrack);
-      }
-      updateFavoriteIcon();
-    });
 
     async function loadMainTrack(trackId) {
       try {
@@ -299,13 +295,11 @@
           return [];
         }
 
-       
         for (let i = artistTracks.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
           [artistTracks[i], artistTracks[j]] = [artistTracks[j], artistTracks[i]];
         }
 
-        
         artistTracks = artistTracks.slice(0, 15);
 
         tracks = artistTracks;
@@ -418,7 +412,6 @@
 
       playTrack(currentTrackIndex);
     };
-
   </script>
 
 </body>
