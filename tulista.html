@@ -2,107 +2,86 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Mi Lista de Canciones Guardadas</title>
+  <title>Mis Favoritos - FlixpleMusic</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     body {
-      background: black;
+      background-color: black;
       color: white;
-      min-height: 100vh;
       font-family: system-ui, sans-serif;
       padding: 1rem;
+      min-height: 100vh;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
     h1 {
+      font-size: 1.75rem;
       margin-bottom: 1rem;
       font-weight: 700;
-      font-size: 1.5rem;
+      text-align: center;
     }
-    #listaCanciones {
+    ul {
+      list-style: none;
+      padding: 0;
       width: 100%;
-      max-width: 600px;
+      max-width: 480px;
     }
-    .cancion {
-      background: #2d1600;
-      margin-bottom: 0.75rem;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
+    li {
       display: flex;
       align-items: center;
-      cursor: pointer;
+      background: #1a1a1a;
+      margin-bottom: 0.75rem;
+      border-radius: 0.5rem;
+      padding: 0.6rem 1rem;
       transition: background-color 0.3s;
+      cursor: default;
     }
-    .cancion:hover {
-      background-color: #3a1e00;
+    li:hover {
+      background: #2d2d2d;
     }
-    .cover {
+    img.cover {
       width: 64px;
       height: 64px;
       border-radius: 0.5rem;
       object-fit: cover;
       margin-right: 1rem;
       flex-shrink: 0;
-      box-shadow: 0 0 6px #a3f7bf;
     }
-    .info {
+    div.info {
       flex-grow: 1;
       overflow: hidden;
     }
-    .titulo {
+    a.track-title {
       font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .artista {
-      font-size: 0.9rem;
-      color: #ccc;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-top: 0.1rem;
-    }
-    .btnEliminar {
-      background: none;
-      border: none;
-      color: red;
-      font-size: 1.4rem;
-      cursor: pointer;
-      padding: 0;
-      margin-left: 1rem;
-      transition: color 0.3s;
-      flex-shrink: 0;
-    }
-    .btnEliminar:hover {
-      color: #ff4444;
-    }
-    a.volver {
+      font-size: 1.1rem;
       color: #a3f7bf;
-      margin-bottom: 1rem;
       text-decoration: none;
-      font-weight: 600;
-      align-self: flex-start;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.3rem;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
     }
-    * {
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
+    a.track-title:hover {
+      text-decoration: underline;
+    }
+    div.artist-name {
+      font-size: 0.9rem;
+      color: #bbb;
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   </style>
 </head>
 <body>
-
-  <a href="index.html" class="volver"><i class="fa-solid fa-arrow-left"></i> Volver</a>
-
-  <h1>Mi Lista de Canciones Guardadas</h1>
-
-  <div id="listaCanciones"></div>
+  <h1>Canciones Favoritas</h1>
+  <ul id="favoritesList">
+    <li>Cargando...</li>
+  </ul>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
@@ -121,121 +100,70 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Usamos la misma clave localStorage que el segundo código
-    const STORAGE_KEY = 'tulista';
+    const FAVORITES_KEY = 'flixplemusic_favorites';
+    const favoritesList = document.getElementById('favoritesList');
 
-    function getTulista() {
-      const lista = localStorage.getItem(STORAGE_KEY);
-      if (!lista) return [];
-      try {
-        return JSON.parse(lista);
-      } catch {
-        return [];
-      }
-    }
-
-    function saveTulista(lista) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(lista));
-    }
-
-    // Eliminar canción por id de localStorage
-    function eliminarID(id) {
-      let lista = getTulista();
-      lista = lista.filter(t => t.id !== id);
-      saveTulista(lista);
-    }
-
-    async function renderLista() {
-      const listaDiv = document.getElementById('listaCanciones');
-      listaDiv.innerHTML = '';
-
-      const tulista = getTulista();
-
-      if (tulista.length === 0) {
-        listaDiv.innerHTML = '<p>No tienes canciones guardadas.</p>';
+    async function loadFavoriteTracks() {
+      const favs = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
+      if (favs.length === 0) {
+        favoritesList.innerHTML = '<li>No tienes canciones favoritas aún.</li>';
         return;
       }
+      favoritesList.innerHTML = '<li>Cargando...</li>';
 
-      // Por cada id en tulista, buscar info en Firebase
-      const promesas = tulista.map(async (track) => {
+      const promises = favs.map(async (trackId) => {
         try {
-          const snapshot = await get(ref(db, `tracks/${track.id}`));
+          const snapshot = await get(ref(db, `tracks/${trackId}`));
           if (!snapshot.exists()) return null;
-          return { id: track.id, ...snapshot.val() };
+          return { id: trackId, ...snapshot.val() };
         } catch {
           return null;
         }
       });
 
-      const tracks = (await Promise.all(promesas)).filter(Boolean);
-
+      const tracks = (await Promise.all(promises)).filter(Boolean);
       if (tracks.length === 0) {
-        listaDiv.innerHTML = '<p>No se encontraron canciones guardadas válidas.</p>';
+        favoritesList.innerHTML = '<li>No se encontraron canciones favoritas válidas.</li>';
         return;
       }
 
+      favoritesList.innerHTML = '';
       tracks.forEach(track => {
-        const div = document.createElement('div');
-        div.classList.add('cancion');
-        div.title = "Clic para reproducir";
+        const li = document.createElement('li');
 
-        div.innerHTML = `
-          <img src="${track.cover || 'https://via.placeholder.com/64'}" alt="Portada ${track.title}" class="cover" />
-          <div class="info">
-            <div class="titulo">${track.title || 'Sin título'}</div>
-            <div class="artista">${track.artist || 'Sin artista'}</div>
-          </div>
-          <button class="btnEliminar" title="Quitar de mi lista" aria-label="Quitar canción">
-            <i class="fa-solid fa-trash"></i>
-          </button>
-        `;
+        // Crear la portada
+        const img = document.createElement('img');
+        img.src = track.cover || 'https://via.placeholder.com/64?text=No+Cover';
+        img.alt = `Portada de ${track.artist}`;
+        img.className = 'cover';
 
-        div.addEventListener('click', (e) => {
-          if (e.target.closest('.btnEliminar')) return;
-          location.href = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${encodeURIComponent(track.id)}`;
-        });
+        // Crear contenedor info
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'info';
 
-        const btnEliminar = div.querySelector('.btnEliminar');
-        btnEliminar.onclick = (e) => {
-          e.stopPropagation();
-          eliminarID(track.id);
-          renderLista();
-        };
+        // Crear título clickeable
+        const titleLink = document.createElement('a');
+        titleLink.textContent = track.title || 'Título';
+        titleLink.href = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${encodeURIComponent(track.id)}`;
+        titleLink.className = 'track-title';
+        titleLink.target = '_self';  // abre en la misma pestaña
 
-        listaDiv.appendChild(div);
+        // Crear nombre del artista
+        const artistDiv = document.createElement('div');
+        artistDiv.textContent = track.artist || 'Artista';
+        artistDiv.className = 'artist-name';
+
+        infoDiv.appendChild(titleLink);
+        infoDiv.appendChild(artistDiv);
+
+        li.appendChild(img);
+        li.appendChild(infoDiv);
+
+        favoritesList.appendChild(li);
       });
     }
 
-    window.onload = () => {
-      renderLista();
-    };
-
-    // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
-    document.addEventListener('keydown', function (e) {
-      if (
-        e.key === 'F12' ||
-        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
-        (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
-      ) {
-        e.preventDefault();
-      }
-    });
-
-    // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
-    window.oncontextmenu = function () {
-      return false;
-    };
-
-    // Hacer que los enlaces se manejen con JS para evitar problemas en móviles
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('a').forEach(el => {
-        const url = el.getAttribute('href');
-        el.removeAttribute('href');
-        el.style.cursor = 'pointer';
-        el.onclick = () => window.location.href = url;
-      });
-    });
+    window.onload = loadFavoriteTracks;
   </script>
-
 </body>
 </html>
