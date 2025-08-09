@@ -2,206 +2,72 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Mi Lista de Canciones Guardadas</title>
+  <title>Mis Favoritos - FlixpleMusic</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-  <style>
-    body {
-      background: black;
-      color: white;
-      min-height: 100vh;
-      font-family: system-ui, sans-serif;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    h1 {
-      margin-bottom: 1rem;
-      font-weight: 700;
-      font-size: 1.5rem;
-    }
-    #listaCanciones {
-      width: 100%;
-      max-width: 600px;
-    }
-    .cancion {
-      background: #2d1600;
-      margin-bottom: 0.75rem;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-    .cancion:hover {
-      background-color: #3a1e00;
-    }
-    .cover {
-      width: 64px;
-      height: 64px;
-      border-radius: 0.5rem;
-      object-fit: cover;
-      margin-right: 1rem;
-      flex-shrink: 0;
-      box-shadow: 0 0 6px #a3f7bf;
-    }
-    .info {
-      flex-grow: 1;
-      overflow: hidden;
-    }
-    .titulo {
-      font-weight: 600;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .artista {
-      font-size: 0.9rem;
-      color: #ccc;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-top: 0.1rem;
-    }
-    .btnEliminar {
-      background: none;
-      border: none;
-      color: red;
-      font-size: 1.4rem;
-      cursor: pointer;
-      padding: 0;
-      margin-left: 1rem;
-      transition: color 0.3s;
-      flex-shrink: 0;
-    }
-    .btnEliminar:hover {
-      color: #ff4444;
-    }
-    a.volver {
-      color: #a3f7bf;
-      margin-bottom: 1rem;
-      text-decoration: none;
-      font-weight: 600;
-      align-self: flex-start;
-    }
-    * {
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-    }
-  </style>
 </head>
-<body>
+<body class="bg-black text-white p-4">
+  <h1 class="text-center text-2xl mb-6">Canciones Favoritas</h1>
+  <ul id="favoritesList" class="max-w-md mx-auto space-y-3"></ul>
 
-  <a href="index.html" class="volver"><i class="fa-solid fa-arrow-left"></i> Volver</a>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
 
-  <h1>Mi Lista de Canciones Guardadas</h1>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+      authDomain: "flixplemusic.firebaseapp.com",
+      databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+      projectId: "flixplemusic",
+      storageBucket: "flixplemusic.appspot.com",
+      messagingSenderId: "792301053512",
+      appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+    };
 
-  <div id="listaCanciones"></div>
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
-  <script>
-    // Obtiene el arreglo guardado en localStorage
-    function getTulista() {
-      const lista = localStorage.getItem('tulista');
-      if (!lista) return [];
-      try {
-        return JSON.parse(lista);
-      } catch {
-        return [];
+    const FAVORITES_KEY = 'flixplemusic_favorites';
+    const favoritesList = document.getElementById('favoritesList');
+
+    async function loadFavoriteTracks() {
+      const favs = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
+      if (favs.length === 0) {
+        favoritesList.innerHTML = '<li>No tienes canciones favoritas aún.</li>';
+        return;
       }
-    }
+      favoritesList.innerHTML = '<li>Cargando...</li>';
 
-    // Guarda el arreglo en localStorage
-    function saveTulista(lista) {
-      localStorage.setItem('tulista', JSON.stringify(lista));
-    }
+      const promises = favs.map(async (trackId) => {
+        try {
+          const snapshot = await get(ref(db, `tracks/${trackId}`));
+          if (!snapshot.exists()) return null;
+          return { id: trackId, ...snapshot.val() };
+        } catch {
+          return null;
+        }
+      });
 
-    // Elimina canción por id
-    function eliminarID(id) {
-      let lista = getTulista();
-      lista = lista.filter(t => t.id !== id);
-      saveTulista(lista);
-    }
-
-    // Renderiza la lista en el DOM
-    function renderLista() {
-      const listaDiv = document.getElementById('listaCanciones');
-      listaDiv.innerHTML = '';
-
-      const tulista = getTulista();
-
-      if (tulista.length === 0) {
-        listaDiv.innerHTML = '<p>No tienes canciones guardadas.</p>';
+      const tracks = (await Promise.all(promises)).filter(Boolean);
+      if (tracks.length === 0) {
+        favoritesList.innerHTML = '<li>No se encontraron canciones favoritas válidas.</li>';
         return;
       }
 
-      tulista.forEach(track => {
-        const div = document.createElement('div');
-        div.classList.add('cancion');
-        div.title = "Clic para reproducir";
-
-        div.innerHTML = `
-          <img src="${track.cover || 'https://via.placeholder.com/64'}" alt="Portada ${track.title}" class="cover" />
-          <div class="info">
-            <div class="titulo">${track.title || 'Sin título'}</div>
-            <div class="artista">${track.artist || 'Sin artista'}</div>
-          </div>
-          <button class="btnEliminar" title="Quitar de mi lista" aria-label="Quitar canción">
-            <i class="fa-solid fa-trash"></i>
-          </button>
+      favoritesList.innerHTML = '';
+      tracks.forEach(track => {
+        const li = document.createElement('li');
+        li.className = 'p-4 bg-gray-900 rounded shadow';
+        li.innerHTML = `
+          <strong>${track.title}</strong> - <em>${track.artist}</em>
+          <br />
+          <audio controls src="${track.url}" class="w-full mt-2"></audio>
         `;
-
-        // Click para reproducir (salvo si clic en eliminar)
-        div.addEventListener('click', (e) => {
-          if (e.target.closest('.btnEliminar')) return;
-          // Aquí va la URL del reproductor con el id de la canción
-          location.href = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${encodeURIComponent(track.id)}`;
-        });
-
-        // Botón eliminar
-        const btnEliminar = div.querySelector('.btnEliminar');
-        btnEliminar.onclick = (e) => {
-          e.stopPropagation();
-          eliminarID(track.id);
-          renderLista();
-        };
-
-        listaDiv.appendChild(div);
+        favoritesList.appendChild(li);
       });
     }
 
-    // Ejecutar al cargar la página
-    window.onload = () => {
-      renderLista();
-    };
-
-    // Bloqueos para evitar ver código (opcional)
-    document.addEventListener('keydown', function (e) {
-      if (
-        e.key === 'F12' ||
-        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
-        (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
-      ) {
-        e.preventDefault();
-      }
-    });
-
-    window.oncontextmenu = function () {
-      return false;
-    };
-
-    // Hacer que los enlaces se manejen con JS para evitar problemas en móviles
-    document.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('a').forEach(el => {
-        const url = el.getAttribute('href');
-        el.removeAttribute('href');
-        el.style.cursor = 'pointer';
-        el.onclick = () => window.location.href = url;
-      });
-    });
+    window.onload = loadFavoriteTracks;
   </script>
-
 </body>
 </html>
