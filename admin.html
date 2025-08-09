@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admin - Imagen de Perfil</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #121212;
+    color: #eee;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  .container {
+    background: #1e1e1e;
+    padding: 30px 40px;
+    border-radius: 10px;
+    width: 360px;
+    box-shadow: 0 0 10px #7a44ff;
+    text-align: center;
+  }
+  h2 {
+    color: #7a44ff;
+    margin-bottom: 20px;
+  }
+  input[type="url"] {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: none;
+    font-size: 14px;
+    margin-bottom: 15px;
+    outline: none;
+  }
+  img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 75px;
+    border: 3px solid #7a44ff;
+    margin-bottom: 15px;
+    background: #333;
+  }
+  button {
+    padding: 12px 20px;
+    background: #7a44ff;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+  button:hover {
+    background: #5e32cc;
+  }
+  .error {
+    color: #ff5c5c;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+  .success {
+    color: #7fff7f;
+    margin-top: 10px;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="container" style="display:none;">
+  <h2>Agrega tu imagen de perfil</h2>
+  <input type="url" id="profile-url" placeholder="Pega la URL de tu imagen aquí" />
+  <img id="preview" src="" alt="Vista previa" style="display:none;" />
+  <button id="save-btn">Siguiente</button>
+  <div class="error" id="error-msg"></div>
+  <div class="success" id="success-msg"></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+  import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+    authDomain: "flixplemusic.firebaseapp.com",
+    databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+    projectId: "flixplemusic",
+    storageBucket: "flixplemusic.firebasestorage.app",
+    messagingSenderId: "792301053512",
+    appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const database = getDatabase(app);
+
+  const container = document.getElementById('container');
+  const profileUrlInput = document.getElementById('profile-url');
+  const previewImg = document.getElementById('preview');
+  const saveBtn = document.getElementById('save-btn');
+  const errorMsg = document.getElementById('error-msg');
+  const successMsg = document.getElementById('success-msg');
+
+  let currentUser = null;
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUser = user;
+      try {
+        // Revisar si el usuario ya tiene imagen de perfil en la base
+        const snapshot = await get(ref(database, 'admins/' + currentUser.uid + '/profileImage'));
+        if (snapshot.exists() && snapshot.val()) {
+          // Ya tiene imagen, redirigir directo
+          window.location.href = 'go:panel';
+        } else {
+          // Mostrar formulario para agregar imagen
+          container.style.display = 'block';
+        }
+      } catch (error) {
+        errorMsg.textContent = 'Error al verificar imagen: ' + error.message;
+        container.style.display = 'block'; // permitir intentar de nuevo
+      }
+    } else {
+      // No autenticado, redirigir a login admin
+      window.location.href = 'go:admin';
+    }
+  });
+
+  profileUrlInput.addEventListener('input', () => {
+    const url = profileUrlInput.value.trim();
+    if (url) {
+      previewImg.src = url;
+      previewImg.style.display = 'block';
+      errorMsg.textContent = '';
+      successMsg.textContent = '';
+    } else {
+      previewImg.style.display = 'none';
+    }
+  });
+
+  saveBtn.addEventListener('click', async () => {
+    errorMsg.textContent = '';
+    successMsg.textContent = '';
+
+    const url = profileUrlInput.value.trim();
+    if (!url) {
+      errorMsg.textContent = 'Por favor, ingresa una URL válida.';
+      return;
+    }
+
+    if (!currentUser) {
+      errorMsg.textContent = 'No estás autenticado.';
+      return;
+    }
+
+    try {
+      await set(ref(database, 'admins/' + currentUser.uid + '/profileImage'), url);
+      successMsg.textContent = 'Imagen guardada correctamente. Redirigiendo...';
+      setTimeout(() => {
+        window.location.href = 'go:panel';
+      }, 1500);
+    } catch (error) {
+      errorMsg.textContent = 'Error al guardar la imagen: ' + error.message;
+    }
+  });
+</script>
+
+</body>
+</html>

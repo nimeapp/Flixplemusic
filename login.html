@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #121212;
+    color: #eee;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  .container {
+    background: #1e1e1e;
+    padding: 30px 40px;
+    border-radius: 10px;
+    width: 320px;
+    box-shadow: 0 0 10px #7a44ff;
+  }
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+    color: #7a44ff;
+  }
+  form {
+    display: flex;
+    flex-direction: column;
+  }
+  label { margin-top: 10px; }
+  input[type="text"],
+  input[type="email"],
+  input[type="password"] {
+    padding: 8px;
+    margin-top: 5px;
+    border-radius: 5px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+  }
+  button {
+    margin-top: 20px;
+    padding: 10px;
+    background: #7a44ff;
+    border: none;
+    border-radius: 5px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.3s ease;
+  }
+  button:hover { background: #5e32cc; }
+  .toggle-link {
+    margin-top: 15px;
+    text-align: center;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .error { color: #ff5c5c; margin-top: 10px; font-size: 13px; text-align: center; }
+  .success { color: #7fff7f; margin-top: 10px; font-size: 13px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h2 id="form-title">Iniciar Sesión</h2>
+
+  <form id="form">
+    <label for="name" id="label-name">Nombre</label>
+    <input type="text" id="name" />
+
+    <label for="email">Correo</label>
+    <input type="email" id="email" required />
+
+    <label for="password">Contraseña</label>
+    <input type="password" id="password" required />
+
+    <button type="submit" id="submit-btn">Iniciar Sesión</button>
+  </form>
+
+  <div class="toggle-link" id="toggle-form">¿No tienes cuenta? Regístrate</div>
+  <div class="error" id="error-msg"></div>
+  <div class="success" id="success-msg"></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+  import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+    authDomain: "flixplemusic.firebaseapp.com",
+    databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+    projectId: "flixplemusic",
+    storageBucket: "flixplemusic.firebasestorage.app",
+    messagingSenderId: "792301053512",
+    appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const database = getDatabase(app);
+
+  const form = document.getElementById('form');
+  const toggleForm = document.getElementById('toggle-form');
+  const formTitle = document.getElementById('form-title');
+  const submitBtn = document.getElementById('submit-btn');
+  const errorMsg = document.getElementById('error-msg');
+  const successMsg = document.getElementById('success-msg');
+  const nameLabel = document.getElementById('label-name');
+  const nameInput = document.getElementById('name');
+
+  let isLogin = true;
+
+  function updateFormUI() {
+    if (isLogin) {
+      formTitle.textContent = 'Iniciar Sesión';
+      submitBtn.textContent = 'Iniciar Sesión';
+      toggleForm.textContent = '¿No tienes cuenta? Regístrate';
+      nameLabel.style.display = 'none';
+      nameInput.style.display = 'none';
+      nameInput.required = false;
+    } else {
+      formTitle.textContent = 'Registro';
+      submitBtn.textContent = 'Registrarse';
+      toggleForm.textContent = '¿Ya tienes cuenta? Inicia sesión';
+      nameLabel.style.display = 'block';
+      nameInput.style.display = 'block';
+      nameInput.required = true;
+    }
+    errorMsg.textContent = '';
+    successMsg.textContent = '';
+    form.reset();
+  }
+
+  toggleForm.addEventListener('click', () => {
+    isLogin = !isLogin;
+    updateFormUI();
+  });
+
+  updateFormUI();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorMsg.textContent = '';
+    successMsg.textContent = '';
+
+    const name = nameInput.value.trim();
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    const password = document.getElementById('password').value;
+
+    if (isLogin) {
+      try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        const dbRef = ref(database);
+        const snapshot = await get(child(dbRef, `admins/${user.uid}`));
+        if (snapshot.exists() && snapshot.val().role === "admin") {
+          successMsg.textContent = '¡Inicio de sesión correcto! Redirigiendo...';
+          setTimeout(() => {
+            window.location.href = 'go:admin';
+          }, 1500);
+        } else {
+          errorMsg.textContent = 'No tienes permisos de administrador.';
+        }
+      } catch (error) {
+        errorMsg.textContent = 'Error: ' + error.message;
+      }
+    } else {
+      try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        await updateProfile(user, { displayName: name });
+        await set(ref(database, 'admins/' + user.uid), {
+          name,
+          email,
+          role: "admin",
+          createdAt: Date.now()
+        });
+        successMsg.textContent = 'Cuenta creada como administrador. Redirigiendo...';
+        setTimeout(() => {
+          window.location.href = 'go:admin';
+        }, 1500);
+      } catch (error) {
+        errorMsg.textContent = 'Error: ' + error.message;
+      }
+    }
+  });
+</script>
+</body>
+</html>

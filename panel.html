@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Panel Administrador</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Icono cámara centrado dentro del círculo, tamaño más pequeño */
+    #camera-icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+    }
+    #camera-icon i {
+      width: 14px !important;
+      height: 14px !important;
+    }
+    /* Sidebar perfil */
+    #profile-sidebar {
+      transition: transform 0.3s ease-in-out;
+      transform: translateX(100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    #profile-sidebar.open {
+      transform: translateX(0);
+    }
+    /* Fondo semi-transparente cuando sidebar abierto */
+    #sidebar-overlay {
+      transition: opacity 0.3s ease-in-out;
+      opacity: 0;
+      pointer-events: none;
+      background: rgba(0,0,0,0.7);
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+    }
+    #sidebar-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Modal */
+    #modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+    }
+    #modal-overlay.active {
+      display: flex;
+    }
+    #modal {
+      background: #1f2937; /* gray-800 */
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 10px 15px rgba(0,0,0,0.5);
+      color: #e0e0e0;
+    }
+    #modal h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    #modal input[type="url"] {
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      border: none;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      color: #111827;
+    }
+    #modal button {
+      background-color: #7c3aed; /* purple-600 */
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-right: 0.5rem;
+    }
+    #modal button:hover {
+      background-color: #6d28d9; /* purple-700 */
+    }
+    #modal .btn-cancel {
+      background-color: #374151; /* gray-700 */
+    }
+    #modal .btn-cancel:hover {
+      background-color: #4b5563; /* gray-600 */
+    }
+    #modal p.error {
+      color: #f87171; /* red-400 */
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+    }
+  </style>
+</head>
+<body class="bg-gray-900 text-gray-200 min-h-screen flex flex-col">
+
+  <!-- HEADER -->
+  <header class="bg-gray-800 p-4 flex items-center justify-between relative z-20">
+    <!-- Imagen perfil con cámara -->
+    <div class="relative cursor-pointer" id="profile-container" title="Ver perfil">
+      <img id="profile-image"
+        src="https://via.placeholder.com/150?text=Sin+Imagen"
+        alt="Perfil"
+        class="rounded-full w-16 h-16 object-cover border-4 border-purple-400" />
+      <div id="camera-icon" class="absolute bg-gray-500 rounded-full shadow-lg opacity-80 cursor-pointer border-2 border-white"
+        style="bottom: 0; right: 0;" title="Editar imagen">
+        <i data-lucide="camera" class="text-white"></i>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-grow p-6 max-w-4xl mx-auto w-full">
+
+    <!-- Tarjetas -->
+    <section class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <a href="https://nimeapp.github.io/Flixplemusic/editar.html" 
+         class="bg-gray-800 rounded-lg p-6 flex flex-col items-center justify-center gap-3 hover:bg-purple-700 transition cursor-pointer" 
+         title="Editar Perfil">
+        <i data-lucide="edit-2" class="w-12 h-12 text-purple-400"></i>
+        <span class="text-lg font-semibold">Editar Perfil</span>
+      </a>
+
+      <a href="https://nimeapp.github.io/Flixplemusic/generadorMusica.html" 
+         class="bg-gray-800 rounded-lg p-6 flex flex-col items-center justify-center gap-3 hover:bg-purple-700 transition cursor-pointer" 
+         title="Generador Música">
+        <i data-lucide="music" class="w-12 h-12 text-purple-400"></i>
+        <span class="text-lg font-semibold">Generador Música</span>
+      </a>
+
+      <a href="https://nimeapp.github.io/Flixplemusic/generadorfeed.html" 
+         class="bg-gray-800 rounded-lg p-6 flex flex-col items-center justify-center gap-3 hover:bg-purple-700 transition cursor-pointer" 
+         title="Generador Feed">
+        <i data-lucide="rss" class="w-12 h-12 text-purple-400"></i>
+        <span class="text-lg font-semibold">Generador Feed</span>
+      </a>
+
+      <a href="https://nimeapp.github.io/Flixplemusic/eliminar.html" 
+         class="bg-gray-800 rounded-lg p-6 flex flex-col items-center justify-center gap-3 hover:bg-purple-700 transition cursor-pointer" 
+         title="Eliminar Canciones">
+        <i data-lucide="trash-2" class="w-12 h-12 text-purple-400"></i>
+        <span class="text-lg font-semibold">Eliminar Canciones</span>
+      </a>
+    </section>
+
+  </main>
+
+  <!-- SIDEBAR PERFIL -->
+  <div id="sidebar-overlay"></div>
+  <aside id="profile-sidebar" class="fixed top-0 right-0 h-full w-80 bg-gray-800 shadow-lg p-6 flex flex-col z-40">
+    <div>
+      <button id="close-sidebar-btn" class="self-end text-purple-400 hover:text-purple-600 mb-6" title="Cerrar perfil">
+        <i data-lucide="x" class="w-6 h-6 cursor-pointer"></i>
+      </button>
+      <img id="sidebar-profile-image" alt="Perfil" class="mx-auto rounded-full w-28 h-28 object-cover border-4 border-purple-400 mb-6" />
+      <h2 id="sidebar-user-name" class="text-2xl font-semibold mb-1 flex items-center justify-center gap-2">
+        <i data-lucide="user" class="w-6 h-6"></i>
+        <span>Nombre</span>
+      </h2>
+      <p id="sidebar-user-email" class="text-purple-400 mb-6 flex items-center justify-center gap-2">
+        <i data-lucide="mail" class="w-5 h-5"></i>
+        <span>Email</span>
+      </p>
+      <p class="text-purple-300 mb-6 font-medium text-center">Administrador</p>
+    </div>
+    <button id="logout-btn" class="bg-purple-600 hover:bg-purple-700 px-5 py-3 rounded font-semibold inline-flex items-center gap-2 transition mt-auto self-center w-full max-w-xs">
+      <i data-lucide="log-out" class="w-5 h-5"></i>
+      Cerrar sesión
+    </button>
+  </aside>
+
+  <!-- MODAL CAMBIAR IMAGEN -->
+  <div id="modal-overlay">
+    <div id="modal">
+      <h3>Cambiar URL de imagen de perfil</h3>
+      <input type="url" id="new-image-url" placeholder="Pega aquí la URL de la imagen" />
+      <p id="modal-error" class="error hidden"></p>
+      <div class="flex justify-end">
+        <button class="btn-cancel" id="modal-cancel-btn">Cancelar</button>
+        <button id="modal-save-btn">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <p id="error-msg" class="text-red-500 mt-4 text-center"></p>
+
+  <script type="module">
+    lucide.createIcons();
+
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+    import { getDatabase, ref, get, update } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+      authDomain: "flixplemusic.firebaseapp.com",
+      databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+      projectId: "flixplemusic",
+      storageBucket: "flixplemusic.firebasestorage.app",
+      messagingSenderId: "792301053512",
+      appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const database = getDatabase(app);
+
+    // Elementos Header
+    const profileImage = document.getElementById('profile-image');
+    const cameraIcon = document.getElementById('camera-icon');
+    const profileContainer = document.getElementById('profile-container');
+    const errorMsg = document.getElementById('error-msg');
+
+    // Sidebar elementos
+    const sidebar = document.getElementById('profile-sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    const sidebarProfileImage = document.getElementById('sidebar-profile-image');
+    const sidebarUserName = document.getElementById('sidebar-user-name').querySelector('span');
+    const sidebarUserEmail = document.getElementById('sidebar-user-email').querySelector('span');
+    const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+
+    // Botón cerrar sesión dentro sidebar
+    const logoutBtn = document.getElementById('logout-btn');
+
+    // Modal elementos
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalCancelBtn = document.getElementById('modal-cancel-btn');
+    const modalSaveBtn = document.getElementById('modal-save-btn');
+    const newImageUrlInput = document.getElementById('new-image-url');
+    const modalError = document.getElementById('modal-error');
+
+    let currentUser = null;
+    let currentUserData = null;
+
+    // Funciones abrir/cerrar sidebar
+    function openSidebar() {
+      if (!currentUserData) return;
+      sidebarProfileImage.src = currentUserData.profileImage || 'https://via.placeholder.com/150?text=Sin+Imagen';
+      sidebarUserName.textContent = currentUserData.name || currentUser.displayName || 'Sin nombre';
+      sidebarUserEmail.textContent = currentUserData.email || currentUser.email || 'Sin correo';
+      sidebar.classList.add('open');
+      sidebarOverlay.classList.add('visible');
+      document.body.style.overflow = 'hidden'; // Evitar scroll fondo
+      window.lucide.replace();
+    }
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('visible');
+      document.body.style.overflow = ''; // Restaurar scroll
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUser = user;
+        try {
+          const snapshot = await get(ref(database, 'admins/' + user.uid));
+          if (snapshot.exists()) {
+            currentUserData = snapshot.val();
+            profileImage.src = currentUserData.profileImage || 'https://via.placeholder.com/150?text=Sin+Imagen';
+          } else {
+            errorMsg.textContent = 'No se encontraron datos de usuario en la base de datos.';
+            currentUserData = {
+              name: user.displayName || 'Sin nombre',
+              email: user.email || 'Sin correo',
+              profileImage: 'https://via.placeholder.com/150?text=Sin+Imagen'
+            };
+            profileImage.src = currentUserData.profileImage;
+          }
+        } catch (error) {
+          errorMsg.textContent = 'Error al cargar datos: ' + error.message;
+          currentUserData = {
+            name: user.displayName || 'Sin nombre',
+            email: user.email || 'Sin correo',
+            profileImage: 'https://via.placeholder.com/150?text=Sin+Imagen'
+          };
+          profileImage.src = currentUserData.profileImage;
+        }
+      } else {
+        window.location.href = 'go:login';
+      }
+      window.lucide.replace();
+    });
+
+    // Eventos
+    profileContainer.addEventListener('click', () => {
+      openSidebar();
+    });
+
+    // Cerrar sidebar con overlay o botón cerrar
+    sidebarOverlay.addEventListener('click', closeSidebar);
+    closeSidebarBtn.addEventListener('click', closeSidebar);
+
+    // Cerrar sesión
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await signOut(auth);
+        window.location.href = 'go:login';
+      } catch (error) {
+        errorMsg.textContent = 'Error al cerrar sesión: ' + error.message;
+      }
+    });
+
+    // Abrir modal para cambiar imagen al hacer click en la cámara
+    cameraIcon.addEventListener('click', (e) => {
+      e.stopPropagation();
+      newImageUrlInput.value = currentUserData?.profileImage || '';
+      modalError.classList.add('hidden');
+      modalOverlay.classList.add('active');
+      newImageUrlInput.focus();
+    });
+
+    // Cerrar modal
+    modalCancelBtn.addEventListener('click', () => {
+      modalOverlay.classList.remove('active');
+    });
+    modalOverlay.addEventListener('click', (e) => {
+      if(e.target === modalOverlay) {
+        modalOverlay.classList.remove('active');
+      }
+    });
+
+    // Validar URL simple
+    function isValidUrl(string) {
+      try {
+        new URL(string);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    // Validar que URL termine con extensión válida de imagen
+    function hasValidImageExtension(url) {
+      return /\.(png|jpe?g|gif)$/i.test(url.trim());
+    }
+
+    // Guardar nueva URL en Firebase y actualizar interfaz
+    modalSaveBtn.addEventListener('click', async () => {
+      const newUrl = newImageUrlInput.value.trim();
+
+      if (!newUrl) {
+        modalError.textContent = 'Por favor ingresa una URL.';
+        modalError.classList.remove('hidden');
+        return;
+      }
+      if (!isValidUrl(newUrl)) {
+        modalError.textContent = 'La URL no es válida.';
+        modalError.classList.remove('hidden');
+        return;
+      }
+
+      if (!hasValidImageExtension(newUrl)) {
+        modalError.textContent = 'La URL debe terminar en .png, .jpg, .jpeg o .gif';
+        modalError.classList.remove('hidden');
+        return;
+      }
+
+      modalError.classList.add('hidden');
+
+      try {
+        await update(ref(database, 'admins/' + currentUser.uid), { profileImage: newUrl });
+        currentUserData.profileImage = newUrl;
+        profileImage.src = newUrl;
+        sidebarProfileImage.src = newUrl;
+        modalOverlay.classList.remove('active');
+      } catch (error) {
+        modalError.textContent = 'Error al actualizar imagen: ' + error.message;
+        modalError.classList.remove('hidden');
+      }
+    });
+
+  </script>
+
+</body>
+</html>
