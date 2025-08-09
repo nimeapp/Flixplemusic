@@ -91,7 +91,7 @@
 </head>
 <body>
 
-  <a href="index.html" class="volver"><i class="fa-solid fa-arrow-left"></i> </a>
+  <a href="index.html" class="volver"><i class="fa-solid fa-arrow-left"></i> Volver al reproductor</a>
 
   <h1>Mi Lista de Canciones Guardadas</h1>
   <div id="listaCanciones">
@@ -99,7 +99,6 @@
   </div>
 
   <script>
-    // Trae la lista guardada con objetos {id, title, cover, artist}
     function getTulista() {
       const lista = localStorage.getItem('tulista');
       if (!lista) return [];
@@ -147,14 +146,12 @@
           </button>
         `;
 
-        // Al hacer clic en la canción (no botón eliminar) abre reproductor en nueva pestaña con el trackId
+        // Cambio aquí: usar location.href para cargar reproductor en misma pestaña (carga inmediata)
         div.addEventListener('click', (e) => {
-          if (e.target.closest('.btnEliminar')) return; // no abrir reproductor si clic en eliminar
-          // Abrir reproductor con trackId en URL
-          window.open(`https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${encodeURIComponent(track.id)}`, '_blank');
+          if (e.target.closest('.btnEliminar')) return;
+          location.href = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${encodeURIComponent(track.id)}`;
         });
 
-        // Botón eliminar
         const btnEliminar = div.querySelector('.btnEliminar');
         btnEliminar.onclick = (e) => {
           e.stopPropagation();
