@@ -36,7 +36,8 @@
       border-radius: 0.5rem;
       padding: 0.6rem 1rem;
       transition: background-color 0.3s;
-      cursor: default;
+      cursor: pointer;
+      user-select: none;
     }
     li:hover {
       background: #2d2d2d;
@@ -48,10 +49,14 @@
       object-fit: cover;
       margin-right: 1rem;
       flex-shrink: 0;
+      pointer-events: none;
+      user-select: none;
     }
     div.info {
       flex-grow: 1;
       overflow: hidden;
+      pointer-events: none;
+      user-select: none;
     }
     a.track-title {
       font-weight: 600;
@@ -62,7 +67,8 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      cursor: pointer;
+      pointer-events: none;
+      user-select: none;
     }
     a.track-title:hover {
       text-decoration: underline;
@@ -74,6 +80,8 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      pointer-events: none;
+      user-select: none;
     }
   </style>
 </head>
@@ -131,33 +139,32 @@
       tracks.forEach(track => {
         const li = document.createElement('li');
 
-        // Crear la portada
         const img = document.createElement('img');
         img.src = track.cover || 'https://via.placeholder.com/64?text=No+Cover';
         img.alt = `Portada de ${track.artist}`;
         img.className = 'cover';
 
-        // Crear contenedor info
         const infoDiv = document.createElement('div');
         infoDiv.className = 'info';
 
-        // Crear título clickeable
-        const titleLink = document.createElement('a');
-        titleLink.textContent = track.title || 'Título';
-        titleLink.href = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${encodeURIComponent(track.id)}`;
-        titleLink.className = 'track-title';
-        titleLink.target = '_self';  // abre en la misma pestaña
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = track.title || 'Título';
+        titleSpan.className = 'track-title';
 
-        // Crear nombre del artista
         const artistDiv = document.createElement('div');
         artistDiv.textContent = track.artist || 'Artista';
         artistDiv.className = 'artist-name';
 
-        infoDiv.appendChild(titleLink);
+        infoDiv.appendChild(titleSpan);
         infoDiv.appendChild(artistDiv);
 
         li.appendChild(img);
         li.appendChild(infoDiv);
+
+        li.addEventListener('click', () => {
+          const url = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${encodeURIComponent(track.id)}`;
+          window.location.href = url;
+        });
 
         favoritesList.appendChild(li);
       });
