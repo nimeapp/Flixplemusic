@@ -85,34 +85,97 @@
     <!-- Aquí irán las canciones -->
   </div>
 
-  <script>
-    function getTulista() {
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getDatabase, ref, get, child } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+      authDomain: "flixplemusic.firebaseapp.com",
+      databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+      projectId: "flixplemusic",
+      storageBucket: "flixplemusic.firebasestorage.app",
+      messagingSenderId: "792301053512",
+      appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Función para obtener lista IDs de canciones guardadas (solo IDs)
+    function getTulistaIDs() {
       const lista = localStorage.getItem('tulista');
-      return lista ? JSON.parse(lista) : [];
+      if (!lista) return [];
+      try {
+        const parsed = JSON.parse(lista);
+        // Esperamos que tulista sea un array de objetos {id, ...}
+        // Sólo extraemos los IDs
+        return parsed.map(t => t.id).filter(Boolean);
+      } catch {
+        return [];
+      }
     }
 
+    // Función para guardar lista completa en localStorage
     function saveTulista(lista) {
       localStorage.setItem('tulista', JSON.stringify(lista));
     }
 
-    function renderLista() {
-      const listaDiv = document.getElementById('listaCanciones');
-      const lista = getTulista();
-      listaDiv.innerHTML = '';
+    // Función para eliminar ID de tulista localStorage
+    function eliminarID(id) {
+      let lista = localStorage.getItem('tulista');
+      if (!lista) return;
+      try {
+        let parsed = JSON.parse(lista);
+        parsed = parsed.filter(t => t.id !== id);
+        saveTulista(parsed);
+      } catch {}
+    }
 
-      if (lista.length === 0) {
+    // Función para cargar datos de una canción por ID desde Firebase Realtime DB
+    async function cargarTrackPorID(id) {
+      try {
+        const dbRef = ref(db);
+        const snapshot = await get(child(dbRef, `tracks/${id}`));
+        if (snapshot.exists()) {
+          return { id, ...snapshot.val() };
+        } else {
+          return null;
+        }
+      } catch (e) {
+        console.error("Error cargando canción", id, e);
+        return null;
+      }
+    }
+
+    // Función para renderizar la lista
+    async function renderLista() {
+      const listaDiv = document.getElementById('listaCanciones');
+      listaDiv.innerHTML = '';
+      const ids = getTulistaIDs();
+      if (ids.length === 0) {
         listaDiv.innerHTML = '<p>No tienes canciones guardadas.</p>';
         return;
       }
 
-      lista.forEach((track, index) => {
+      // Cargar todos los tracks desde Firebase por ID
+      const promesas = ids.map(id => cargarTrackPorID(id));
+      const tracks = (await Promise.all(promesas)).filter(t => t !== null);
+
+      if (tracks.length === 0) {
+        listaDiv.innerHTML = '<p>No tienes canciones guardadas o hubo un error al cargar.</p>';
+        return;
+      }
+
+      // Renderizar cada track
+      tracks.forEach(track => {
         const div = document.createElement('div');
         div.classList.add('cancion');
 
         div.innerHTML = `
           <div class="info">
-            <div class="titulo" title="${track.title}">${track.title}</div>
-            <div class="artista" title="${track.artist}">${track.artist}</div>
+            <div class="titulo" title="${track.title || ''}">${track.title || 'Sin título'}</div>
+            <div class="artista" title="${track.artist || ''}">${track.artist || 'Sin artista'}</div>
           </div>
           <button class="btnEliminar" title="Quitar de mi lista" aria-label="Quitar canción">
             <i class="fa-solid fa-trash"></i>
@@ -121,8 +184,7 @@
 
         const btnEliminar = div.querySelector('.btnEliminar');
         btnEliminar.onclick = () => {
-          const nuevaLista = getTulista().filter((_, i) => i !== index);
-          saveTulista(nuevaLista);
+          eliminarID(track.id);
           renderLista();
         };
 
