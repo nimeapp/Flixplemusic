@@ -21,17 +21,16 @@
       padding: 1rem;
       font-family: system-ui, sans-serif;
     }
-    /* Contenedor transparente */
     #tracksListContainer {
       margin-top: 2rem;
       width: 100%;
       max-width: 400px;
-      background: transparent; /* Sin fondo visible */
+      background: transparent;
       border-radius: 0.75rem;
       padding: 1rem;
       max-height: 300px;
       overflow-y: auto;
-      box-shadow: none; /* Sin sombra */
+      box-shadow: none;
     }
     #tracksListContainer h3 {
       margin-bottom: 1rem;
@@ -39,8 +38,6 @@
       text-align: center;
       color: white;
     }
-
-    /* Cada item con título blanco y artista más pequeño a la izquierda */
     .track-item {
       cursor: pointer;
       padding: 0.4rem 0.5rem;
@@ -61,11 +58,11 @@
       background-color: #1a3a27;
     }
     .track-title {
-      color: white; /* Título en blanco */
+      color: white;
       font-weight: 500;
     }
     .track-artist {
-      color: #cccccc; /* Artista en gris claro */
+      color: #cccccc;
       font-size: 0.85rem;
       text-align: left;
       margin-top: 2px;
@@ -86,7 +83,8 @@
       <p id="trackArtist" class="text-sm text-gray-400">Artista</p>
     </div>
     <div class="flex justify-center my-2">
-      <i class="fa-regular fa-heart text-xl opacity-70 hover:opacity-100"></i>
+      <!-- Corazón que cambia color y guarda canción -->
+      <i id="heartBtn" class="fa-regular fa-heart text-xl opacity-70 hover:opacity-100 cursor-pointer"></i>
     </div>
     <audio id="audio" src=""></audio>
     <div class="mt-4">
@@ -146,10 +144,67 @@
     const trackArtistElem = document.getElementById('trackArtist');
     const tracksListDiv = document.getElementById('tracksList');
 
+    const heartBtn = document.getElementById('heartBtn');
+
     let currentTrackIndex = -1;
     let tracks = [];
     let isRepeat = false;
     let isShuffle = false;
+
+    // Función para obtener tulista desde localStorage (array de objetos)
+    function getTulista() {
+      const lista = localStorage.getItem('tulista');
+      return lista ? JSON.parse(lista) : [];
+    }
+
+    // Función para guardar tulista en localStorage
+    function saveTulista(lista) {
+      localStorage.setItem('tulista', JSON.stringify(lista));
+    }
+
+    // Verificar si la canción actual está en tulista
+    function isInTulista(trackId) {
+      const lista = getTulista();
+      return lista.some(t => t.id === trackId);
+    }
+
+    // Actualizar icono corazón según si está en tulista o no
+    function updateHeartIcon() {
+      if (currentTrackIndex < 0 || !tracks[currentTrackIndex]) {
+        heartBtn.classList.remove('fa-heart');
+        heartBtn.classList.remove('fa-solid');
+        heartBtn.classList.add('fa-regular');
+        heartBtn.style.color = '';
+        return;
+      }
+      const currentTrack = tracks[currentTrackIndex];
+      if (isInTulista(currentTrack.id)) {
+        heartBtn.classList.remove('fa-regular');
+        heartBtn.classList.add('fa-solid');
+        heartBtn.style.color = 'red';
+      } else {
+        heartBtn.classList.remove('fa-solid');
+        heartBtn.classList.add('fa-regular');
+        heartBtn.style.color = '';
+      }
+    }
+
+    // Al tocar corazón, agregar o quitar canción de tulista
+    heartBtn.addEventListener('click', () => {
+      if (currentTrackIndex < 0) return;
+      const currentTrack = tracks[currentTrackIndex];
+      let lista = getTulista();
+
+      if (isInTulista(currentTrack.id)) {
+        // Quitar canción de tulista
+        lista = lista.filter(t => t.id !== currentTrack.id);
+      } else {
+        // Agregar canción a tulista
+        lista.push(currentTrack);
+      }
+      saveTulista(lista);
+      updateHeartIcon();
+    });
 
     function formatTime(sec) {
       if (isNaN(sec)) return '0:00';
@@ -194,6 +249,7 @@
       playIcon.classList.replace('fa-play', 'fa-pause');
 
       renderTracks();
+      updateHeartIcon(); // Actualizar corazón al cambiar canción
     }
 
     async function loadMainTrack(trackId) {
@@ -242,7 +298,6 @@
           [artistTracks[i], artistTracks[j]] = [artistTracks[j], artistTracks[i]];
         }
 
-        // Limitamos a máximo 50 canciones para performance
         artistTracks = artistTracks.slice(0, 50);
 
         tracks = artistTracks;
@@ -346,10 +401,8 @@
       const mainTrack = await loadMainTrack(trackId);
       if (!mainTrack) return;
 
-      // Cargamos todas las canciones del artista, aleatorias
       await loadArtistTracks(mainTrack.artist);
 
-      // Buscamos índice de la canción inicial en el arreglo cargado
       currentTrackIndex = tracks.findIndex(t => t.id === trackId);
       if (currentTrackIndex === -1) currentTrackIndex = 0;
 
