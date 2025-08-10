@@ -238,11 +238,9 @@ btnRegister.addEventListener('click', async () => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, regEmail.value.trim(), regPassword.value);
     
-    // Obtener iniciales y color para perfil
     const initials = getInitials(regName.value);
     const profileColor = getRandomColor();
 
-    // Guardar datos en Realtime DB
     await set(ref(db, 'users/' + userCredential.user.uid), { 
       name: regName.value.trim(), 
       email: regEmail.value.trim(), 
@@ -251,7 +249,12 @@ btnRegister.addEventListener('click', async () => {
       createdAt: new Date().toISOString() 
     });
 
-    await sendEmailVerification(userCredential.user);
+    const actionCodeSettings = {
+      url: 'https://nimeapp.github.io/Flixplemusic/login.html',
+      handleCodeInApp: false,
+    };
+
+    await sendEmailVerification(userCredential.user, actionCodeSettings);
     showModal('Cuenta creada. Verifica tu correo.');
     containerRegister.classList.add('hidden');
     containerLogin.classList.remove('hidden');
