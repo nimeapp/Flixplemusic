@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Artistas y Canciones Firebase</title>
+  <title>Artistas y Canciones Firebase - Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
   <style>
@@ -22,7 +22,6 @@
       margin-bottom: 2rem;
       user-select: none;
     }
-    /* Scrollbar oculto */
     #artistList, #songList {
       max-width: 600px;
       margin: 0 auto 1.5rem auto;
@@ -93,128 +92,125 @@
     button.delete-btn:hover {
       color: #b91c1c;
     }
-
-* {
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
+    * {
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    #loginStatus {
+      text-align: center;
+      margin-bottom: 1rem;
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #7a44ff;
+    }
   </style>
 </head>
 <body>
-  <h1>Artistas y Canciones</h1>
+  <h1>Artistas y Canciones - Administración</h1>
+  <div id="loginStatus">Verificando usuario...</div>
   <div id="artistList"></div>
   <ul id="songList"></ul>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-    import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+  import { getDatabase, ref, onValue, remove, get, child } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
-      authDomain: "flixplemusic.firebaseapp.com",
-      databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
-      projectId: "flixplemusic",
-      storageBucket: "flixplemusic.firebasestorage.app",
-      messagingSenderId: "792301053512",
-      appId: "1:792301053512:web:13878703d081f1a7b3da7d"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+    authDomain: "flixplemusic.firebaseapp.com",
+    databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+    projectId: "flixplemusic",
+    storageBucket: "flixplemusic.firebasestorage.app",
+    messagingSenderId: "792301053512",
+    appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    const tracksRef = ref(db, "tracks");
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
 
-    const artistListDiv = document.getElementById("artistList");
-    const songListUl = document.getElementById("songList");
+  const artistListDiv = document.getElementById("artistList");
+  const songListUl = document.getElementById("songList");
+  const loginStatusDiv = document.getElementById("loginStatus");
 
-    let allTracks = {};
-    let currentArtist = null;
+  let allTracks = {};
+  let currentArtist = null;
+  let currentUser = null;
+  let isAdmin = false;
 
-    // Función para eliminar canción en Firebase
-    function eliminarCancion(id) {
-      if(confirm("¿Eliminar esta canción? Esta acción no se puede deshacer.")) {
-        const trackRef = ref(db, `tracks/${id}`);
-        remove(trackRef).catch(err => alert("Error al eliminar: " + err));
+  function mostrarArtistas() {
+    artistListDiv.innerHTML = "";
+    songListUl.innerHTML = "";
+    currentArtist = null;
+
+    if (!allTracks || Object.keys(allTracks).length === 0) {
+      artistListDiv.innerHTML = '<p class="text-center text-gray-400 select-none">No hay artistas disponibles</p>';
+      return;
+    }
+
+    const artistasUnicos = new Map();
+    for (const [id, track] of Object.entries(allTracks)) {
+      if(track.artist) {
+        artistasUnicos.set(track.artist, true);
       }
     }
 
-    // Mostrar lista de artistas únicos
-    function mostrarArtistas() {
-      artistListDiv.innerHTML = "";
-      songListUl.innerHTML = "";
-      currentArtist = null;
-
-      if (!allTracks || Object.keys(allTracks).length === 0) {
-        artistListDiv.innerHTML = '<p class="text-center text-gray-400 select-none">No hay artistas disponibles</p>';
-        return;
-      }
-
-      // Extraer artistas únicos
-      const artistasUnicos = new Map();
-      for (const [id, track] of Object.entries(allTracks)) {
-        if(track.artist) {
-          artistasUnicos.set(track.artist, true);
-        }
-      }
-
-      if (artistasUnicos.size === 0) {
-        artistListDiv.innerHTML = '<p class="text-center text-gray-400 select-none">No hay artistas disponibles</p>';
-        return;
-      }
-
-      artistasUnicos.forEach((_, artista) => {
-        const btn = document.createElement("button");
-        btn.className = "artist-btn";
-        btn.textContent = artista;
-        btn.onclick = () => mostrarCancionesArtista(artista);
-        artistListDiv.appendChild(btn);
-      });
+    if (artistasUnicos.size === 0) {
+      artistListDiv.innerHTML = '<p class="text-center text-gray-400 select-none">No hay artistas disponibles</p>';
+      return;
     }
 
-    // Mostrar canciones del artista seleccionado
-    function mostrarCancionesArtista(artista) {
-      currentArtist = artista;
-      songListUl.innerHTML = "";
-      artistListDiv.innerHTML = ""; // Ocultar lista de artistas
+    artistasUnicos.forEach((_, artista) => {
+      const btn = document.createElement("button");
+      btn.className = "artist-btn";
+      btn.textContent = artista;
+      btn.onclick = () => mostrarCancionesArtista(artista);
+      artistListDiv.appendChild(btn);
+    });
+  }
 
-      // Botón para volver a la lista de artistas
-      const backBtn = document.createElement("button");
-      backBtn.textContent = "← Volver a artistas";
-      backBtn.className = "artist-btn mb-6";
-      backBtn.onclick = () => mostrarArtistas();
-      artistListDiv.appendChild(backBtn);
+  function mostrarCancionesArtista(artista) {
+    currentArtist = artista;
+    songListUl.innerHTML = "";
+    artistListDiv.innerHTML = "";
 
-      // Mostrar solo el botón de volver y canciones del artista
-      document.body.insertBefore(artistListDiv, songListUl);
+    const backBtn = document.createElement("button");
+    backBtn.textContent = "← Volver a artistas";
+    backBtn.className = "artist-btn mb-6";
+    backBtn.onclick = () => mostrarArtistas();
+    artistListDiv.appendChild(backBtn);
 
-      // Filtrar canciones del artista
-      const canciones = Object.entries(allTracks).filter(([id, track]) => track.artist === artista);
+    document.body.insertBefore(artistListDiv, songListUl);
 
-      if (canciones.length === 0) {
-        songListUl.innerHTML = '<li class="text-center text-gray-400 select-none">No hay canciones para este artista.</li>';
-        return;
-      }
+    const canciones = Object.entries(allTracks).filter(([id, track]) => track.artist === artista);
 
-      canciones.forEach(([id, track]) => {
-        const li = document.createElement("li");
-        li.className = "song-item";
+    if (canciones.length === 0) {
+      songListUl.innerHTML = '<li class="text-center text-gray-400 select-none">No hay canciones para este artista.</li>';
+      return;
+    }
 
-        const infoDiv = document.createElement("div");
-        infoDiv.className = "song-info";
+    canciones.forEach(([id, track]) => {
+      const li = document.createElement("li");
+      li.className = "song-item";
 
-        const titleSpan = document.createElement("span");
-        titleSpan.className = "song-title";
-        titleSpan.textContent = track.title || "Sin título";
+      const infoDiv = document.createElement("div");
+      infoDiv.className = "song-info";
 
-        const artistSpan = document.createElement("span");
-        artistSpan.className = "song-artist";
-        artistSpan.textContent = track.artist || "Artista desconocido";
+      const titleSpan = document.createElement("span");
+      titleSpan.className = "song-title";
+      titleSpan.textContent = track.title || "Sin título";
 
-        infoDiv.appendChild(titleSpan);
-        infoDiv.appendChild(artistSpan);
+      const artistSpan = document.createElement("span");
+      artistSpan.className = "song-artist";
+      artistSpan.textContent = track.artist || "Artista desconocido";
 
-        li.appendChild(infoDiv);
+      infoDiv.appendChild(titleSpan);
+      infoDiv.appendChild(artistSpan);
 
-        // Botón eliminar
+      li.appendChild(infoDiv);
+
+      if (isAdmin) {
         const deleteBtn = document.createElement("button");
         deleteBtn.className = "delete-btn";
         deleteBtn.title = "Eliminar canción";
@@ -225,17 +221,62 @@
           </svg>
         `;
         deleteBtn.onclick = () => eliminarCancion(id);
-
         li.appendChild(deleteBtn);
+      }
 
-        songListUl.appendChild(li);
-      });
+      songListUl.appendChild(li);
+    });
+  }
+
+  function eliminarCancion(id) {
+    if (!isAdmin) {
+      alert("No tienes permisos para eliminar canciones.");
+      return;
+    }
+    if(confirm("¿Eliminar esta canción? Esta acción no se puede deshacer.")) {
+      const trackRef = ref(db, `tracks/${id}`);
+      remove(trackRef)
+        .then(() => alert("Canción eliminada correctamente."))
+        .catch(err => alert("Error al eliminar: " + err.message));
+    }
+  }
+
+  onAuthStateChanged(auth, async (user) => {
+    currentUser = user;
+    if (!user) {
+      loginStatusDiv.textContent = "No has iniciado sesión. Por favor inicia sesión para administrar.";
+      artistListDiv.innerHTML = "";
+      songListUl.innerHTML = "";
+      return;
     }
 
+    // Verificar rol admin
+    const adminRef = ref(db, `admins/${user.uid}`);
+    try {
+      const snapshot = await get(adminRef);
+      if (snapshot.exists() && snapshot.val().role === "admin") {
+        isAdmin = true;
+        loginStatusDiv.textContent = `Hola, ${snapshot.val().name} (Administrador)`;
+      } else {
+        isAdmin = false;
+        loginStatusDiv.textContent = "No tienes permisos de administrador.";
+        artistListDiv.innerHTML = "";
+        songListUl.innerHTML = "";
+        return;
+      }
+    } catch (error) {
+      loginStatusDiv.textContent = "Error verificando permisos.";
+      console.error(error);
+      artistListDiv.innerHTML = "";
+      songListUl.innerHTML = "";
+      return;
+    }
+
+    // Escuchar canciones
+    const tracksRef = ref(db, "tracks");
     onValue(tracksRef, (snapshot) => {
       allTracks = snapshot.val() || {};
       if(currentArtist) {
-        // Si hay artista seleccionado, refrescar lista canciones
         mostrarCancionesArtista(currentArtist);
       } else {
         mostrarArtistas();
@@ -245,13 +286,11 @@
       songListUl.innerHTML = "";
       console.error("Error leyendo datos:", error);
     });
-     // Bloquear clic derecho
-  document.addEventListener('contextmenu', function (e) {
-    e.preventDefault();
   });
-
-  // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
-  document.addEventListener('keydown', function (e) {
+  
+  // Bloquear clic derecho y teclas comunes de devtools (opcional)
+  document.addEventListener('contextmenu', e => e.preventDefault());
+  document.addEventListener('keydown', e => {
     if (
       e.key === 'F12' ||
       (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
@@ -260,21 +299,7 @@
       e.preventDefault();
     }
   });
-
-  // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
-  window.oncontextmenu = function () {
-    return false;
-  };
-
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('a').forEach(el => {
-      const url = el.getAttribute('href');
-      el.removeAttribute('href');
-      el.style.cursor = 'pointer';
-      el.onclick = () => window.location.href = url;
-    });
-  });
-  </script>
+  window.oncontextmenu = () => false;
+</script>
 </body>
 </html>
