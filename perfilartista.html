@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Perfil Artista</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .carousel {
+      display: flex;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      gap: 1rem;
+      padding-bottom: 1rem;
+    }
+    .carousel::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+</head>
+<body class="bg-black text-white min-h-screen">
+
+  <header class="flex items-center gap-4 p-6 bg-gray-900 shadow-lg">
+    <img id="fotoArtista" alt="Foto Artista" class="w-24 h-24 rounded-full border-4 border-green-400 object-cover" />
+    <div class="flex items-center gap-2">
+      <h1 id="nombreArtista" class="text-4xl font-bold flex items-center gap-1"></h1>
+    </div>
+  </header>
+
+  <main class="p-6 max-w-6xl mx-auto">
+
+    <section class="mb-8">
+      <h2 class="text-2xl font-semibold mb-4">Álbumes</h2>
+      <div id="contenedorAlbums" class="carousel"></div>
+    </section>
+
+    <section class="mb-8">
+      <h2 class="text-2xl font-semibold mb-4">Canciones</h2>
+      <div id="contenedorCanciones" class="space-y-3 max-h-96 overflow-y-auto bg-gray-800 p-4 rounded"></div>
+    </section>
+
+    <section class="mb-8 text-center">
+      <h2 class="text-2xl font-semibold mb-4">Estadísticas</h2>
+      <div class="text-lg space-y-1">
+        <p><strong>Total álbumes:</strong> <span id="totalAlbums">0</span></p>
+        <p><strong>Total canciones:</strong> <span id="totalCanciones">0</span></p>
+        <p><strong>Total reproducciones aproximadas:</strong> <span id="totalReproducciones">0</span></p>
+      </div>
+    </section>
+
+  </main>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getDatabase, ref, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+      authDomain: "flixplemusic.firebaseapp.com",
+      databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+      projectId: "flixplemusic",
+      storageBucket: "flixplemusic.appspot.com",
+      messagingSenderId: "792301053512",
+      appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const urlIconoVerificado = 'https://cdn-icons-png.flaticon.com/512/11820/11820312.png';
+
+    function jsonp(url) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'cb_' + Math.random().toString(36).substring(2, 9);
+        window[callbackName] = (data) => {
+          delete window[callbackName];
+          script.remove();
+          resolve(data);
+        };
+        const script = document.createElement('script');
+        script.src = `${url}&output=jsonp&callback=${callbackName}`;
+        script.onerror = () => {
+          delete window[callbackName];
+          script.remove();
+          reject(new Error('Error al cargar JSONP'));
+        };
+        document.body.appendChild(script);
+      });
+    }
+
+    function getArtistIdFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('id');  // Debe ser el key del artista en Firebase (ejemplo: 160)
+    }
+
+    async function renderHeader(artistData) {
+      const foto = document.getElementById('fotoArtista');
+      const nombre = document.getElementById('nombreArtista');
+
+      foto.src = artistData.imagen || artistData.artist_covers || artistData.artistaCover || '';
+      foto.alt = artistData.nombre || artistData.artista || 'Artista';
+
+      nombre.textContent = artistData.nombre || artistData.artista || 'Artista';
+
+      if (artistData.verificado) {
+        const imgVerificado = document.createElement('img');
+        imgVerificado.src = urlIconoVerificado;
+        imgVerificado.alt = "Verificado";
+        imgVerificado.className = "w-6 h-6";
+        nombre.appendChild(imgVerificado);
+      }
+    }
+
+    function renderAlbums(albums) {
+      const cont = document.getElementById('contenedorAlbums');
+      cont.innerHTML = '';
+      if (albums.length === 0) {
+        cont.textContent = 'No se encontraron álbumes';
+        return;
+      }
+      albums.forEach(a => {
+        const div = document.createElement('div');
+        div.className = 'min-w-[150px] bg-gray-800 rounded overflow-hidden shadow-md cursor-pointer hover:scale-105 transition-transform duration-200';
+        div.title = a.title || a.album || a.nombre || 'Álbum';
+        div.innerHTML = `
+          <img src="${a.cover || a.imagen || ''}" alt="${a.title || a.album || 'Álbum'}" class="w-full h-32 object-cover" />
+          <div class="p-2 text-center font-semibold truncate">${a.title || a.album || a.nombre}</div>
+        `;
+        cont.appendChild(div);
+      });
+    }
+
+    function renderSongs(songs) {
+      const cont = document.getElementById('contenedorCanciones');
+      cont.innerHTML = '';
+      if (songs.length === 0) {
+        cont.textContent = 'No se encontraron canciones';
+        return;
+      }
+      songs.forEach(s => {
+        const div = document.createElement('div');
+        div.className = 'p-2 bg-gray-700 rounded flex justify-between items-center';
+        div.title = s.title || s.nombre || 'Canción';
+        div.innerHTML = `
+          <span class="truncate">${s.title || s.nombre}</span>
+          <span class="text-sm text-gray-400">${formatDuration(s.duration)}</span>
+        `;
+        cont.appendChild(div);
+      });
+    }
+
+    function formatDuration(seconds) {
+      if (!seconds) return "0:00";
+      const m = Math.floor(seconds / 60);
+      const s = seconds % 60;
+      return `${m}:${s.toString().padStart(2,'0')}`;
+    }
+
+    async function main() {
+      const artistKey = getArtistIdFromURL();
+      if (!artistKey) {
+        alert('ID de artista no especificado en URL.');
+        return;
+      }
+
+      try {
+        // Cargar datos artista desde Firebase (/artists/{id})
+        const artistSnap = await get(ref(db, `artists/${artistKey}`));
+        if (!artistSnap.exists()) {
+          alert('Artista no encontrado en Firebase.');
+          return;
+        }
+        const artistData = artistSnap.val();
+
+        await renderHeader(artistData);
+
+        // Cargar álbumes desde /albums donde artista == nombre artista (por ejemplo "Shakira")
+        const albumsQuery = query(ref(db, 'albums'), orderByChild('artista'), equalTo(artistData.nombre || artistData.artista));
+        const albumsSnap = await get(albumsQuery);
+        const albums = [];
+        if (albumsSnap.exists()) {
+          albumsSnap.forEach(childSnap => albums.push(childSnap.val()));
+        }
+        renderAlbums(albums);
+
+        // Cargar canciones desde /tracks donde artist == nombre artista
+        const tracksQuery = query(ref(db, 'tracks'), orderByChild('artist'), equalTo(artistData.nombre || artistData.artista));
+        const tracksSnap = await get(tracksQuery);
+        const tracks = [];
+        if (tracksSnap.exists()) {
+          tracksSnap.forEach(childSnap => tracks.push(childSnap.val()));
+        }
+        renderSongs(tracks);
+
+        // Deezer ID para stats: está en artistData.deezerId (número)
+        if (!artistData.deezerId) {
+          document.getElementById('totalReproducciones').textContent = 'N/A';
+          return;
+        }
+
+        // Obtener total reproducciones sumando rank de top tracks Deezer
+        const topTracksRes = await jsonp(`https://api.deezer.com/artist/${artistData.deezerId}/top?limit=100`);
+        const totalReproducciones = (topTracksRes.data || []).reduce((acc, song) => acc + (song.rank || 0), 0);
+
+        document.getElementById('totalAlbums').textContent = albums.length.toLocaleString();
+        document.getElementById('totalCanciones').textContent = tracks.length.toLocaleString();
+        document.getElementById('totalReproducciones').textContent = totalReproducciones.toLocaleString();
+
+      } catch (error) {
+        alert('Error cargando datos del artista: ' + error.message);
+        console.error(error);
+      }
+    }
+
+    window.onload = main;
+  </script>
+</body>
+</html>
