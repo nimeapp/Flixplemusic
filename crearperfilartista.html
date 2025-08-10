@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth" >
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Crear Perfil de Artista</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Ícono verificado estilo Facebook */
+    .verified-blue {
+      width: 20px; height: 20px;
+      fill: #1877f2;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
+
+  <div class="max-w-xl w-full bg-white rounded-xl shadow-lg p-6">
+    <h1 class="text-3xl font-semibold mb-6 text-center">Crear Perfil de Artista</h1>
+
+    <div class="mb-4">
+      <label for="buscar" class="block font-medium mb-2">Buscar artista:</label>
+      <input id="buscar" type="text" placeholder="Ej. Shakira" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+      <button id="btnBuscar" class="mt-3 w-full bg-blue-600 text-white font-semibold rounded px-3 py-2 hover:bg-blue-700 transition">Buscar</button>
+    </div>
+
+    <div id="result" class="mt-6"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+    // Tu configuración Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+      authDomain: "flixplemusic.firebaseapp.com",
+      databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+      projectId: "flixplemusic",
+      storageBucket: "flixplemusic.firebasestorage.app",
+      messagingSenderId: "792301053512",
+      appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const auth = getAuth(app);
+
+    const buscarInput = document.getElementById('buscar');
+    const btnBuscar = document.getElementById('btnBuscar');
+    const resultDiv = document.getElementById('result');
+
+    let currentUser = null;
+    let isAdmin = false;
+
+    // Verificamos usuario y rol admin
+    onAuthStateChanged(auth, user => {
+      if (user) {
+        currentUser = user;
+        // Checar rol admin en DB
+        get(child(ref(db), `admins/${user.uid}/role`)).then(snapshot => {
+          if(snapshot.exists() && snapshot.val() === 'admin'){
+            isAdmin = true;
+          } else {
+            alert('No tienes permisos para crear perfiles de artistas. Contacta al administrador.');
+            // Podrías redirigir al login o home
+            // window.location.href = 'login.html';
+          }
+        });
+      } else {
+        alert('Debes iniciar sesión para crear perfiles de artistas.');
+        window.location.href = 'login.html'; // Cambia según tu ruta
+      }
+    });
+
+    btnBuscar.addEventListener('click', () => {
+      const q = buscarInput.value.trim();
+      if(!q) return alert('Escribe el nombre del artista');
+
+      resultDiv.innerHTML = 'Buscando...';
+
+      // Usar proxy porque la API Deezer bloquea CORS (opcional)
+      const corsProxy = "https://cors-anywhere.herokuapp.com/";
+
+      fetch(`https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}`)
+        .then(res => res.json())
+        .then(data => {
+          if(!data.data || data.data.length === 0) {
+            resultDiv.innerHTML = '<p class="text-red-500">No se encontró ningún artista</p>';
+            return;
+          }
+          // Mostrar primer resultado
+          const artista = data.data[0];
+          mostrarFormulario(artista);
+        })
+        .catch(() => {
+          resultDiv.innerHTML = '<p class="text-red-500">Error al conectar con Deezer API</p>';
+        });
+    });
+
+    function mostrarFormulario(artista){
+      resultDiv.innerHTML = `
+        <div class="flex items-center space-x-4">
+          <img src="${artista.picture_medium}" alt="${artista.name}" class="rounded-lg w-32 h-32 object-cover shadow" />
+          <div class="flex-1">
+            <h2 class="text-2xl font-bold mb-2">${artista.name} 
+              <span id="iconVerified" class="hidden" title="Verificado">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="verified-blue inline">
+                  <path d="M22.5 12l-2.164 2.857.332 3.86-3.52 1.512-3.41-1.5-3.41 1.5-3.52-1.512.332-3.86L1.5 12l2.164-2.857-.332-3.86 3.52-1.512 3.41 1.5 3.41-1.5 3.52 1.512-.332 3.86L22.5 12zM10 15.5l6-6-1.4-1.4-4.6 4.6-2.3-2.3-1.4 1.4 3.7 3.7z"/>
+                </svg>
+              </span>
+            </h2>
+            <p class="text-gray-600">Fans: ${artista.nb_fan.toLocaleString()}</p>
+          </div>
+        </div>
+        <div class="mt-4">
+          <label class="inline-flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" id="verificado" class="form-checkbox h-5 w-5 text-blue-600" />
+            <span class="text-gray-700 select-none">Verificado</span>
+          </label>
+        </div>
+        <button id="guardarBtn" class="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded transition">Guardar perfil</button>
+      `;
+
+      const chk = document.getElementById('verificado');
+      const iconVerified = document.getElementById('iconVerified');
+
+      chk.addEventListener('change', () => {
+        iconVerified.style.display = chk.checked ? 'inline' : 'none';
+      });
+
+      document.getElementById('guardarBtn').addEventListener('click', () => {
+        if(!isAdmin){
+          alert('No tienes permisos para guardar perfiles.');
+          return;
+        }
+        guardarArtista(artista);
+      });
+    }
+
+    function guardarArtista(artista){
+      const verificado = document.getElementById('verificado').checked;
+
+      const artistaData = {
+        id: artista.id,
+        nombre: artista.name,
+        foto: artista.picture_medium,
+        fans: artista.nb_fan,
+        verificado: verificado
+      };
+
+      set(ref(db, 'artists/' + artista.id), artistaData)
+      .then(() => {
+        alert('Perfil guardado con éxito');
+        window.location.href = `perfilartista.html?id=${artista.id}`;
+      })
+      .catch((error) => {
+        alert('Error guardando perfil: ' + error.message);
+      });
+    }
+  </script>
+
+  <script>
+    lucide.createIcons();
+  </script>
+
+</body>
+</html>
