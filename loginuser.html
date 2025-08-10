@@ -74,229 +74,193 @@
   </div>
 </div>
 
-<!-- Modal para mostrar mensajes -->
-<div id="modal-msg" class="modal-bg hidden" role="alert" aria-live="assertive" aria-atomic="true" tabindex="0">
+<!-- Modal mensajes -->
+<div id="modal-msg" class="modal-bg hidden">
   <div class="bg-black border-2 borde-verde p-6 rounded-lg max-w-sm text-center morado text-lg cursor-pointer" id="modal-content"></div>
 </div>
 
+<!-- Modal recuperar contraseña -->
+<div id="modal-forgot" class="modal-bg hidden">
+  <div class="bg-black border-2 borde-verde p-6 rounded-lg max-w-sm text-center text-white">
+    <h2 class="text-xl font-bold morado mb-4">Recuperar Contraseña</h2>
+    <input id="forgot-email" type="email" placeholder="Tu correo electrónico"
+      class="w-full p-3 mb-4 rounded-lg borde-verde border bg-black text-white placeholder-gray-400 focus:outline-none" />
+    <div class="flex justify-between">
+      <button id="cancel-forgot" class="px-4 py-2 morado-bg rounded-lg font-bold hover:opacity-80">Cancelar</button>
+      <button id="send-forgot" class="px-4 py-2 morado-bg rounded-lg font-bold hover:opacity-80">Enviar</button>
+    </div>
+  </div>
+</div>
+
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
-    authDomain: "flixplemusic.firebaseapp.com",
-    databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
-    projectId: "flixplemusic",
-    storageBucket: "flixplemusic.firebasestorage.app",
-    messagingSenderId: "792301053512",
-    appId: "1:792301053512:web:13878703d081f1a7b3da7d"
-  };
+const firebaseConfig = {
+  apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+  authDomain: "flixplemusic.firebaseapp.com",
+  databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+  projectId: "flixplemusic",
+  storageBucket: "flixplemusic.firebasestorage.app",
+  messagingSenderId: "792301053512",
+  appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getDatabase(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getDatabase(app);
 
-  // Elementos DOM
-  const containerLogin = document.getElementById('container-login');
-  const containerRegister = document.getElementById('container-register');
-  const showRegister = document.getElementById('show-register');
-  const showLogin = document.getElementById('show-login');
+const containerLogin = document.getElementById('container-login');
+const containerRegister = document.getElementById('container-register');
+const showRegister = document.getElementById('show-register');
+const showLogin = document.getElementById('show-login');
+const loginEmail = document.getElementById('login-email');
+const loginPassword = document.getElementById('login-password');
+const btnLogin = document.getElementById('btn-login');
+const rememberMeCheckbox = document.getElementById('remember-me');
+const regName = document.getElementById('reg-name');
+const regEmail = document.getElementById('reg-email');
+const regPassword = document.getElementById('reg-password');
+const regPasswordConfirm = document.getElementById('reg-password-confirm');
+const btnRegister = document.getElementById('btn-register');
+const forgotPasswordLink = document.getElementById('forgot-password');
+const modalMsg = document.getElementById('modal-msg');
+const modalContent = document.getElementById('modal-content');
+const modalForgot = document.getElementById('modal-forgot');
+const forgotEmail = document.getElementById('forgot-email');
+const cancelForgot = document.getElementById('cancel-forgot');
+const sendForgot = document.getElementById('send-forgot');
 
-  const loginEmail = document.getElementById('login-email');
-  const loginPassword = document.getElementById('login-password');
-  const btnLogin = document.getElementById('btn-login');
-  const rememberMeCheckbox = document.getElementById('remember-me');
+function showModal(message) {
+  modalContent.textContent = message;
+  modalMsg.classList.remove('hidden');
+  modalMsg.addEventListener('click', () => modalMsg.classList.add('hidden'), { once: true });
+}
 
-  const regName = document.getElementById('reg-name');
-  const regEmail = document.getElementById('reg-email');
-  const regPassword = document.getElementById('reg-password');
-  const regPasswordConfirm = document.getElementById('reg-password-confirm');
-  const btnRegister = document.getElementById('btn-register');
+function showForgotModal() {
+  forgotEmail.value = '';
+  modalForgot.classList.remove('hidden');
+}
 
-  const forgotPasswordLink = document.getElementById('forgot-password');
+function hideForgotModal() {
+  modalForgot.classList.add('hidden');
+}
 
-  // Modal mensaje
-  const modalMsg = document.getElementById('modal-msg');
-  const modalContent = document.getElementById('modal-content');
+showRegister.addEventListener('click', () => {
+  containerLogin.classList.add('hidden');
+  containerRegister.classList.remove('hidden');
+});
+showLogin.addEventListener('click', () => {
+  containerRegister.classList.add('hidden');
+  containerLogin.classList.remove('hidden');
+});
 
-  // Función para mostrar modal con mensaje
-  function showModal(message) {
-    modalContent.textContent = message;
-    modalMsg.classList.remove('hidden');
-    modalMsg.focus();
+function validarPassword(pwd) {
+  return /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/.test(pwd);
+}
 
-    function closeModal() {
-      modalMsg.classList.add('hidden');
-      modalMsg.removeEventListener('click', closeModal);
-      clearTimeout(timeoutId);
-    }
-
-    modalMsg.addEventListener('click', closeModal);
-    // Cerrar modal automáticamente después de 8 segundos
-    const timeoutId = setTimeout(() => {
-      closeModal();
-    }, 8000);
+async function sendPasswordReset(email) {
+  try {
+    await sendPasswordResetEmail(auth, email, { url: 'https://nimeapp.github.io/Flixplemusic/reset_password.html' });
+    showModal('Se ha enviado un enlace para cambiar tu contraseña.');
+  } catch {
+    showModal('Correo no válido o no registrado.');
   }
+}
 
-  // Cambiar entre login y registro
-  showRegister.addEventListener('click', () => {
-    containerLogin.classList.add('hidden');
-    containerRegister.classList.remove('hidden');
-    clearFields();
-  });
+forgotPasswordLink.addEventListener('click', showForgotModal);
+cancelForgot.addEventListener('click', hideForgotModal);
+sendForgot.addEventListener('click', () => {
+  const email = forgotEmail.value.trim();
+  if (email) {
+    sendPasswordReset(email);
+    hideForgotModal();
+  } else {
+    showModal('Ingresa un correo válido.');
+  }
+});
 
-  showLogin.addEventListener('click', () => {
+function togglePassword(input, toggleId) {
+  const iconSpan = document.getElementById(toggleId);
+  const icon = iconSpan.querySelector('i');
+  if (input.type === "password") {
+    input.type = "text";
+    icon.setAttribute('data-lucide', 'eye-off');
+  } else {
+    input.type = "password";
+    icon.setAttribute('data-lucide', 'eye');
+  }
+  lucide.createIcons();
+}
+
+document.getElementById('toggle-login-password').addEventListener('click', () => {
+  togglePassword(loginPassword, 'toggle-login-password');
+});
+document.getElementById('toggle-reg-password').addEventListener('click', () => {
+  togglePassword(regPassword, 'toggle-reg-password');
+});
+document.getElementById('toggle-reg-password-confirm').addEventListener('click', () => {
+  togglePassword(regPasswordConfirm, 'toggle-reg-password-confirm');
+});
+
+btnRegister.addEventListener('click', async () => {
+  if (!regName.value || !regEmail.value || !regPassword.value || !regPasswordConfirm.value) {
+    showModal('Completa todos los campos.');
+    return;
+  }
+  if (regPassword.value !== regPasswordConfirm.value) {
+    showModal('Las contraseñas no coinciden.');
+    return;
+  }
+  if (!validarPassword(regPassword.value)) {
+    showModal('La contraseña debe tener al menos 8 caracteres, mayúscula, número y símbolo.');
+    return;
+  }
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, regEmail.value.trim(), regPassword.value);
+    await set(ref(db, 'users/' + userCredential.user.uid), { name: regName.value.trim(), email: regEmail.value.trim(), createdAt: new Date().toISOString() });
+    await sendEmailVerification(userCredential.user);
+    showModal('Cuenta creada. Verifica tu correo.');
     containerRegister.classList.add('hidden');
     containerLogin.classList.remove('hidden');
-    clearFields();
-  });
-
-  // Limpiar campos
-  function clearFields() {
-    loginEmail.value = '';
-    loginPassword.value = '';
-    regName.value = '';
-    regEmail.value = '';
-    regPassword.value = '';
-    regPasswordConfirm.value = '';
+  } catch {
+    showModal('El correo ya está registrado o es inválido.');
   }
+});
 
-  // Validar contraseña fuerte
-  function validarPassword(pwd) {
-    const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
-    return regex.test(pwd);
+btnLogin.addEventListener('click', async () => {
+  if (!loginEmail.value || !loginPassword.value) {
+    showModal('Ingresa correo y contraseña.');
+    return;
   }
-
-  // Enviar email para reset de contraseña
-  async function sendPasswordReset(email) {
-    try {
-      await sendPasswordResetEmail(auth, email, {
-        url: 'https://nimeapp.github.io/Flixplemusic/reset_password.html'
-      });
-      showModal('Se ha enviado un enlace para cambiar tu contraseña, revisa tu correo.');
-    } catch(error) {
-      showModal('Error al enviar correo: ' + error.message);
-    }
-  }
-
-  forgotPasswordLink.addEventListener('click', () => {
-    // Cambiado prompt por modal personalizado para mejor UI
-    const email = prompt('Ingresa tu correo para enviar el enlace de recuperación:');
-    if(email && email.trim() !== '') {
-      sendPasswordReset(email.trim());
-    }
-  });
-
-  // Toggle visibilidad contraseña
-  function togglePassword(input, toggleId) {
-    const iconSpan = document.getElementById(toggleId);
-    const icon = iconSpan.querySelector('i');
-    if (input.type === "password") {
-      input.type = "text";
-      icon.setAttribute('data-lucide', 'eye-off');
+  try {
+    await signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPassword.value);
+    if (rememberMeCheckbox.checked) {
+      localStorage.setItem('rememberMe', 'true');
+      localStorage.setItem('email', loginEmail.value.trim());
+      localStorage.setItem('password', loginPassword.value);
     } else {
-      input.type = "password";
-      icon.setAttribute('data-lucide', 'eye');
+      localStorage.clear();
     }
-    lucide.createIcons();
+    window.location.href = 'https://nimeapp.github.io/Flixplemusic/index.html';
+  } catch {
+    showModal('Correo o contraseña incorrectos.');
   }
+});
 
-  document.getElementById('toggle-login-password').addEventListener('click', () => {
-    togglePassword(loginPassword, 'toggle-login-password');
-  });
-  document.getElementById('toggle-reg-password').addEventListener('click', () => {
-    togglePassword(regPassword, 'toggle-reg-password');
-  });
-  document.getElementById('toggle-reg-password-confirm').addEventListener('click', () => {
-    togglePassword(regPasswordConfirm, 'toggle-reg-password-confirm');
-  });
-
-  // Registro
-  btnRegister.addEventListener('click', async () => {
-    const name = regName.value.trim();
-    const email = regEmail.value.trim();
-    const pwd = regPassword.value;
-    const pwdConf = regPasswordConfirm.value;
-
-    if (!name || !email || !pwd || !pwdConf) {
-      showModal('Completa todos los campos');
-      return;
-    }
-    if (pwd !== pwdConf) {
-      showModal('Las contraseñas no coinciden');
-      return;
-    }
-    if (!validarPassword(pwd)) {
-      showModal('La contraseña debe tener al menos 8 caracteres, una letra mayúscula, un número y un carácter especial.');
-      return;
-    }
-
+window.addEventListener('load', async () => {
+  if (localStorage.getItem('rememberMe')) {
     try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, pwd);
-      await set(ref(db, 'users/' + userCredential.user.uid), {
-        name,
-        email,
-        createdAt: new Date().toISOString()
-      });
-      await sendEmailVerification(userCredential.user);
-      showModal('Cuenta creada. Verifica tu correo, revisa también la carpeta spam.');
-      containerRegister.classList.add('hidden');
-      containerLogin.classList.remove('hidden');
-      clearFields();
-    } catch (error) {
-      showModal('Error: ' + error.message);
-    }
-  });
-
-  // Login
-  btnLogin.addEventListener('click', async () => {
-    const email = loginEmail.value.trim();
-    const pwd = loginPassword.value;
-
-    if (!email || !pwd) {
-      showModal('Ingresa correo y contraseña');
-      return;
-    }
-
-    try {
-      await signInWithEmailAndPassword(auth, email, pwd);
-
-      if(rememberMeCheckbox.checked) {
-        localStorage.setItem('rememberMe', 'true');
-        localStorage.setItem('email', email);
-        localStorage.setItem('password', pwd);
-      } else {
-        localStorage.removeItem('rememberMe');
-        localStorage.removeItem('email');
-        localStorage.removeItem('password');
-      }
-
+      await signInWithEmailAndPassword(auth, localStorage.getItem('email'), localStorage.getItem('password'));
       window.location.href = 'https://nimeapp.github.io/Flixplemusic/index.html';
-    } catch (error) {
-      showModal('Error: ' + error.message);
+    } catch {
+      localStorage.clear();
     }
-  });
+  }
+});
 
-  // Login automático si recordado
-  window.addEventListener('load', async () => {
-    const remember = localStorage.getItem('rememberMe');
-    const savedEmail = localStorage.getItem('email');
-    const savedPassword = localStorage.getItem('password');
-    if (remember && savedEmail && savedPassword) {
-      try {
-        await signInWithEmailAndPassword(auth, savedEmail, savedPassword);
-        window.location.href = 'https://nimeapp.github.io/Flixplemusic/index.html';
-      } catch {
-        localStorage.removeItem('rememberMe');
-        localStorage.removeItem('email');
-        localStorage.removeItem('password');
-      }
-    }
-  });
-
-  lucide.createIcons();
+lucide.createIcons();
 </script>
 
 </body>
