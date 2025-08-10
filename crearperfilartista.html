@@ -1,164 +1,208 @@
 <!DOCTYPE html>
-<html lang="es" class="scroll-smooth" >
+<html lang="es" >
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Crear Perfil de Artista</title>
+  <title>Crear Perfil Artista</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <style>
-    .verified-blue {
-      width: 20px; height: 20px;
-      fill: #1877f2;
-      vertical-align: middle;
-    }
-  </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center p-6">
+<body class="bg-black text-white min-h-screen flex items-center justify-center p-4">
 
-  <div class="max-w-xl w-full bg-white rounded-xl shadow-lg p-6">
-    <h1 class="text-3xl font-semibold mb-6 text-center">Crear Perfil de Artista</h1>
+  <main class="bg-gray-900 rounded-lg p-6 max-w-lg w-full">
+    <h1 class="text-3xl font-bold mb-6 text-center">Crear Perfil Artista</h1>
 
-    <div class="mb-4">
-      <label for="buscar" class="block font-medium mb-2">Buscar artista:</label>
-      <input id="buscar" type="text" placeholder="Ej. Shakira" class="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-      <button id="btnBuscar" class="mt-3 w-full bg-blue-600 text-white font-semibold rounded px-3 py-2 hover:bg-blue-700 transition">Buscar</button>
-    </div>
+    <form id="formPerfil" class="space-y-4">
 
-    <div id="result" class="mt-6"></div>
-  </div>
+      <div>
+        <label for="nombreArtista" class="block mb-1 font-semibold">Nombre del artista (Buscar en Deezer)</label>
+        <input id="nombreArtista" name="nombreArtista" type="text" required
+          placeholder="Ej: Coldplay" 
+          class="w-full p-2 rounded text-black" />
+      </div>
 
+      <button id="btnBuscar" type="button" 
+        class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded font-semibold">
+        Buscar Artista
+      </button>
+
+      <div id="infoArtista" class="mt-4 hidden bg-gray-800 p-4 rounded flex items-center gap-4">
+        <img id="imgArtista" src="" alt="Foto artista" 
+          class="w-20 h-20 rounded-full border-4 border-green-400 object-cover" />
+        <div>
+          <h2 id="nombreEncontrado" class="text-xl font-bold flex items-center gap-1 select-none">
+            <!-- Aquí va el nombre y el icono de verificado -->
+          </h2>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 mt-2">
+        <input type="checkbox" id="verificado" />
+        <label for="verificado" class="select-none">Artista Verificado</label>
+      </div>
+
+      <button type="submit" 
+        class="w-full bg-green-600 hover:bg-green-700 py-2 rounded font-semibold mt-4">
+        Guardar Perfil
+      </button>
+    </form>
+
+    <div id="mensaje" class="mt-4 text-center font-semibold"></div>
+  </main>
+
+  <!-- Firebase y scripts -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-    import { getDatabase, ref, set, get, child } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
       authDomain: "flixplemusic.firebaseapp.com",
       databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
       projectId: "flixplemusic",
-      storageBucket: "flixplemusic.firebasestorage.app",
+      storageBucket: "flixplemusic.appspot.com",
       messagingSenderId: "792301053512",
       appId: "1:792301053512:web:13878703d081f1a7b3da7d"
     };
+
     const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
     const auth = getAuth(app);
+    const db = getDatabase(app);
 
-    const buscarInput = document.getElementById('buscar');
-    const btnBuscar = document.getElementById('btnBuscar');
-    const resultDiv = document.getElementById('result');
-
-    let currentUser = null;
-    let isAdmin = false;
-
-    onAuthStateChanged(auth, user => {
-      if (user) {
-        currentUser = user;
-        get(child(ref(db), `admins/${user.uid}/role`)).then(snapshot => {
-          if(snapshot.exists() && snapshot.val() === 'admin'){
-            isAdmin = true;
-          } else {
-            alert('No tienes permisos para crear perfiles de artistas. Contacta al administrador.');
-          }
-        });
-      } else {
-        alert('Debes iniciar sesión para crear perfiles de artistas.');
-        window.location.href = 'login.html';
-      }
-    });
-
-    btnBuscar.addEventListener('click', () => {
-      const q = buscarInput.value.trim();
-      if(!q) return alert('Escribe el nombre del artista');
-
-      resultDiv.innerHTML = 'Buscando...';
-
-      // Usamos proxy allorigins.win para evitar CORS
-      const urlDeezer = `https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}`;
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(urlDeezer)}`;
-
-      fetch(proxyUrl)
-        .then(res => res.json())
-        .then(data => {
-          if(!data.data || data.data.length === 0) {
-            resultDiv.innerHTML = '<p class="text-red-500">No se encontró ningún artista</p>';
-            return;
-          }
-          const artista = data.data[0];
-          mostrarFormulario(artista);
-        })
-        .catch(() => {
-          resultDiv.innerHTML = '<p class="text-red-500">Error al conectar con Deezer API</p>';
-        });
-    });
-
-    function mostrarFormulario(artista){
-      resultDiv.innerHTML = `
-        <div class="flex items-center space-x-4">
-          <img src="${artista.picture_medium}" alt="${artista.name}" class="rounded-lg w-32 h-32 object-cover shadow" />
-          <div class="flex-1">
-            <h2 class="text-2xl font-bold mb-2">${artista.name} 
-              <span id="iconVerified" class="hidden" title="Verificado">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="verified-blue inline">
-                  <path d="M22.5 12l-2.164 2.857.332 3.86-3.52 1.512-3.41-1.5-3.41 1.5-3.52-1.512.332-3.86L1.5 12l2.164-2.857-.332-3.86 3.52-1.512 3.41 1.5 3.41-1.5 3.52 1.512-.332 3.86L22.5 12zM10 15.5l6-6-1.4-1.4-4.6 4.6-2.3-2.3-1.4 1.4 3.7 3.7z"/>
-                </svg>
-              </span>
-            </h2>
-            <p class="text-gray-600">Fans: ${artista.nb_fan.toLocaleString()}</p>
-          </div>
-        </div>
-        <div class="mt-4">
-          <label class="inline-flex items-center space-x-2 cursor-pointer">
-            <input type="checkbox" id="verificado" class="form-checkbox h-5 w-5 text-blue-600" />
-            <span class="text-gray-700 select-none">Verificado</span>
-          </label>
-        </div>
-        <button id="guardarBtn" class="mt-6 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded transition">Guardar perfil</button>
-      `;
-
-      const chk = document.getElementById('verificado');
-      const iconVerified = document.getElementById('iconVerified');
-
-      chk.addEventListener('change', () => {
-        iconVerified.style.display = chk.checked ? 'inline' : 'none';
-      });
-
-      document.getElementById('guardarBtn').addEventListener('click', () => {
-        if(!isAdmin){
-          alert('No tienes permisos para guardar perfiles.');
-          return;
-        }
-        guardarArtista(artista);
+    // JSONP Deezer
+    function jsonp(url) {
+      return new Promise((resolve, reject) => {
+        const callbackName = 'cb_' + Math.random().toString(36).substring(2, 9);
+        window[callbackName] = (data) => {
+          delete window[callbackName];
+          script.remove();
+          resolve(data);
+        };
+        const script = document.createElement('script');
+        script.src = `${url}&output=jsonp&callback=${callbackName}`;
+        script.onerror = () => {
+          delete window[callbackName];
+          script.remove();
+          reject(new Error('Error al cargar JSONP'));
+        };
+        document.body.appendChild(script);
       });
     }
 
-    function guardarArtista(artista){
-      const verificado = document.getElementById('verificado').checked;
+    async function buscarArtista(nombre) {
+      if (!nombre) throw new Error('Nombre de artista requerido');
+      const url = `https://api.deezer.com/search/artist?q=${encodeURIComponent(nombre)}`;
+      const res = await jsonp(url);
+      if (!res.data || !res.data.length) throw new Error('Artista no encontrado');
+      return res.data[0];
+    }
 
-      const artistaData = {
-        id: artista.id,
-        nombre: artista.name,
-        foto: artista.picture_medium,
-        fans: artista.nb_fan,
-        verificado: verificado
+    const inputNombre = document.getElementById('nombreArtista');
+    const btnBuscar = document.getElementById('btnBuscar');
+    const infoArtista = document.getElementById('infoArtista');
+    const imgArtista = document.getElementById('imgArtista');
+    const nombreEncontrado = document.getElementById('nombreEncontrado');
+    const checkboxVerificado = document.getElementById('verificado');
+    const mensaje = document.getElementById('mensaje');
+    const formPerfil = document.getElementById('formPerfil');
+
+    let artistaActual = null;
+
+    // URL icono verificado azul Facebook (tamaño 20x20 px)
+    const urlIconoVerificado = 'https://cdn-icons-png.flaticon.com/512/11820/11820312.png';
+
+    btnBuscar.onclick = async () => {
+      mensaje.textContent = '';
+      infoArtista.classList.add('hidden');
+      nombreEncontrado.innerHTML = '';
+      checkboxVerificado.checked = false;
+
+      const nombre = inputNombre.value.trim();
+      if (!nombre) {
+        mensaje.textContent = 'Escribe el nombre de un artista';
+        return;
+      }
+      mensaje.textContent = 'Buscando artista...';
+
+      try {
+        const artista = await buscarArtista(nombre);
+        artistaActual = artista;
+        imgArtista.src = artista.picture_medium;
+        imgArtista.alt = artista.name;
+
+        actualizarNombreConVerificado();
+
+        infoArtista.classList.remove('hidden');
+        mensaje.textContent = '';
+      } catch (e) {
+        artistaActual = null;
+        mensaje.textContent = e.message;
+      }
+    };
+
+    function actualizarNombreConVerificado() {
+      if (!artistaActual) return;
+      nombreEncontrado.innerHTML = '';
+
+      const spanNombre = document.createElement('span');
+      spanNombre.textContent = artistaActual.name;
+
+      nombreEncontrado.appendChild(spanNombre);
+
+      if (checkboxVerificado.checked) {
+        const imgVerificado = document.createElement('img');
+        imgVerificado.src = urlIconoVerificado;
+        imgVerificado.alt = 'Verificado';
+        imgVerificado.className = 'w-5 h-5';
+        imgVerificado.style.marginLeft = '4px';
+        nombreEncontrado.appendChild(imgVerificado);
+      }
+    }
+
+    checkboxVerificado.addEventListener('change', () => {
+      actualizarNombreConVerificado();
+    });
+
+    formPerfil.onsubmit = async (e) => {
+      e.preventDefault();
+      mensaje.textContent = '';
+
+      if (!artistaActual) {
+        mensaje.textContent = 'Busca y selecciona un artista primero';
+        return;
+      }
+
+      const user = auth.currentUser;
+      if (!user) {
+        mensaje.textContent = 'Debes iniciar sesión para guardar el perfil';
+        return;
+      }
+
+      const perfil = {
+        deezerId: artistaActual.id,
+        nombre: artistaActual.name,
+        imagen: artistaActual.picture_medium,
+        verificado: checkboxVerificado.checked,
+        creadoPor: user.uid,
+        creadoEn: new Date().toISOString()
       };
 
-      set(ref(db, 'artists/' + artista.id), artistaData)
-      .then(() => {
-        alert('Perfil guardado con éxito');
-        window.location.href = `perfilartista.html?id=${artista.id}`;
-      })
-      .catch((error) => {
-        alert('Error guardando perfil: ' + error.message);
-      });
-    }
-  </script>
+      try {
+        await set(ref(db, `artist_profiles/${perfil.deezerId}`), perfil);
+        mensaje.textContent = 'Perfil guardado con éxito ✅';
+      } catch (error) {
+        console.error(error);
+        mensaje.textContent = 'Error al guardar perfil';
+      }
+    };
 
-  <script>
-    lucide.createIcons();
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        mensaje.textContent = `Usuario autenticado: ${user.email || user.uid}`;
+      } else {
+        mensaje.textContent = 'Debes iniciar sesión para crear perfiles';
+      }
+    });
   </script>
-
 </body>
 </html>
