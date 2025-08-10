@@ -292,7 +292,7 @@
           profileImage.src = currentUserData.profileImage;
         }
       } else {
-        window.location.href = 'go:login';
+        window.location.href = 'https://nimeapp.github.io/Flixplemusic/login.html';
       }
       window.lucide.replace();
     });
@@ -310,7 +310,7 @@
     logoutBtn.addEventListener('click', async () => {
       try {
         await signOut(auth);
-        window.location.href = 'go:login';
+        window.location.href = 'https://nimeapp.github.io/Flixplemusic/login.html';
       } catch (error) {
         errorMsg.textContent = 'Error al cerrar sesión: ' + error.message;
       }
