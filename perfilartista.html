@@ -88,10 +88,15 @@
       });
     }
 
-    // Obtiene el parámetro id de la URL (?id=)
-    function getArtistIdFromURL() {
+    // EXTRAER y limpiar nombre del artista del parámetro "nombre"
+    function getNombreArtistaFromURL() {
       const params = new URLSearchParams(window.location.search);
-      return params.get('id');
+      let nombre = params.get('nombre') || '';
+      // Quitar el prefijo "$delartista/" si existe
+      if (nombre.startsWith('$delartista/')) {
+        nombre = nombre.substring('$delartista/'.length);
+      }
+      return decodeURIComponent(nombre);
     }
 
     // Renderiza header con foto, nombre y verificado
@@ -160,26 +165,31 @@
       return `${m}:${s.toString().padStart(2,'0')}`;
     }
 
-    // Función principal
     async function main() {
-      const artistId = getArtistIdFromURL();
-      if (!artistId) {
-        alert('No se proporcionó el ID del artista en la URL');
+      const nombreArtista = getNombreArtistaFromURL();
+      if (!nombreArtista) {
+        alert('No se proporcionó el nombre del artista en la URL');
         return;
       }
 
       try {
-        // Cargar datos del artista
-        const artistSnap = await get(ref(db, `artists/${artistId}`));
-        if (!artistSnap.exists()) {
+        // Buscar el artista en Firebase artists, buscando por el campo "nombre" (indexado)
+        const artistsRef = ref(db, 'artists');
+        const q = query(artistsRef, orderByChild('nombre'), equalTo(nombreArtista));
+        const snapshot = await get(q);
+
+        if (!snapshot.exists()) {
           alert('Artista no encontrado en la base de datos');
           return;
         }
-        const artistData = artistSnap.val();
+
+        // Firebase devuelve un objeto con keys, tomamos el primero
+        const artistKey = Object.keys(snapshot.val())[0];
+        const artistData = snapshot.val()[artistKey];
 
         renderHeader(artistData);
 
-        // Cargar álbumes donde artista == artistData.nombre (campo artista en tu BD es "artista")
+        // Cargar álbumes donde artista == artistData.nombre (campo "artista" en albums)
         const albumsQuery = query(ref(db, 'albums'), orderByChild('artista'), equalTo(artistData.nombre));
         const albumsSnap = await get(albumsQuery);
         const albums = [];
@@ -188,7 +198,7 @@
         }
         renderAlbums(albums);
 
-        // Cargar canciones donde artist == artistData.nombre
+        // Cargar canciones donde artist == artistData.nombre (campo "artist" en tracks)
         const tracksQuery = query(ref(db, 'tracks'), orderByChild('artist'), equalTo(artistData.nombre));
         const tracksSnap = await get(tracksQuery);
         const tracks = [];
