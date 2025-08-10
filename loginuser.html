@@ -74,25 +74,9 @@
   </div>
 </div>
 
-<!-- Modal error contraseña -->
-<div id="modal-error" class="modal-bg hidden" role="alert" aria-live="assertive" aria-atomic="true">
-  <div class="bg-black border-2 borde-verde p-6 rounded-lg max-w-sm text-center morado text-lg">
-    <p>La contraseña debe tener al menos 8 caracteres, una letra mayúscula, un número y un carácter especial.</p>
-  </div>
-</div>
-
-<!-- Modal verificar correo -->
-<div id="modal-verify" class="modal-bg hidden" role="alert" aria-live="assertive" aria-atomic="true" tabindex="0">
-  <div class="bg-black border-2 borde-verde p-6 rounded-lg max-w-sm text-center morado text-lg">
-    <p>Verifica tu correo, revisa también tu carpeta spam.</p>
-  </div>
-</div>
-
-<!-- Modal email enviado para reset -->
-<div id="modal-reset-sent" class="modal-bg hidden" role="alert" aria-live="assertive" aria-atomic="true" tabindex="0">
-  <div class="bg-black border-2 borde-verde p-6 rounded-lg max-w-sm text-center morado text-lg">
-    <p>Se ha enviado un enlace para cambiar tu contraseña, revisa tu correo.</p>
-  </div>
+<!-- Modal para mostrar mensajes -->
+<div id="modal-msg" class="modal-bg hidden" role="alert" aria-live="assertive" aria-atomic="true" tabindex="0">
+  <div class="bg-black border-2 borde-verde p-6 rounded-lg max-w-sm text-center morado text-lg" id="modal-content"></div>
 </div>
 
 <script type="module">
@@ -114,6 +98,7 @@
   const auth = getAuth(app);
   const db = getDatabase(app);
 
+  // Elementos DOM
   const containerLogin = document.getElementById('container-login');
   const containerRegister = document.getElementById('container-register');
   const showRegister = document.getElementById('show-register');
@@ -130,12 +115,31 @@
   const regPasswordConfirm = document.getElementById('reg-password-confirm');
   const btnRegister = document.getElementById('btn-register');
 
-  const modalError = document.getElementById('modal-error');
-  const modalVerify = document.getElementById('modal-verify');
-  const modalResetSent = document.getElementById('modal-reset-sent');
   const forgotPasswordLink = document.getElementById('forgot-password');
 
-  // Switch containers
+  // Modal mensaje
+  const modalMsg = document.getElementById('modal-msg');
+  const modalContent = document.getElementById('modal-content');
+
+  // Funciones para modales
+  function showModal(message) {
+    modalContent.textContent = message;
+    modalMsg.classList.remove('hidden');
+    modalMsg.focus();
+
+    function closeModal() {
+      modalMsg.classList.add('hidden');
+      modalMsg.removeEventListener('click', closeModal);
+      clearTimeout(timeoutId);
+    }
+
+    modalMsg.addEventListener('click', closeModal);
+    const timeoutId = setTimeout(() => {
+      closeModal();
+    }, 8000);
+  }
+
+  // Cambiar entre login y registro
   showRegister.addEventListener('click', () => {
     containerLogin.classList.add('hidden');
     containerRegister.classList.remove('hidden');
@@ -148,13 +152,7 @@
     clearFields();
   });
 
-  forgotPasswordLink.addEventListener('click', () => {
-    const email = prompt('Ingresa tu correo para enviar el enlace de recuperación:');
-    if(email && email.trim() !== '') {
-      sendPasswordReset(email.trim());
-    }
-  });
-
+  // Limpiar campos
   function clearFields() {
     loginEmail.value = '';
     loginPassword.value = '';
@@ -164,60 +162,33 @@
     regPasswordConfirm.value = '';
   }
 
+  // Validar contraseña fuerte
   function validarPassword(pwd) {
     const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
     return regex.test(pwd);
   }
 
-  function showModal(modal) {
-    modal.classList.remove('hidden');
-    modal.focus();
-    function closeModal() {
-      modal.classList.add('hidden');
-      modal.removeEventListener('click', closeModal);
-      clearTimeout(timeoutId);
-    }
-    modal.addEventListener('click', closeModal);
-    const timeoutId = setTimeout(closeModal, 10000);
-  }
-
-  function showModalError() {
-    showModal(modalError);
-  }
-
-  function showModalVerify() {
-    showModal(modalVerify);
-    containerRegister.classList.add('hidden');
-    containerLogin.classList.remove('hidden');
-    clearFields();
-  }
-
-  function showModalResetSent() {
-    showModal(modalResetSent);
-  }
-
+  // Enviar email para reset de contraseña
   async function sendPasswordReset(email) {
     try {
       await sendPasswordResetEmail(auth, email, {
         url: 'https://nimeapp.github.io/Flixplemusic/reset_password.html'
       });
-      showModalResetSent();
+      showModal('Se ha enviado un enlace para cambiar tu contraseña, revisa tu correo.');
     } catch(error) {
-      alert('Error al enviar correo: ' + error.message);
+      showModal('Error al enviar correo: ' + error.message);
     }
   }
 
-  // Toggle password visibility
-  document.getElementById('toggle-login-password').addEventListener('click', () => {
-    togglePassword(loginPassword, 'toggle-login-password');
-  });
-  document.getElementById('toggle-reg-password').addEventListener('click', () => {
-    togglePassword(regPassword, 'toggle-reg-password');
-  });
-  document.getElementById('toggle-reg-password-confirm').addEventListener('click', () => {
-    togglePassword(regPasswordConfirm, 'toggle-reg-password-confirm');
+  forgotPasswordLink.addEventListener('click', () => {
+    // Cambiado prompt por modal personalizado para mejor UI
+    const email = prompt('Ingresa tu correo para enviar el enlace de recuperación:');
+    if(email && email.trim() !== '') {
+      sendPasswordReset(email.trim());
+    }
   });
 
+  // Toggle visibilidad contraseña
   function togglePassword(input, toggleId) {
     const iconSpan = document.getElementById(toggleId);
     const icon = iconSpan.querySelector('i');
@@ -231,6 +202,16 @@
     lucide.createIcons();
   }
 
+  document.getElementById('toggle-login-password').addEventListener('click', () => {
+    togglePassword(loginPassword, 'toggle-login-password');
+  });
+  document.getElementById('toggle-reg-password').addEventListener('click', () => {
+    togglePassword(regPassword, 'toggle-reg-password');
+  });
+  document.getElementById('toggle-reg-password-confirm').addEventListener('click', () => {
+    togglePassword(regPasswordConfirm, 'toggle-reg-password-confirm');
+  });
+
   // Registro
   btnRegister.addEventListener('click', async () => {
     const name = regName.value.trim();
@@ -239,15 +220,15 @@
     const pwdConf = regPasswordConfirm.value;
 
     if (!name || !email || !pwd || !pwdConf) {
-      alert('Completa todos los campos');
+      showModal('Completa todos los campos');
       return;
     }
     if (pwd !== pwdConf) {
-      alert('Las contraseñas no coinciden');
+      showModal('Las contraseñas no coinciden');
       return;
     }
     if (!validarPassword(pwd)) {
-      showModalError();
+      showModal('La contraseña debe tener al menos 8 caracteres, una letra mayúscula, un número y un carácter especial.');
       return;
     }
 
@@ -259,9 +240,12 @@
         createdAt: new Date().toISOString()
       });
       await sendEmailVerification(userCredential.user);
-      showModalVerify();
+      showModal('Cuenta creada. Verifica tu correo, revisa también la carpeta spam.');
+      containerRegister.classList.add('hidden');
+      containerLogin.classList.remove('hidden');
+      clearFields();
     } catch (error) {
-      alert('Error: ' + error.message);
+      showModal('Error: ' + error.message);
     }
   });
 
@@ -271,7 +255,7 @@
     const pwd = loginPassword.value;
 
     if (!email || !pwd) {
-      alert('Ingresa correo y contraseña');
+      showModal('Ingresa correo y contraseña');
       return;
     }
 
@@ -290,7 +274,7 @@
 
       window.location.href = 'https://nimeapp.github.io/Flixplemusic/index.html';
     } catch (error) {
-      alert('Error: ' + error.message);
+      showModal('Error: ' + error.message);
     }
   });
 
