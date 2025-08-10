@@ -117,7 +117,7 @@
         const snapshot = await get(ref(database, 'admins/' + currentUser.uid + '/profileImage'));
         if (snapshot.exists() && snapshot.val()) {
           // Ya tiene imagen, redirigir directo
-          window.location.href = 'go:panel';
+          window.location.href = 'https://nimeapp.github.io/Flixplemusic/panel.html';
         } else {
           // Mostrar formulario para agregar imagen
           container.style.display = 'block';
@@ -128,7 +128,7 @@
       }
     } else {
       // No autenticado, redirigir a login admin
-      window.location.href = 'go:admin';
+      window.location.href = 'https://nimeapp.github.io/Flixplemusic/login.html';
     }
   });
 
@@ -163,7 +163,7 @@
       await set(ref(database, 'admins/' + currentUser.uid + '/profileImage'), url);
       successMsg.textContent = 'Imagen guardada correctamente. Redirigiendo...';
       setTimeout(() => {
-        window.location.href = 'go:panel';
+        window.location.href = 'https://nimeapp.github.io/Flixplemusic/panel.html';
       }, 1500);
     } catch (error) {
       errorMsg.textContent = 'Error al guardar la imagen: ' + error.message;
