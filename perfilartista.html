@@ -5,7 +5,6 @@
   <title>Perfil Artista</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     body {
       background: black;
@@ -25,7 +24,7 @@
       border-radius: 9999px;
       width: 96px;
       height: 96px;
-      border: 4px solid #22c55e; /* borde verde claro */
+      border: 4px solid #22c55e;
       object-fit: cover;
     }
     .artist-name-container {
@@ -33,7 +32,7 @@
       align-items: center;
       gap: 0.3rem;
       font-weight: 700;
-      font-size: 1.5rem; /* nombre más chico */
+      font-size: 1.5rem;
       user-select: text;
     }
     #verifiedIcon {
@@ -62,7 +61,7 @@
       background: #27272a;
       border-radius: 0.5rem;
       padding: 0.5rem;
-      min-width: 110px; /* Álbumes más chicos */
+      min-width: 110px;
       cursor: pointer;
       transition: transform 0.2s;
       user-select: none;
@@ -142,12 +141,6 @@
       document.getElementById('tracksContainer').textContent = 'Error al cargar canciones.';
     }
 
-    // Función para simular reproducción - adáptala a tu reproductor
-    function reproducir(item, tipo) {
-      alert(`Reproducir ${tipo}: ${item.title || item.album || item.nombre}`);
-      // Aquí puedes poner la lógica para reproducir canción o álbum
-    }
-
     async function main() {
       const nombreArtista = getNombreArtistaFromURL();
       if (!nombreArtista) {
@@ -170,7 +163,6 @@
         const artistKey = Object.keys(artists)[0];
         const artist = artists[artistKey];
 
-        // Mostrar datos artista
         document.getElementById('artistImage').src = artist.imagen || 'https://via.placeholder.com/96';
         document.getElementById('artistName').textContent = artist.nombre || 'Artista';
         if (artist.verificado) {
@@ -179,54 +171,95 @@
           document.getElementById('verifiedIcon').style.display = 'none';
         }
 
-        // Cargar álbumes donde "artista" == nombreArtista
+        // Cargar álbumes y obtener el playlistId (ID de playlist)
         const albumsRef = ref(db, 'albums');
         const albumsQuery = query(albumsRef, orderByChild('artista'), equalTo(nombreArtista));
         const albumsSnap = await get(albumsQuery);
         const albumsContainer = document.getElementById('albumsContainer');
         albumsContainer.innerHTML = '';
         let albums = [];
+
         if (albumsSnap.exists()) {
-          albums = [];
           albumsSnap.forEach(childSnap => {
-            albums.push(childSnap.val());
+            const albumData = childSnap.val();
+            albumData.key = childSnap.key; // ID del álbum en Firebase
+            albums.push(albumData);
           });
-          albums.forEach(album => {
+
+          // Por cada álbum, buscamos playlist relacionado para obtener playlistId
+          for (const album of albums) {
+            // Busca la playlist cuyo album sea igual al nombre del álbum
+            const playlistsRef = ref(db, 'playlists');
+            const playlistsQuery = query(playlistsRef, orderByChild('album'), equalTo(album.album || album.title));
+            const playlistsSnap = await get(playlistsQuery);
+
+            let playlistId = null;
+            if (playlistsSnap.exists()) {
+              // Tomamos el primer playlist que coincida
+              playlistId = Object.keys(playlistsSnap.val())[0];
+            }
+
             const div = document.createElement('div');
             div.className = 'album';
             div.title = album.album || album.title || 'Álbum';
-            div.tabIndex = 0; // para accesibilidad
-            div.addEventListener('click', () => reproducir(album, 'álbum'));
-            div.addEventListener('keydown', e => { if(e.key === 'Enter') reproducir(album, 'álbum'); });
+            div.tabIndex = 0;
+
+            // Si hay playlistId, al hacer click abrimos reproductor con playlistId
+            div.addEventListener('click', () => {
+              if (playlistId) {
+                window.location.href = `https://nimeapp.github.io/Flixplemusic/Reproductor.html?playlistId=${encodeURIComponent(playlistId)}`;
+              } else {
+                alert('No hay playlist asociada para este álbum.');
+              }
+            });
+            div.addEventListener('keydown', e => {
+              if (e.key === 'Enter') {
+                if (playlistId) {
+                  window.location.href = `https://nimeapp.github.io/Flixplemusic/Reproductor.html?playlistId=${encodeURIComponent(playlistId)}`;
+                } else {
+                  alert('No hay playlist asociada para este álbum.');
+                }
+              }
+            });
+
             div.innerHTML = `
               <img src="${album.cover || 'https://via.placeholder.com/150'}" alt="${album.album || album.title}" />
               <div class="track-info">${album.album || album.title}</div>
             `;
             albumsContainer.appendChild(div);
-          });
+          }
         } else {
           albumsContainer.textContent = 'No se encontraron álbumes';
         }
 
-        // Cargar canciones donde "artist" == nombreArtista
+        // Cargar canciones y hacer click para abrir reproductor canción
         const tracksRef = ref(db, 'tracks');
         const tracksQuery = query(tracksRef, orderByChild('artist'), equalTo(nombreArtista));
         const tracksSnap = await get(tracksQuery);
         const tracksContainer = document.getElementById('tracksContainer');
         tracksContainer.innerHTML = '';
         let tracks = [];
+
         if (tracksSnap.exists()) {
-          tracks = [];
           tracksSnap.forEach(childSnap => {
-            tracks.push(childSnap.val());
+            const trackData = childSnap.val();
+            trackData.key = childSnap.key; // ID canción
+            tracks.push(trackData);
           });
+
           tracks.forEach(track => {
             const div = document.createElement('div');
             div.className = 'track';
             div.title = track.title || track.nombre || 'Canción';
             div.tabIndex = 0;
-            div.addEventListener('click', () => reproducir(track, 'canción'));
-            div.addEventListener('keydown', e => { if(e.key === 'Enter') reproducir(track, 'canción'); });
+            div.addEventListener('click', () => {
+              window.location.href = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?trackId=${encodeURIComponent(track.key)}`;
+            });
+            div.addEventListener('keydown', e => {
+              if (e.key === 'Enter') {
+                window.location.href = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?trackId=${encodeURIComponent(track.key)}`;
+              }
+            });
             div.innerHTML = `
               <div class="track-info">${track.title || track.nombre}</div>
             `;
@@ -236,12 +269,8 @@
           tracksContainer.textContent = 'No se encontraron canciones';
         }
 
-        // Estadísticas simples
         document.getElementById('totalAlbums').textContent = albums.length;
         document.getElementById('totalTracks').textContent = tracks.length;
-
-        // Crear iconos Lucide (en caso de que uses otros iconos lucide)
-        if (window.lucide) lucide.createIcons();
 
       } catch (error) {
         showError('Error al cargar datos: ' + error.message);
