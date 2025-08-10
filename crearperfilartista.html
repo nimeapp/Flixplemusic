@@ -29,9 +29,7 @@
         <img id="imgArtista" src="" alt="Foto artista" 
           class="w-20 h-20 rounded-full border-4 border-green-400 object-cover" />
         <div>
-          <h2 id="nombreEncontrado" class="text-xl font-bold flex items-center gap-1 select-none">
-            <!-- Aquí va el nombre y el icono de verificado -->
-          </h2>
+          <h2 id="nombreEncontrado" class="text-xl font-bold flex items-center gap-1 select-none"></h2>
         </div>
       </div>
 
@@ -49,11 +47,10 @@
     <div id="mensaje" class="mt-4 text-center font-semibold"></div>
   </main>
 
-  <!-- Firebase y scripts -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-    import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+    import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
@@ -68,6 +65,9 @@
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getDatabase(app);
+
+    // URL icono verificado azul Facebook (tamaño 20x20 px)
+    const urlIconoVerificado = 'https://cdn-icons-png.flaticon.com/512/11820/11820312.png';
 
     // JSONP Deezer
     function jsonp(url) {
@@ -107,9 +107,26 @@
     const formPerfil = document.getElementById('formPerfil');
 
     let artistaActual = null;
+    let usuarioAdmin = false;
 
-    // URL icono verificado azul Facebook (tamaño 20x20 px)
-    const urlIconoVerificado = 'https://cdn-icons-png.flaticon.com/512/11820/11820312.png';
+    function actualizarNombreConVerificado() {
+      if (!artistaActual) return;
+      nombreEncontrado.innerHTML = '';
+
+      const spanNombre = document.createElement('span');
+      spanNombre.textContent = artistaActual.name;
+
+      nombreEncontrado.appendChild(spanNombre);
+
+      if (checkboxVerificado.checked) {
+        const imgVerificado = document.createElement('img');
+        imgVerificado.src = urlIconoVerificado;
+        imgVerificado.alt = 'Verificado';
+        imgVerificado.className = 'w-5 h-5';
+        imgVerificado.style.marginLeft = '4px';
+        nombreEncontrado.appendChild(imgVerificado);
+      }
+    }
 
     btnBuscar.onclick = async () => {
       mensaje.textContent = '';
@@ -140,41 +157,47 @@
       }
     };
 
-    function actualizarNombreConVerificado() {
-      if (!artistaActual) return;
-      nombreEncontrado.innerHTML = '';
+    checkboxVerificado.addEventListener('change', () => {
+      actualizarNombreConVerificado();
+    });
 
-      const spanNombre = document.createElement('span');
-      spanNombre.textContent = artistaActual.name;
-
-      nombreEncontrado.appendChild(spanNombre);
-
-      if (checkboxVerificado.checked) {
-        const imgVerificado = document.createElement('img');
-        imgVerificado.src = urlIconoVerificado;
-        imgVerificado.alt = 'Verificado';
-        imgVerificado.className = 'w-5 h-5';
-        imgVerificado.style.marginLeft = '4px';
-        nombreEncontrado.appendChild(imgVerificado);
+    // Verificar si usuario es admin
+    async function checkAdmin(uid) {
+      try {
+        const snapshot = await get(ref(db, `admins/${uid}`));
+        if (snapshot.exists() && snapshot.val().role === "admin") {
+          usuarioAdmin = true;
+          mensaje.textContent = `Usuario admin autenticado: ${auth.currentUser.email || uid}`;
+        } else {
+          usuarioAdmin = false;
+          mensaje.textContent = 'No tienes permisos para guardar perfiles.';
+        }
+      } catch {
+        usuarioAdmin = false;
+        mensaje.textContent = 'Error verificando permisos.';
       }
     }
 
-    checkboxVerificado.addEventListener('change', () => {
-      actualizarNombreConVerificado();
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        await checkAdmin(user.uid);
+      } else {
+        usuarioAdmin = false;
+        mensaje.textContent = 'Debes iniciar sesión para crear perfiles';
+      }
     });
 
     formPerfil.onsubmit = async (e) => {
       e.preventDefault();
       mensaje.textContent = '';
 
-      if (!artistaActual) {
-        mensaje.textContent = 'Busca y selecciona un artista primero';
+      if (!usuarioAdmin) {
+        mensaje.textContent = 'No tienes permisos para guardar.';
         return;
       }
 
-      const user = auth.currentUser;
-      if (!user) {
-        mensaje.textContent = 'Debes iniciar sesión para guardar el perfil';
+      if (!artistaActual) {
+        mensaje.textContent = 'Busca y selecciona un artista primero';
         return;
       }
 
@@ -183,26 +206,18 @@
         nombre: artistaActual.name,
         imagen: artistaActual.picture_medium,
         verificado: checkboxVerificado.checked,
-        creadoPor: user.uid,
+        creadoPor: auth.currentUser.uid,
         creadoEn: new Date().toISOString()
       };
 
       try {
-        await set(ref(db, `artist_profiles/${perfil.deezerId}`), perfil);
+        await set(ref(db, `artists/${perfil.deezerId}`), perfil);
         mensaje.textContent = 'Perfil guardado con éxito ✅';
       } catch (error) {
         console.error(error);
         mensaje.textContent = 'Error al guardar perfil';
       }
     };
-
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        mensaje.textContent = `Usuario autenticado: ${user.email || user.uid}`;
-      } else {
-        mensaje.textContent = 'Debes iniciar sesión para crear perfiles';
-      }
-    });
   </script>
 </body>
 </html>
