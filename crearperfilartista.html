@@ -5,9 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Crear Perfil Artista</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
   <style>
-    /* Modal básico */
     #modalNoEncontrado {
       position: fixed;
       inset: 0;
@@ -26,6 +24,7 @@
       color: #eee;
       font-weight: bold;
       user-select: none;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -68,12 +67,9 @@
     </form>
 
     <div id="mensaje" class="mt-4 text-center font-semibold"></div>
-
-    <!-- Contenedor para mostrar la URL generada y botón copiar -->
     <div id="urlGuardada" class="mt-4 text-center break-words"></div>
   </main>
 
-  <!-- Modal para artista no encontrado en Firebase -->
   <div id="modalNoEncontrado">
     <div class="modal-content">No se encontró datos de ese artista<br>(Toca cualquier parte para cerrar)</div>
   </div>
@@ -126,6 +122,35 @@
       return res.data[0];
     }
 
+    async function artistaExisteEnNodos(nombreArtista) {
+      const nombreLower = nombreArtista.toLowerCase();
+      const nodos = ['albums', 'playlists', 'tracks', 'artist_covers'];
+      for (const nodo of nodos) {
+        try {
+          const snapshot = await get(ref(db, nodo));
+          if (snapshot.exists()) {
+            const datos = snapshot.val();
+            for (const key in datos) {
+              if (!datos.hasOwnProperty(key)) continue;
+              const item = datos[key];
+              // Checar campos posibles
+              const camposArtista = ['artist', 'artista'];
+              for (const campo of camposArtista) {
+                if (item[campo] && typeof item[campo] === 'string') {
+                  if (item[campo].toLowerCase() === nombreLower) {
+                    return true;
+                  }
+                }
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Error al buscar en nodo', nodo, e);
+        }
+      }
+      return false;
+    }
+
     const inputNombre = document.getElementById('nombreArtista');
     const btnBuscar = document.getElementById('btnBuscar');
     const infoArtista = document.getElementById('infoArtista');
@@ -139,6 +164,7 @@
 
     let artistaActual = null;
     let usuarioAdmin = false;
+    let userUID = null;
 
     function actualizarNombreConVerificado() {
       if (!artistaActual) return;
@@ -211,23 +237,21 @@
 
     onAuthStateChanged(auth, async (user) => {
       if (user) {
+        userUID = user.uid;
         await checkAdmin(user.uid);
       } else {
         usuarioAdmin = false;
+        userUID = null;
         mensaje.textContent = 'Debes iniciar sesión para crear perfiles';
       }
     });
 
-    // Función para mostrar modal
     function mostrarModal() {
       modalNoEncontrado.style.display = 'flex';
     }
-    // Función para ocultar modal
     function ocultarModal() {
       modalNoEncontrado.style.display = 'none';
     }
-
-    // Cerrar modal al tocar cualquier parte
     modalNoEncontrado.addEventListener('click', ocultarModal);
 
     formPerfil.onsubmit = async (e) => {
@@ -245,39 +269,36 @@
         return;
       }
 
-      // Verificar si artista ya existe en Firebase
-      try {
-        const snapshot = await get(ref(db, `artists/${artistaActual.id}`));
-        if (!snapshot.exists()) {
-          // Si no existe, mostrar modal y salir
-          mostrarModal();
-          return;
-        }
-      } catch (error) {
-        mensaje.textContent = 'Error verificando datos en Firebase.';
+      const nombreArtista = artistaActual.name;
+
+      // Validar existencia en nodos
+      const existe = await artistaExisteEnNodos(nombreArtista);
+
+      if (!existe) {
+        mostrarModal();
         return;
       }
 
-      // Generar URL personalizada
-      const nombreUrl = encodeURIComponent(artistaActual.name.replace(/\s+/g, ''));
+      // Generar URL personalizada sin espacios
+      const nombreUrl = encodeURIComponent(nombreArtista.replace(/\s+/g, ''));
       const urlPerfil = `https://nimeapp.github.io/Flixplemusic/perfilartista.html?nombre=$delartista/${nombreUrl}`;
 
       const perfil = {
         deezerId: artistaActual.id,
-        nombre: artistaActual.name,
+        nombre: nombreArtista,
         imagen: artistaActual.picture_medium,
         verificado: checkboxVerificado.checked,
-        creadoPor: auth.currentUser.uid,
+        creadoPor: userUID,
         creadoEn: new Date().toISOString(),
         perfilURL: urlPerfil
       };
 
       try {
+        // Guardamos o actualizamos el perfil en Firebase (en nodo artists)
         await set(ref(db, `artists/${perfil.deezerId}`), perfil);
 
         mensaje.textContent = 'Perfil guardado con éxito ✅';
 
-        // Mostrar URL con botón copiar
         urlGuardadaDiv.innerHTML = `
           <p class="mb-2">URL del perfil:</p>
           <input type="text" readonly value="${urlPerfil}" id="urlPerfilInput"
@@ -302,8 +323,8 @@
         };
 
       } catch (error) {
+        mensaje.textContent = 'Error al guardar perfil en Firebase.';
         console.error(error);
-        mensaje.textContent = 'Error al guardar perfil';
       }
     };
   </script>
