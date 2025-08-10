@@ -1,55 +1,106 @@
 <!DOCTYPE html>
-<html lang="es" >
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Perfil Artista</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    .carousel {
+    body {
+      background: black;
+      color: white;
+      font-family: system-ui, sans-serif;
+      padding: 1rem;
+      max-width: 900px;
+      margin: auto;
+    }
+    header {
       display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    header img {
+      border-radius: 9999px;
+      width: 96px;
+      height: 96px;
+      border: 4px solid #22c55e; /* verde */
+      object-fit: cover;
+    }
+    .verified-icon {
+      width: 20px;
+      height: 20px;
+      margin-left: 0.3rem;
+    }
+    h2 {
+      margin-top: 2rem;
+      margin-bottom: 1rem;
+      font-weight: 700;
+      font-size: 1.5rem;
+      border-bottom: 2px solid #22c55e;
+      padding-bottom: 0.3rem;
+    }
+    .albums, .tracks {
+      display: flex;
+      flex-wrap: nowrap;
       overflow-x: auto;
-      scroll-behavior: smooth;
       gap: 1rem;
       padding-bottom: 1rem;
     }
-    .carousel::-webkit-scrollbar {
-      display: none;
+    .album, .track {
+      background: #27272a;
+      border-radius: 0.5rem;
+      padding: 0.5rem;
+      min-width: 150px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .album img, .track img {
+      width: 100%;
+      border-radius: 0.5rem;
+      object-fit: cover;
+      aspect-ratio: 1 / 1;
+    }
+    .album:hover, .track:hover {
+      transform: scale(1.05);
+    }
+    .track-info {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .stats {
+      margin-top: 2rem;
+      font-size: 1.1rem;
     }
   </style>
 </head>
-<body class="bg-black text-white min-h-screen">
+<body>
 
-  <header class="flex items-center gap-4 p-6 bg-gray-900 shadow-lg">
-    <img id="fotoArtista" alt="Foto Artista" class="w-24 h-24 rounded-full border-4 border-green-400 object-cover" />
-    <div class="flex items-center gap-2 text-4xl font-bold">
-      <span id="nombreArtista"></span>
-      <img id="iconoVerificado" src="https://cdn-icons-png.flaticon.com/512/11820/11820312.png" alt="Verificado" class="w-6 h-6 hidden" />
-    </div>
+  <header>
+    <img id="artistImage" alt="Foto artista" src="https://via.placeholder.com/96" />
+    <h1 id="artistName" class="text-4xl font-bold flex items-center">
+      Artista
+      <img id="verifiedIcon" src="https://cdn-icons-png.flaticon.com/512/11820/11820312.png" alt="Verificado" class="verified-icon" style="display:none;" />
+    </h1>
   </header>
 
-  <main class="p-6 max-w-6xl mx-auto">
+  <section>
+    <h2>Álbumes</h2>
+    <div id="albumsContainer" class="albums">Cargando álbumes...</div>
+  </section>
 
-    <section class="mb-8">
-      <h2 class="text-2xl font-semibold mb-4">Álbumes</h2>
-      <div id="contenedorAlbums" class="carousel"></div>
-    </section>
+  <section>
+    <h2>Canciones</h2>
+    <div id="tracksContainer" class="tracks">Cargando canciones...</div>
+  </section>
 
-    <section class="mb-8">
-      <h2 class="text-2xl font-semibold mb-4">Canciones</h2>
-      <div id="contenedorCanciones" class="space-y-3 max-h-96 overflow-y-auto bg-gray-800 p-4 rounded"></div>
-    </section>
-
-    <section class="mb-8 text-center">
-      <h2 class="text-2xl font-semibold mb-4">Estadísticas</h2>
-      <div class="text-lg space-y-1">
-        <p><strong>Total álbumes:</strong> <span id="totalAlbums">0</span></p>
-        <p><strong>Total canciones:</strong> <span id="totalCanciones">0</span></p>
-        <p><strong>Total reproducciones aproximadas:</strong> <span id="totalReproducciones">0</span></p>
-      </div>
-    </section>
-
-  </main>
+  <section class="stats">
+    <p><strong>Total álbumes:</strong> <span id="totalAlbums">0</span></p>
+    <p><strong>Total canciones:</strong> <span id="totalTracks">0</span></p>
+  </section>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
@@ -68,102 +119,25 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // JSONP para Deezer
-    function jsonp(url) {
-      return new Promise((resolve, reject) => {
-        const callbackName = 'cb_' + Math.random().toString(36).substring(2, 9);
-        window[callbackName] = (data) => {
-          delete window[callbackName];
-          script.remove();
-          resolve(data);
-        };
-        const script = document.createElement('script');
-        script.src = `${url}&output=jsonp&callback=${callbackName}`;
-        script.onerror = () => {
-          delete window[callbackName];
-          script.remove();
-          reject(new Error('Error al cargar JSONP'));
-        };
-        document.body.appendChild(script);
-      });
-    }
-
-    // Extraer y limpiar nombre artista
     function getNombreArtistaFromURL() {
       const params = new URLSearchParams(window.location.search);
       let nombre = params.get('nombre') || '';
       if (nombre.startsWith('$delartista/')) {
-        nombre = nombre.slice('$delartista/'.length);
+        nombre = nombre.substring('$delartista/'.length);
       }
       return decodeURIComponent(nombre);
     }
 
-    function renderHeader(artistData) {
-      const foto = document.getElementById('fotoArtista');
-      const nombre = document.getElementById('nombreArtista');
-      const iconoVerificado = document.getElementById('iconoVerificado');
-
-      foto.src = artistData.imagen || '';
-      foto.alt = artistData.nombre || 'Artista';
-
-      nombre.textContent = artistData.nombre || 'Artista';
-
-      if (artistData.verificado) {
-        iconoVerificado.classList.remove('hidden');
-      } else {
-        iconoVerificado.classList.add('hidden');
-      }
-    }
-
-    function renderAlbums(albums) {
-      const cont = document.getElementById('contenedorAlbums');
-      cont.innerHTML = '';
-      if (!albums.length) {
-        cont.textContent = 'No se encontraron álbumes';
-        return;
-      }
-      albums.forEach(a => {
-        const div = document.createElement('div');
-        div.className = 'min-w-[150px] bg-gray-800 rounded overflow-hidden shadow-md cursor-pointer hover:scale-105 transition-transform duration-200';
-        div.title = a.title || a.album || a.nombre || 'Álbum';
-        div.innerHTML = `
-          <img src="${a.cover || a.imagen || ''}" alt="${a.title || a.album || 'Álbum'}" class="w-full h-32 object-cover" />
-          <div class="p-2 text-center font-semibold truncate">${a.title || a.album || a.nombre}</div>
-        `;
-        cont.appendChild(div);
-      });
-    }
-
-    function renderSongs(songs) {
-      const cont = document.getElementById('contenedorCanciones');
-      cont.innerHTML = '';
-      if (!songs.length) {
-        cont.textContent = 'No se encontraron canciones';
-        return;
-      }
-      songs.forEach(s => {
-        const div = document.createElement('div');
-        div.className = 'p-2 bg-gray-700 rounded flex justify-between items-center';
-        div.title = s.title || s.nombre || 'Canción';
-        div.innerHTML = `
-          <span class="truncate">${s.title || s.nombre}</span>
-          <span class="text-sm text-gray-400">${formatDuration(s.duration)}</span>
-        `;
-        cont.appendChild(div);
-      });
-    }
-
-    function formatDuration(seconds) {
-      if (!seconds) return "0:00";
-      const m = Math.floor(seconds / 60);
-      const s = seconds % 60;
-      return `${m}:${s.toString().padStart(2,'0')}`;
+    function showError(msg) {
+      alert(msg);
+      document.getElementById('albumsContainer').textContent = 'Error al cargar álbumes.';
+      document.getElementById('tracksContainer').textContent = 'Error al cargar canciones.';
     }
 
     async function main() {
       const nombreArtista = getNombreArtistaFromURL();
       if (!nombreArtista) {
-        alert('No se proporcionó el nombre del artista en la URL');
+        showError('No se especificó el nombre del artista en la URL');
         return;
       }
 
@@ -174,58 +148,84 @@
         const snapshot = await get(q);
 
         if (!snapshot.exists()) {
-          alert('Artista no encontrado en la base de datos');
+          showError('Artista no encontrado');
           return;
         }
 
-        const artistsData = snapshot.val();
-        const artistKey = Object.keys(artistsData)[0];
-        const artistData = artistsData[artistKey];
+        const artists = snapshot.val();
+        const artistKey = Object.keys(artists)[0];
+        const artist = artists[artistKey];
 
-        renderHeader(artistData);
+        // Mostrar datos artista
+        document.getElementById('artistImage').src = artist.imagen || 'https://via.placeholder.com/96';
+        document.getElementById('artistName').childNodes[0].nodeValue = artist.nombre || 'Artista';
+        if (artist.verificado) {
+          document.getElementById('verifiedIcon').style.display = 'inline-block';
+        }
 
-        // Álbumes
-        const albumsQuery = query(ref(db, 'albums'), orderByChild('artista'), equalTo(artistData.nombre));
+        // Cargar álbumes donde "artista" == nombreArtista
+        const albumsRef = ref(db, 'albums');
+        const albumsQuery = query(albumsRef, orderByChild('artista'), equalTo(nombreArtista));
         const albumsSnap = await get(albumsQuery);
-        const albums = [];
+        const albumsContainer = document.getElementById('albumsContainer');
+        albumsContainer.innerHTML = '';
+        let albums = [];
         if (albumsSnap.exists()) {
-          albumsSnap.forEach(childSnap => albums.push(childSnap.val()));
-        }
-        renderAlbums(albums);
-
-        // Canciones
-        const tracksQuery = query(ref(db, 'tracks'), orderByChild('artist'), equalTo(artistData.nombre));
-        const tracksSnap = await get(tracksQuery);
-        const tracks = [];
-        if (tracksSnap.exists()) {
-          tracksSnap.forEach(childSnap => tracks.push(childSnap.val()));
-        }
-        renderSongs(tracks);
-
-        // Reproducciones Deezer (opcional)
-        if (!artistData.deezerId) {
-          document.getElementById('totalReproducciones').textContent = 'N/A';
+          albums = [];
+          albumsSnap.forEach(childSnap => {
+            albums.push(childSnap.val());
+          });
+          albums.forEach(album => {
+            const div = document.createElement('div');
+            div.className = 'album';
+            div.title = album.album || album.title || 'Álbum';
+            div.innerHTML = `
+              <img src="${album.cover || 'https://via.placeholder.com/150'}" alt="${album.album || album.title}" />
+              <div class="track-info">${album.album || album.title}</div>
+            `;
+            albumsContainer.appendChild(div);
+          });
         } else {
-          try {
-            const topTracksRes = await jsonp(`https://api.deezer.com/artist/${artistData.deezerId}/top?limit=100`);
-            const totalReproducciones = (topTracksRes.data || []).reduce((acc, t) => acc + (t.rank || 0), 0);
-            document.getElementById('totalReproducciones').textContent = totalReproducciones.toLocaleString();
-          } catch {
-            document.getElementById('totalReproducciones').textContent = 'N/A';
-          }
+          albumsContainer.textContent = 'No se encontraron álbumes';
         }
 
-        // Estadísticas
-        document.getElementById('totalAlbums').textContent = albums.length.toLocaleString();
-        document.getElementById('totalCanciones').textContent = tracks.length.toLocaleString();
+        // Cargar canciones donde "artist" == nombreArtista
+        const tracksRef = ref(db, 'tracks');
+        const tracksQuery = query(tracksRef, orderByChild('artist'), equalTo(nombreArtista));
+        const tracksSnap = await get(tracksQuery);
+        const tracksContainer = document.getElementById('tracksContainer');
+        tracksContainer.innerHTML = '';
+        let tracks = [];
+        if (tracksSnap.exists()) {
+          tracks = [];
+          tracksSnap.forEach(childSnap => {
+            tracks.push(childSnap.val());
+          });
+          tracks.forEach(track => {
+            const div = document.createElement('div');
+            div.className = 'track';
+            div.title = track.title || track.nombre || 'Canción';
+            div.innerHTML = `
+              <div class="track-info">${track.title || track.nombre}</div>
+            `;
+            tracksContainer.appendChild(div);
+          });
+        } else {
+          tracksContainer.textContent = 'No se encontraron canciones';
+        }
+
+        // Estadísticas simples
+        document.getElementById('totalAlbums').textContent = albums.length;
+        document.getElementById('totalTracks').textContent = tracks.length;
 
       } catch (error) {
-        alert('Error cargando datos: ' + error.message);
+        showError('Error al cargar datos: ' + error.message);
         console.error(error);
       }
     }
 
     window.onload = main;
   </script>
+
 </body>
 </html>
