@@ -37,7 +37,6 @@
       user-select: text;
     }
     #verifiedIcon {
-      stroke: #22c55e;
       width: 20px;
       height: 20px;
       flex-shrink: 0;
@@ -63,11 +62,12 @@
       background: #27272a;
       border-radius: 0.5rem;
       padding: 0.5rem;
-      min-width: 150px;
+      min-width: 110px; /* Álbumes más chicos */
       cursor: pointer;
       transition: transform 0.2s;
+      user-select: none;
     }
-    .album img, .track img {
+    .album img {
       width: 100%;
       border-radius: 0.5rem;
       object-fit: cover;
@@ -91,10 +91,7 @@
     <img id="artistImage" alt="Foto artista" src="https://via.placeholder.com/96" />
     <div class="artist-name-container">
       <span id="artistName">Artista</span>
-      <svg id="verifiedIcon" xmlns="http://www.w3.org/2000/svg" class="lucide lucide-check-circle" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10" />
-        <path d="M9 12l2 2 4-4" />
-      </svg>
+      <img id="verifiedIcon" src="https://cdn-icons-png.flaticon.com/512/11820/11820312.png" alt="Verificado" />
     </div>
   </header>
 
@@ -145,6 +142,12 @@
       document.getElementById('tracksContainer').textContent = 'Error al cargar canciones.';
     }
 
+    // Función para simular reproducción - adáptala a tu reproductor
+    function reproducir(item, tipo) {
+      alert(`Reproducir ${tipo}: ${item.title || item.album || item.nombre}`);
+      // Aquí puedes poner la lógica para reproducir canción o álbum
+    }
+
     async function main() {
       const nombreArtista = getNombreArtistaFromURL();
       if (!nombreArtista) {
@@ -192,6 +195,9 @@
             const div = document.createElement('div');
             div.className = 'album';
             div.title = album.album || album.title || 'Álbum';
+            div.tabIndex = 0; // para accesibilidad
+            div.addEventListener('click', () => reproducir(album, 'álbum'));
+            div.addEventListener('keydown', e => { if(e.key === 'Enter') reproducir(album, 'álbum'); });
             div.innerHTML = `
               <img src="${album.cover || 'https://via.placeholder.com/150'}" alt="${album.album || album.title}" />
               <div class="track-info">${album.album || album.title}</div>
@@ -218,6 +224,9 @@
             const div = document.createElement('div');
             div.className = 'track';
             div.title = track.title || track.nombre || 'Canción';
+            div.tabIndex = 0;
+            div.addEventListener('click', () => reproducir(track, 'canción'));
+            div.addEventListener('keydown', e => { if(e.key === 'Enter') reproducir(track, 'canción'); });
             div.innerHTML = `
               <div class="track-info">${track.title || track.nombre}</div>
             `;
@@ -231,7 +240,7 @@
         document.getElementById('totalAlbums').textContent = albums.length;
         document.getElementById('totalTracks').textContent = tracks.length;
 
-        // Crear iconos Lucide
+        // Crear iconos Lucide (en caso de que uses otros iconos lucide)
         if (window.lucide) lucide.createIcons();
 
       } catch (error) {
