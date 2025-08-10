@@ -5,27 +5,48 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Perfil de Usuario</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
 <style>
-  body { background-color: #000; color: white; font-family: sans-serif; }
-  .avatar {
-    width: 100px; height: 100px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center; justify-content: center;
-    font-size: 48px;
-    font-weight: bold;
-    user-select: none;
-  }
+  body { background-color: #f5f6f7; font-family: sans-serif; }
 </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-6">
+<body class="min-h-screen p-2">
 
-<h1 class="text-3xl mb-6 text-purple-500 font-bold">Perfil de Usuario</h1>
+<!-- Contenedor perfil -->
+<div class="bg-white p-4 flex items-center gap-4 shadow mt-2 rounded-lg">
+  <div id="avatar" class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white"></div>
+  <div class="flex flex-wrap items-center gap-2">
+    <span id="user-name" class="text-lg font-semibold text-gray-800"></span>
+    <span id="user-email" class="text-sm text-gray-500"></span>
+  </div>
+</div>
 
-<div id="avatar" class="avatar mb-6"></div>
-<div>
-  <p><strong>Nombre:</strong> <span id="user-name"></span></p>
-  <p><strong>Correo:</strong> <span id="user-email"></span></p>
+<!-- Cuadrícula de opciones -->
+<div class="bg-white mt-2 p-4 grid grid-cols-2 gap-3 shadow rounded-lg">
+  <div class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
+    <i data-lucide="bar-chart-3" class="w-6 h-6 text-blue-500"></i>
+    <span>Panel profesional</span>
+  </div>
+  <div class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
+    <i data-lucide="users" class="w-6 h-6 text-blue-500"></i>
+    <span>Grupos</span>
+  </div>
+  <div class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
+    <i data-lucide="newspaper" class="w-6 h-6 text-blue-500"></i>
+    <span>Feeds</span>
+  </div>
+  <div class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
+    <i data-lucide="search" class="w-6 h-6 text-blue-500"></i>
+    <span>Explorar personas</span>
+  </div>
+  <div class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
+    <i data-lucide="play-circle" class="w-6 h-6 text-blue-500"></i>
+    <span>Reels</span>
+  </div>
+  <div class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
+    <i data-lucide="clock" class="w-6 h-6 text-blue-500"></i>
+    <span>Recuerdos</span>
+  </div>
 </div>
 
 <script type="module">
@@ -51,9 +72,13 @@ const avatarDiv = document.getElementById('avatar');
 const userNameSpan = document.getElementById('user-name');
 const userEmailSpan = document.getElementById('user-email');
 
-function setAvatar(initials, color) {
-  avatarDiv.textContent = initials;
-  avatarDiv.style.backgroundColor = color;
+function setAvatar(initials, color, photoURL) {
+  if (photoURL) {
+    avatarDiv.innerHTML = `<img src="${photoURL}" alt="avatar" class="w-full h-full object-cover rounded-full">`;
+  } else {
+    avatarDiv.textContent = initials;
+    avatarDiv.style.backgroundColor = color;
+  }
 }
 
 onAuthStateChanged(auth, async (user) => {
@@ -64,19 +89,22 @@ onAuthStateChanged(auth, async (user) => {
       const data = snapshot.val();
       userNameSpan.textContent = data.name || '';
       userEmailSpan.textContent = data.email || '';
-      setAvatar(data.initials || '', data.profileColor || '#555');
+      setAvatar(data.initials || '', data.profileColor || '#555', data.photoURL || user.photoURL);
     } else {
       userNameSpan.textContent = user.displayName || '';
       userEmailSpan.textContent = user.email || '';
-      setAvatar('', '#555');
+      setAvatar('', '#555', user.photoURL);
     }
   } else {
-    // No hay usuario logueado
-    userNameSpan.textContent = 'No has iniciado sesión.';
+    userNameSpan.textContent = 'No has iniciado sesión';
     userEmailSpan.textContent = '';
     setAvatar('', '#555');
   }
 });
+</script>
+
+<script>
+lucide.createIcons();
 </script>
 
 </body>
