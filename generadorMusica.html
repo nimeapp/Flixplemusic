@@ -33,11 +33,10 @@
       color: #9ee6a8;
       overflow-wrap: break-word;
     }
- * {
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
-
+    * {
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
   </style>
 </head>
 <body class="bg-gradient-to-b from-[#2d1600] to-black text-white min-h-screen flex flex-col items-center p-4">
@@ -53,7 +52,6 @@
 
     <!-- Álbumes -->
     <div id="albumsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
-
 
     <div id="tracksSection" class="hidden mb-8">
       <h2 class="text-2xl font-semibold mb-4 text-center">Canciones del Álbum</h2>
@@ -106,6 +104,7 @@
   <!-- Firebase -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
     import { getDatabase, ref, push, set, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
 
     const firebaseConfig = {
@@ -119,6 +118,7 @@
     };
 
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getDatabase(app);
 
     const searchInput = document.getElementById('searchInput');
@@ -155,6 +155,32 @@
 
     let currentAlbumTitle = "";
     let currentArtist = "";
+
+    // Controla si usuario actual es admin
+    let isAdmin = false;
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const snapshot = await get(ref(db, `admins/${user.uid}`));
+          if (snapshot.exists() && snapshot.val().role === "admin") {
+            isAdmin = true;
+            saveAlbumBtn.disabled = false;
+          } else {
+            isAdmin = false;
+            saveAlbumBtn.disabled = true;
+            alert("No tienes permisos de administrador para guardar playlists.");
+          }
+        } catch (e) {
+          isAdmin = false;
+          saveAlbumBtn.disabled = true;
+          alert("Error al verificar permisos de administrador.");
+        }
+      } else {
+        isAdmin = false;
+        saveAlbumBtn.disabled = true;
+      }
+    });
 
     function jsonp(url) {
       return new Promise(resolve => {
@@ -231,67 +257,70 @@
           div.appendChild(input);
           tracksContainer.appendChild(div);
         });
-        saveAlbumBtn.disabled = false;
-
-        saveAlbumBtn.onclick = async () => {
-          playlist = [];
-          for (const div of tracksContainer.children) {
-            const title = div.children[0].textContent;
-            const url = div.children[1].value.trim();
-            if (url) playlist.push({ title, artist: currentArtist, url, cover: coverUrl });
-          }
-          if (!playlist.length) return alert("Ingresa al menos una URL válida.");
-
-          try {
-       
-            const pr = push(ref(db, 'playlists'));
-            const playlistId = pr.key;
-            await set(pr, {
-              createdAt: new Date().toISOString(),
-              playlist,
-              album: currentAlbumTitle,
-              artist: currentArtist,
-              cover: coverUrl
-            });
-
-           
-            const individualUrls = [];
-            for (const track of playlist) {
-              const trackRef = push(ref(db, 'tracks'));
-              const trackId = trackRef.key;
-              await set(trackRef, {
-                title: track.title,
-                artist: track.artist,
-                url: track.url,
-                cover: track.cover,
-                album: currentAlbumTitle,
-                createdAt: new Date().toISOString(),
-                playlistId: playlistId
-              });
-         
-              individualUrls.push(`${location.origin}/Flixplemusic/reproductor2.html?track=${trackId}`);
-            }
-
-           
-            const link = `${location.origin}/Flixplemusic/Reproductor.html?playlist=${playlistId}`;
-            generatedUrlContainer.textContent = link;
-
-      
-            individualUrlsContainer.innerHTML = '<strong>URLs individuales para cada canción:</strong><br>' + individualUrls.map(u => `<a href="${u}" target="_blank" class="underline text-green-300">${u}</a>`).join('<br>');
-            individualUrlsContainer.classList.remove('hidden');
-
-            generatedContainer.classList.remove('hidden');
-
-            loadPlaylistFromFirebase(playlistId);
-          } catch (err) {
-            alert("Error al guardar: " + err.message);
-          }
-        };
+        // Solo habilitar si usuario es admin
+        saveAlbumBtn.disabled = !isAdmin;
 
       } catch {
         tracksContainer.innerHTML = '<p class="text-red-500 text-center">Error al cargar canciones</p>';
       }
     }
+
+    saveAlbumBtn.onclick = async () => {
+      if (!isAdmin) {
+        alert("No tienes permisos para guardar.");
+        return;
+      }
+      playlist = [];
+      for (const div of tracksContainer.children) {
+        const title = div.children[0].textContent;
+        const url = div.children[1].value.trim();
+        if (url) playlist.push({ title, artist: currentArtist, url, cover: albumCoverImg.src });
+      }
+      if (!playlist.length) return alert("Ingresa al menos una URL válida.");
+
+      try {
+        const pr = push(ref(db, 'playlists'));
+        const playlistId = pr.key;
+        await set(pr, {
+          createdAt: new Date().toISOString(),
+          playlist,
+          album: currentAlbumTitle,
+          artist: currentArtist,
+          cover: albumCoverImg.src
+        });
+
+        const individualUrls = [];
+        for (const track of playlist) {
+          const trackRef = push(ref(db, 'tracks'));
+          const trackId = trackRef.key;
+          await set(trackRef, {
+            title: track.title,
+            artist: track.artist,
+            url: track.url,
+            cover: track.cover,
+            album: currentAlbumTitle,
+            createdAt: new Date().toISOString(),
+            playlistId: playlistId
+          });
+
+          individualUrls.push(`${location.origin}/Flixplemusic/reproductor2.html?track=${trackId}`);
+        }
+
+        const link = `${location.origin}/Flixplemusic/Reproductor.html?playlist=${playlistId}`;
+        generatedUrlContainer.textContent = link;
+
+        individualUrlsContainer.innerHTML = '<strong>URLs individuales para cada canción:</strong><br>' + individualUrls.map(u => `<a href="${u}" target="_blank" class="underline text-green-300">${u}</a>`).join('<br>');
+        individualUrlsContainer.classList.remove('hidden');
+
+        generatedContainer.classList.remove('hidden');
+
+        loadPlaylistFromFirebase(playlistId);
+
+        alert("Se guardó el álbum con éxito");
+      } catch (err) {
+        alert("Error al guardar: " + err.message);
+      }
+    };
 
     function renderPlaylist() {
       playlistContainer.innerHTML = '';
@@ -447,36 +476,36 @@
         tracksSection.classList.add('hidden');
       }
     };
-     // Bloquear clic derecho
-  document.addEventListener('contextmenu', function (e) {
-    e.preventDefault();
-  });
 
-  // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
-  document.addEventListener('keydown', function (e) {
-    if (
-      e.key === 'F12' ||
-      (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
-      (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
-    ) {
+    // Bloquear clic derecho
+    document.addEventListener('contextmenu', function (e) {
       e.preventDefault();
-    }
-  });
-
-  // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
-  window.oncontextmenu = function () {
-    return false;
-  };
-
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('a').forEach(el => {
-      const url = el.getAttribute('href');
-      el.removeAttribute('href');
-      el.style.cursor = 'pointer';
-      el.onclick = () => window.location.href = url;
     });
-  });
+
+    // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
+    document.addEventListener('keydown', function (e) {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+        (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
+      ) {
+        e.preventDefault();
+      }
+    });
+
+    // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
+    window.oncontextmenu = function () {
+      return false;
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('a').forEach(el => {
+        const url = el.getAttribute('href');
+        el.removeAttribute('href');
+        el.style.cursor = 'pointer';
+        el.onclick = () => window.location.href = url;
+      });
+    });
   </script>
 
 </body>
