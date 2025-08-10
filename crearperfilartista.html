@@ -5,10 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Crear Perfil Artista</title>
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    /* Modal básico */
+    #modalNoEncontrado {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+    }
+    #modalNoEncontrado .modal-content {
+      background: #222;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      max-width: 300px;
+      text-align: center;
+      color: #eee;
+      font-weight: bold;
+      user-select: none;
+    }
+  </style>
 </head>
 <body class="bg-black text-white min-h-screen flex items-center justify-center p-4">
 
-  <main class="bg-gray-900 rounded-lg p-6 max-w-lg w-full">
+  <main class="bg-gray-900 rounded-lg p-6 max-w-lg w-full relative">
     <h1 class="text-3xl font-bold mb-6 text-center">Crear Perfil Artista</h1>
 
     <form id="formPerfil" class="space-y-4">
@@ -45,7 +68,15 @@
     </form>
 
     <div id="mensaje" class="mt-4 text-center font-semibold"></div>
+
+    <!-- Contenedor para mostrar la URL generada y botón copiar -->
+    <div id="urlGuardada" class="mt-4 text-center break-words"></div>
   </main>
+
+  <!-- Modal para artista no encontrado en Firebase -->
+  <div id="modalNoEncontrado">
+    <div class="modal-content">No se encontró datos de ese artista<br>(Toca cualquier parte para cerrar)</div>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
@@ -66,10 +97,8 @@
     const auth = getAuth(app);
     const db = getDatabase(app);
 
-    // URL icono verificado azul Facebook (tamaño 20x20 px)
     const urlIconoVerificado = 'https://cdn-icons-png.flaticon.com/512/11820/11820312.png';
 
-    // JSONP Deezer
     function jsonp(url) {
       return new Promise((resolve, reject) => {
         const callbackName = 'cb_' + Math.random().toString(36).substring(2, 9);
@@ -105,6 +134,8 @@
     const checkboxVerificado = document.getElementById('verificado');
     const mensaje = document.getElementById('mensaje');
     const formPerfil = document.getElementById('formPerfil');
+    const urlGuardadaDiv = document.getElementById('urlGuardada');
+    const modalNoEncontrado = document.getElementById('modalNoEncontrado');
 
     let artistaActual = null;
     let usuarioAdmin = false;
@@ -133,6 +164,7 @@
       infoArtista.classList.add('hidden');
       nombreEncontrado.innerHTML = '';
       checkboxVerificado.checked = false;
+      urlGuardadaDiv.innerHTML = '';
 
       const nombre = inputNombre.value.trim();
       if (!nombre) {
@@ -161,7 +193,6 @@
       actualizarNombreConVerificado();
     });
 
-    // Verificar si usuario es admin
     async function checkAdmin(uid) {
       try {
         const snapshot = await get(ref(db, `admins/${uid}`));
@@ -187,9 +218,22 @@
       }
     });
 
+    // Función para mostrar modal
+    function mostrarModal() {
+      modalNoEncontrado.style.display = 'flex';
+    }
+    // Función para ocultar modal
+    function ocultarModal() {
+      modalNoEncontrado.style.display = 'none';
+    }
+
+    // Cerrar modal al tocar cualquier parte
+    modalNoEncontrado.addEventListener('click', ocultarModal);
+
     formPerfil.onsubmit = async (e) => {
       e.preventDefault();
       mensaje.textContent = '';
+      urlGuardadaDiv.innerHTML = '';
 
       if (!usuarioAdmin) {
         mensaje.textContent = 'No tienes permisos para guardar.';
@@ -201,18 +245,62 @@
         return;
       }
 
+      // Verificar si artista ya existe en Firebase
+      try {
+        const snapshot = await get(ref(db, `artists/${artistaActual.id}`));
+        if (!snapshot.exists()) {
+          // Si no existe, mostrar modal y salir
+          mostrarModal();
+          return;
+        }
+      } catch (error) {
+        mensaje.textContent = 'Error verificando datos en Firebase.';
+        return;
+      }
+
+      // Generar URL personalizada
+      const nombreUrl = encodeURIComponent(artistaActual.name.replace(/\s+/g, ''));
+      const urlPerfil = `https://nimeapp.github.io/Flixplemusic/perfilartista.html?nombre=$delartista/${nombreUrl}`;
+
       const perfil = {
         deezerId: artistaActual.id,
         nombre: artistaActual.name,
         imagen: artistaActual.picture_medium,
         verificado: checkboxVerificado.checked,
         creadoPor: auth.currentUser.uid,
-        creadoEn: new Date().toISOString()
+        creadoEn: new Date().toISOString(),
+        perfilURL: urlPerfil
       };
 
       try {
         await set(ref(db, `artists/${perfil.deezerId}`), perfil);
+
         mensaje.textContent = 'Perfil guardado con éxito ✅';
+
+        // Mostrar URL con botón copiar
+        urlGuardadaDiv.innerHTML = `
+          <p class="mb-2">URL del perfil:</p>
+          <input type="text" readonly value="${urlPerfil}" id="urlPerfilInput"
+            class="w-full p-2 text-black rounded" />
+          <button id="btnCopiarUrl" class="mt-2 bg-blue-600 hover:bg-blue-700 py-1 px-3 rounded">
+            Copiar URL
+          </button>
+        `;
+
+        document.getElementById('btnCopiarUrl').onclick = () => {
+          const input = document.getElementById('urlPerfilInput');
+          input.select();
+          input.setSelectionRange(0, 99999); // Para móviles
+
+          navigator.clipboard.writeText(input.value)
+            .then(() => {
+              mensaje.textContent = 'URL copiada al portapapeles ✔️';
+            })
+            .catch(() => {
+              mensaje.textContent = 'Error al copiar URL';
+            });
+        };
+
       } catch (error) {
         console.error(error);
         mensaje.textContent = 'Error al guardar perfil';
