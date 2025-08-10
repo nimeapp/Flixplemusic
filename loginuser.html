@@ -204,6 +204,24 @@ document.getElementById('toggle-reg-password-confirm').addEventListener('click',
   togglePassword(regPasswordConfirm, 'toggle-reg-password-confirm');
 });
 
+// Función para obtener hasta dos iniciales de nombre
+function getInitials(name) {
+  const parts = name.trim().split(/\s+/);
+  if(parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase();
+  } else {
+    return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
+  }
+}
+
+// Función para obtener color aleatorio para fondo (hex)
+function getRandomColor() {
+  const colors = [
+    "#bb00ff", "#00ff80", "#ff0055", "#ff7700", "#00aaff", "#ffaa00", "#00ffaa", "#ff00aa"
+  ];
+  return colors[Math.floor(Math.random() * colors.length)];
+}
+
 btnRegister.addEventListener('click', async () => {
   if (!regName.value || !regEmail.value || !regPassword.value || !regPasswordConfirm.value) {
     showModal('Completa todos los campos.');
@@ -219,7 +237,20 @@ btnRegister.addEventListener('click', async () => {
   }
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, regEmail.value.trim(), regPassword.value);
-    await set(ref(db, 'users/' + userCredential.user.uid), { name: regName.value.trim(), email: regEmail.value.trim(), createdAt: new Date().toISOString() });
+    
+    // Obtener iniciales y color para perfil
+    const initials = getInitials(regName.value);
+    const profileColor = getRandomColor();
+
+    // Guardar datos en Realtime DB
+    await set(ref(db, 'users/' + userCredential.user.uid), { 
+      name: regName.value.trim(), 
+      email: regEmail.value.trim(), 
+      initials: initials,
+      profileColor: profileColor,
+      createdAt: new Date().toISOString() 
+    });
+
     await sendEmailVerification(userCredential.user);
     showModal('Cuenta creada. Verifica tu correo.');
     containerRegister.classList.add('hidden');
