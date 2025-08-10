@@ -1,92 +1,145 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Menú Inferior</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <style>
-    body {
-      margin: 0;
-      background-color: black;
-      color: white;
-   padding: 0;
-    }
-    .active-tab svg,
-    .active-tab span {
-      color: #a855f7 !important;
-      stroke: #a855f7 !important;
-    }
- * {
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
-
-        iframe {
-            width: 100%;
-            height: 100vh;
-            border: none;
-        }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Menú con Perfil Fijo</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body {
+    margin: 0; padding-bottom: 56px; /* espacio para menú fijo */
+    background-color: #000; color: white; font-family: sans-serif;
+  }
+  nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background-color: #000;
+    border-top: 1px solid #444;
+    display: flex;
+    justify-content: space-around;
+    padding: 0.5rem 0;
+    color: white;
+    font-size: 10px;
+    z-index: 9999;
+  }
+  nav button {
+    background: none;
+    border: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+  }
+  nav button:hover {
+    opacity: 0.8;
+  }
+  #avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    user-select: none;
+    color: white;
+  }
+  .active-tab svg,
+  .active-tab span {
+    color: #a855f7 !important;
+    stroke: #a855f7 !important;
+  }
+</style>
 </head>
 <body>
-    <iframe src="https://nimeapp.github.io/Flixplemusic/index.html" allowfullscreen></iframe>
 
-  <nav class="fixed bottom-0 left-0 right-0 bg-black border-t border-gray-700 flex justify-around p-2 text-white text-[10px]">
-    
-    <button onclick="setActive(this, 'go:inicio')" class="flex flex-col items-center hover:opacity-90" aria-label="Inicio">
-      <i data-lucide="home" class="w-5 h-5"></i>
-      <span>Inicio</span>
-    </button>
+<!-- Aquí va el contenido principal de tu página -->
+<div style="padding: 1rem; text-align: center;">
+  <h1 class="text-2xl text-purple-500 font-bold">Página Principal</h1>
+  <p>Contenido de ejemplo arriba del menú.</p>
+</div>
 
-    <button onclick="window.location.href='https://nimeapp.github.io/Flixplemusic/buscador.html'" 
-        class="flex flex-col items-center hover:opacity-90" 
-        aria-label="Buscar">
-    <i data-lucide="search" class="w-5 h-5"></i>
+<!-- Menú Inferior -->
+<nav>
+  <button onclick="setActive(this, 'https://nimeapp.github.io/Flixplemusic/index.html')" aria-label="Inicio">
+    <svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-home" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7"></path><path d="M9 22V12H15V22"></path></svg>
+    <span>Inicio</span>
+  </button>
+
+  <button onclick="window.location.href='https://nimeapp.github.io/Flixplemusic/buscador.html'" aria-label="Buscar">
+    <svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-search" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
     <span>Buscar</span>
-</button>
+  </button>
 
-<button 
-  onclick="window.location.href='https://nimeapp.github.io/Flixplemusic/tulista.html'" 
-  class="flex flex-col items-center hover:opacity-90" 
-  aria-label="Lista de reproducción">
-  <i data-lucide="list" class="w-5 h-5"></i>
-  <span>Tu Lista</span>
-</button>
+  <button onclick="window.location.href='https://nimeapp.github.io/Flixplemusic/tulista.html'" aria-label="Tu Lista">
+    <svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-list" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+    <span>Tu Lista</span>
+  </button>
 
+  <button id="profile-btn" aria-label="Perfil" style="padding:0;">
+    <div id="avatar"></div>
+  </button>
+</nav>
 
-    <button onclick="setActive(this, 'go:inicio')" class="flex flex-col items-center hover:opacity-90">
-      <i data-lucide="settings" class="w-5 h-5"></i>
-      <span>Ajustes</span>
-    </button>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+  import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
-  </nav>
+  const firebaseConfig = {
+    apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+    authDomain: "flixplemusic.firebaseapp.com",
+    databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+    projectId: "flixplemusic",
+    storageBucket: "flixplemusic.firebasestorage.app",
+    messagingSenderId: "792301053512",
+    appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+  };
 
-  <script>
-    lucide.createIcons();
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
 
-    function setActive(element, url) {
-      // Remueve clase activa de todos
-      document.querySelectorAll("nav button").forEach(el => el.classList.remove("active-tab"));
-      
-      // Agrega clase activa al botón actual
-      element.classList.add("active-tab");
+  const avatarDiv = document.getElementById('avatar');
+  const profileBtn = document.getElementById('profile-btn');
 
-      // Acción: redirigir (o puedes hacer otra cosa aquí)
-      window.location.href = url;
-    }
+  function setAvatar(initials, color) {
+    avatarDiv.textContent = initials;
+    avatarDiv.style.backgroundColor = color;
+  }
 
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('a').forEach(el => {
-      const url = el.getAttribute('href');
-      el.removeAttribute('href');
-      el.style.cursor = 'pointer';
-      el.onclick = () => window.location.href = url;
-    });
+  profileBtn.addEventListener('click', () => {
+    window.location.href = 'https://nimeapp.github.io/Flixplemusic/perfil.html'; // Cambia a tu página de perfil
   });
 
-  </script>
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const userRef = ref(db, 'users/' + user.uid);
+      const snapshot = await get(userRef);
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        setAvatar(data.initials || '', data.profileColor || '#555');
+      } else {
+        const initial = user.email ? user.email.charAt(0).toUpperCase() : '';
+        setAvatar(initial, '#555');
+      }
+    } else {
+      // No hay usuario logueado, redirigir a login
+      window.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
+    }
+  });
+</script>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<script>
+  function setActive(element, url) {
+    document.querySelectorAll("nav button").forEach(el => el.classList.remove("active-tab"));
+    element.classList.add("active-tab");
+    window.location.href = url;
+  }
+</script>
 
 </body>
 </html>
