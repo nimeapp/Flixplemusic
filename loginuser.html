@@ -76,7 +76,7 @@
 
 <!-- Modal para mostrar mensajes -->
 <div id="modal-msg" class="modal-bg hidden" role="alert" aria-live="assertive" aria-atomic="true" tabindex="0">
-  <div class="bg-black border-2 borde-verde p-6 rounded-lg max-w-sm text-center morado text-lg" id="modal-content"></div>
+  <div class="bg-black border-2 borde-verde p-6 rounded-lg max-w-sm text-center morado text-lg cursor-pointer" id="modal-content"></div>
 </div>
 
 <script type="module">
@@ -121,7 +121,7 @@
   const modalMsg = document.getElementById('modal-msg');
   const modalContent = document.getElementById('modal-content');
 
-  // Funciones para modales
+  // Función para mostrar modal con mensaje
   function showModal(message) {
     modalContent.textContent = message;
     modalMsg.classList.remove('hidden');
@@ -134,6 +134,7 @@
     }
 
     modalMsg.addEventListener('click', closeModal);
+    // Cerrar modal automáticamente después de 8 segundos
     const timeoutId = setTimeout(() => {
       closeModal();
     }, 8000);
