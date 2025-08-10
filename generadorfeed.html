@@ -12,6 +12,7 @@
       font-family: 'Montserrat', sans-serif;
       background: linear-gradient(135deg, #e0ffe0 0%, #f9f9f9 100%);
       padding: 1.5rem;
+      margin: 0;
     }
     input, button, select {
       outline: none;
@@ -69,15 +70,26 @@
       text-align: center;
       user-select: none;
     }
-   * {
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
-
+    * {
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
+    #content {
+      display: none;
+    }
+    #no-admin-msg {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #a00;
+      text-align: center;
+      margin-top: 3rem;
+      user-select: none;
+    }
   </style>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+    import { getDatabase, ref, push, set, get, child } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
@@ -90,22 +102,75 @@
     };
 
     const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
     const db = getDatabase(app);
 
-    window.saveToFirebase = (album) => {
-      const albumsRef = ref(db, 'albums');
-      push(albumsRef, album);
+    let isAdmin = false;
+
+    const contentDiv = document.getElementById('content');
+    const noAdminMsg = document.getElementById('no-admin-msg');
+
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const snapshot = await get(child(ref(db), `admins/${user.uid}`));
+          if (snapshot.exists() && snapshot.val().role === 'admin') {
+            isAdmin = true;
+            contentDiv.style.display = 'block';
+            noAdminMsg.style.display = 'none';
+          } else {
+            isAdmin = false;
+            contentDiv.style.display = 'none';
+            noAdminMsg.style.display = 'block';
+          }
+        } catch (error) {
+          console.error("Error comprobando rol admin:", error);
+          contentDiv.style.display = 'none';
+          noAdminMsg.style.display = 'block';
+        }
+      } else {
+        isAdmin = false;
+        contentDiv.style.display = 'none';
+        noAdminMsg.style.display = 'block';
+      }
+    });
+
+    window.saveToFirebase = async (album) => {
+      if (!isAdmin) return alert("No tienes permisos para guardar álbumes.");
+      try {
+        const albumsRef = ref(db, 'albums');
+        await push(albumsRef, album);
+        mostrarModalGuardado();
+      } catch (error) {
+        console.error("Error guardando álbum:", error);
+        alert("Error guardando álbum: " + error.message);
+      }
     }
 
-    
-    window.saveArtistCoverToFirebase = (artistId, coverUrl) => {
-      const artistCoverRef = ref(db, `artist_covers/${artistId}`);
-      return set(artistCoverRef, coverUrl);
+    window.saveArtistCoverToFirebase = async (artistId, coverUrl) => {
+      if (!isAdmin) return alert("No tienes permisos para guardar portada.");
+      try {
+        const artistCoverRef = ref(db, `artist_covers/${artistId}`);
+        await set(artistCoverRef, coverUrl);
+        mostrarModalGuardado();
+      } catch (error) {
+        console.error("Error guardando portada artista:", error);
+        alert("Error guardando portada artista: " + error.message);
+      }
     }
+
+    function mostrarModalGuardado() {
+      const modal = document.getElementById('modalGuardado');
+      modal.classList.add('show');
+      setTimeout(() => modal.classList.remove('show'), 2500);
+    }
+
   </script>
 </head>
 <body>
-  <div class="max-w-4xl mx-auto">
+  <div id="no-admin-msg">¿No eres administrador?</div>
+
+  <div id="content" class="max-w-4xl mx-auto">
     <h1 class="text-4xl font-extrabold text-center mb-8 select-none text-purple-700">🎧 Generador Feed</h1>
 
     <div class="flex flex-col md:flex-row gap-4 mb-8">
@@ -186,14 +251,7 @@
         mostrar_en_index: mostrar
       };
       
-      window.saveArtistCoverToFirebase(id, cover)
-        .then(() => {
-          console.log("Portada artista guardada en artist_covers");
-        })
-        .catch(err => {
-          console.error("Error guardando portada artista:", err);
-        });
-
+      window.saveArtistCoverToFirebase(id, cover);
       mostrarModalGuardado();
     }
 
@@ -242,12 +300,6 @@
       resultados.appendChild(contenedor);
     }
 
-    function mostrarModalGuardado() {
-      const modal = document.getElementById('modalGuardado');
-      modal.classList.add('show');
-      setTimeout(() => modal.classList.remove('show'), 2500);
-    }
-
     function guardarAlbum(id, title, cover, fecha, artista, albId) {
       const urlInput = document.getElementById(`url-${id}`);
       const categoriaSelect = document.getElementById(`categoria-${id}`);
@@ -271,45 +323,34 @@
         mostrar_en_index: mostrarEnIndex
       };
 
-      saveToFirebase(album);
+      window.saveToFirebase(album);
       urlInput.value = "";
       if (mostrarIndexCheckbox) mostrarIndexCheckbox.checked = true;
-      mostrarModalGuardado();
     }
 
-    const artistInput = document.getElementById('artistInput');
-    const resultados = document.getElementById('resultados');
-   // Bloquear clic derecho
-  document.addEventListener('contextmenu', function (e) {
-    e.preventDefault();
-  });
+    // Bloquear clic derecho
+    document.addEventListener('contextmenu', e => e.preventDefault());
 
-  // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
-  document.addEventListener('keydown', function (e) {
-    if (
-      e.key === 'F12' ||
-      (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
-      (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
-    ) {
-      e.preventDefault();
-    }
-  });
-
-  // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
-  window.oncontextmenu = function () {
-    return false;
-  };
-
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('a').forEach(el => {
-      const url = el.getAttribute('href');
-      el.removeAttribute('href');
-      el.style.cursor = 'pointer';
-      el.onclick = () => window.location.href = url;
+    // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
+    document.addEventListener('keydown', e => {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+        (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
+      ) e.preventDefault();
     });
-  });
 
+    // Bloquear menú click derecho largo
+    window.oncontextmenu = () => false;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('a').forEach(el => {
+        const url = el.getAttribute('href');
+        el.removeAttribute('href');
+        el.style.cursor = 'pointer';
+        el.onclick = () => window.location.href = url;
+      });
+    });
   </script>
 </body>
 </html>
