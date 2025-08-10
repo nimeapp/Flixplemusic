@@ -68,7 +68,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // Función para hacer JSONP con Deezer
+    // JSONP para Deezer (opcional)
     function jsonp(url) {
       return new Promise((resolve, reject) => {
         const callbackName = 'cb_' + Math.random().toString(36).substring(2, 9);
@@ -88,18 +88,16 @@
       });
     }
 
-    // EXTRAER y limpiar nombre del artista del parámetro "nombre"
+    // Extraer nombre del artista limpiando prefijo
     function getNombreArtistaFromURL() {
       const params = new URLSearchParams(window.location.search);
       let nombre = params.get('nombre') || '';
-      // Quitar el prefijo "$delartista/" si existe
       if (nombre.startsWith('$delartista/')) {
         nombre = nombre.substring('$delartista/'.length);
       }
       return decodeURIComponent(nombre);
     }
 
-    // Renderiza header con foto, nombre y verificado
     function renderHeader(artistData) {
       const foto = document.getElementById('fotoArtista');
       const nombre = document.getElementById('nombreArtista');
@@ -117,11 +115,10 @@
       }
     }
 
-    // Renderiza álbumes en carrusel
     function renderAlbums(albums) {
       const cont = document.getElementById('contenedorAlbums');
       cont.innerHTML = '';
-      if (albums.length === 0) {
+      if (!albums.length) {
         cont.textContent = 'No se encontraron álbumes';
         return;
       }
@@ -137,11 +134,10 @@
       });
     }
 
-    // Renderiza canciones en lista
     function renderSongs(songs) {
       const cont = document.getElementById('contenedorCanciones');
       cont.innerHTML = '';
-      if (songs.length === 0) {
+      if (!songs.length) {
         cont.textContent = 'No se encontraron canciones';
         return;
       }
@@ -157,7 +153,6 @@
       });
     }
 
-    // Formatea duración segundos a mm:ss
     function formatDuration(seconds) {
       if (!seconds) return "0:00";
       const m = Math.floor(seconds / 60);
@@ -173,7 +168,7 @@
       }
 
       try {
-        // Buscar el artista en Firebase artists, buscando por el campo "nombre" (indexado)
+        // Buscar artista por nombre en artists
         const artistsRef = ref(db, 'artists');
         const q = query(artistsRef, orderByChild('nombre'), equalTo(nombreArtista));
         const snapshot = await get(q);
@@ -183,13 +178,14 @@
           return;
         }
 
-        // Firebase devuelve un objeto con keys, tomamos el primero
-        const artistKey = Object.keys(snapshot.val())[0];
-        const artistData = snapshot.val()[artistKey];
+        // Tomar el primer resultado
+        const artistsData = snapshot.val();
+        const artistKey = Object.keys(artistsData)[0];
+        const artistData = artistsData[artistKey];
 
         renderHeader(artistData);
 
-        // Cargar álbumes donde artista == artistData.nombre (campo "artista" en albums)
+        // Buscar álbumes del artista (campo 'artista' igual a nombre)
         const albumsQuery = query(ref(db, 'albums'), orderByChild('artista'), equalTo(artistData.nombre));
         const albumsSnap = await get(albumsQuery);
         const albums = [];
@@ -198,7 +194,7 @@
         }
         renderAlbums(albums);
 
-        // Cargar canciones donde artist == artistData.nombre (campo "artist" en tracks)
+        // Buscar canciones del artista (campo 'artist' igual a nombre)
         const tracksQuery = query(ref(db, 'tracks'), orderByChild('artist'), equalTo(artistData.nombre));
         const tracksSnap = await get(tracksQuery);
         const tracks = [];
@@ -207,18 +203,22 @@
         }
         renderSongs(tracks);
 
-        // Obtener total reproducciones Deezer sumando rank de top tracks
+        // Obtener reproducciones Deezer si deezerId existe
         if (!artistData.deezerId) {
           document.getElementById('totalReproducciones').textContent = 'N/A';
-          return;
+        } else {
+          try {
+            const topTracksRes = await jsonp(`https://api.deezer.com/artist/${artistData.deezerId}/top?limit=100`);
+            const totalReproducciones = (topTracksRes.data || []).reduce((acc, t) => acc + (t.rank || 0), 0);
+            document.getElementById('totalReproducciones').textContent = totalReproducciones.toLocaleString();
+          } catch {
+            document.getElementById('totalReproducciones').textContent = 'N/A';
+          }
         }
-        const topTracksRes = await jsonp(`https://api.deezer.com/artist/${artistData.deezerId}/top?limit=100`);
-        const totalReproducciones = (topTracksRes.data || []).reduce((acc, t) => acc + (t.rank || 0), 0);
 
         // Estadísticas
         document.getElementById('totalAlbums').textContent = albums.length.toLocaleString();
         document.getElementById('totalCanciones').textContent = tracks.length.toLocaleString();
-        document.getElementById('totalReproducciones').textContent = totalReproducciones.toLocaleString();
 
       } catch (error) {
         alert('Error cargando datos: ' + error.message);
