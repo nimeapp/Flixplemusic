@@ -33,10 +33,6 @@
       color: #9ee6a8;
       overflow-wrap: break-word;
     }
-    * {
-      -webkit-user-select: none;
-      -webkit-touch-callout: none;
-    }
   </style>
 </head>
 <body class="bg-gradient-to-b from-[#2d1600] to-black text-white min-h-screen flex flex-col items-center p-4">
@@ -155,6 +151,7 @@
 
     let currentAlbumTitle = "";
     let currentArtist = "";
+    let currentAlbumCover = ""; // <-- guarda la portada real
 
     // Controla si usuario actual es admin
     let isAdmin = false;
@@ -169,12 +166,13 @@
           } else {
             isAdmin = false;
             saveAlbumBtn.disabled = true;
-            alert("No tienes permisos de administrador para guardar playlists.");
+            // no mostrar alerta repetida al cargar la página, solo si intenta guardar
+            console.warn("Usuario no es admin");
           }
         } catch (e) {
           isAdmin = false;
           saveAlbumBtn.disabled = true;
-          alert("Error al verificar permisos de administrador.");
+          console.error("Error al verificar permisos de administrador.", e);
         }
       } else {
         isAdmin = false;
@@ -183,14 +181,21 @@
     });
 
     function jsonp(url) {
-      return new Promise(resolve => {
+      return new Promise((resolve, reject) => {
         const cb = 'cb_' + Math.random().toString(36).substring(2, 9);
+        const script = document.createElement('script');
         window[cb] = data => {
-          delete window[cb];
-          script.remove();
+          try {
+            delete window[cb];
+          } catch (e) {}
+          if (script.parentNode) script.parentNode.removeChild(script);
           resolve(data);
         };
-        const script = document.createElement('script');
+        script.onerror = () => {
+          try { delete window[cb]; } catch (e) {}
+          if (script.parentNode) script.parentNode.removeChild(script);
+          reject(new Error('JSONP error'));
+        };
         script.src = `${url}&output=jsonp&callback=${cb}`;
         document.body.appendChild(script);
       });
@@ -212,13 +217,18 @@
         }
         const ad = await jsonp(`https://api.deezer.com/artist/${artist.id}/albums?limit=20`);
         renderAlbums(ad.data);
-      } catch {
+      } catch (err) {
+        console.error(err);
         albumsContainer.innerHTML = '<p class="text-red-500 text-center">Error al buscar</p>';
       }
     }
 
     function renderAlbums(albums) {
       albumsContainer.innerHTML = '';
+      if (!Array.isArray(albums) || !albums.length) {
+        albumsContainer.innerHTML = '<p class="text-yellow-400 text-center">No se encontraron álbumes</p>';
+        return;
+      }
       albums.forEach(a => {
         const div = document.createElement('div');
         div.className = 'bg-gray-800 p-3 rounded cursor-pointer flex flex-col items-center hover:bg-gray-700';
@@ -234,11 +244,16 @@
       generatedContainer.classList.add('hidden');
       saveAlbumBtn.disabled = true;
       playlist = [];
+
+      // guardar y mostrar la portada correcta
+      currentAlbumTitle = albumTitle || '';
+      currentAlbumCover = coverUrl || 'https://via.placeholder.com/300';
+      albumCoverImg.src = currentAlbumCover;
+
       try {
         const d = await jsonp(`https://api.deezer.com/album/${albumId}`);
         tracksContainer.innerHTML = '';
-        currentAlbumTitle = albumTitle;
-        currentArtist = d.artist.name;
+        currentArtist = d.artist?.name || '';
         if (!d.tracks?.data?.length) {
           tracksContainer.innerHTML = '<p class="text-red-500 text-center">No se encontraron canciones</p>';
           return;
@@ -260,7 +275,8 @@
         // Solo habilitar si usuario es admin
         saveAlbumBtn.disabled = !isAdmin;
 
-      } catch {
+      } catch (err) {
+        console.error(err);
         tracksContainer.innerHTML = '<p class="text-red-500 text-center">Error al cargar canciones</p>';
       }
     }
@@ -273,8 +289,8 @@
       playlist = [];
       for (const div of tracksContainer.children) {
         const title = div.children[0].textContent;
-        const url = div.children[1].value.trim();
-        if (url) playlist.push({ title, artist: currentArtist, url, cover: albumCoverImg.src });
+        const url = (div.children[1].value || '').trim();
+        if (url) playlist.push({ title, artist: currentArtist, url, cover: currentAlbumCover });
       }
       if (!playlist.length) return alert("Ingresa al menos una URL válida.");
 
@@ -286,7 +302,7 @@
           playlist,
           album: currentAlbumTitle,
           artist: currentArtist,
-          cover: albumCoverImg.src
+          cover: currentAlbumCover
         });
 
         const individualUrls = [];
@@ -314,11 +330,12 @@
 
         generatedContainer.classList.remove('hidden');
 
-        loadPlaylistFromFirebase(playlistId);
+        await loadPlaylistFromFirebase(playlistId);
 
         alert("Se guardó el álbum con éxito");
       } catch (err) {
-        alert("Error al guardar: " + err.message);
+        console.error(err);
+        alert("Error al guardar: " + (err.message || err));
       }
     };
 
@@ -340,12 +357,12 @@
       currentTrackIndex = index;
       const track = playlist[index];
 
-      albumCoverImg.src = track.cover || 'https://via.placeholder.com/300';
+      albumCoverImg.src = track.cover || currentAlbumCover || 'https://via.placeholder.com/300';
       trackTitleElem.textContent = track.title || 'Título';
       trackArtistElem.textContent = track.artist || 'Artista';
 
       audio.src = track.url || '';
-      audio.play();
+      audio.play().catch(err => console.warn('Autoplay bloqueado o error al reproducir', err));
       playIcon.classList.replace('fa-play', 'fa-pause');
 
       renderPlaylist();
@@ -377,7 +394,7 @@
 
     playBtn.addEventListener('click', () => {
       if (audio.paused) {
-        audio.play();
+        audio.play().catch(err => console.warn('Error al reproducir', err));
         playIcon.classList.replace('fa-play', 'fa-pause');
       } else {
         audio.pause();
@@ -450,7 +467,8 @@
         renderPlaylist();
         playTrack(0);
       } catch (err) {
-        alert("Error cargando playlist: " + err.message);
+        console.error(err);
+        alert("Error cargando playlist: " + (err.message || err));
       }
     }
 
@@ -459,7 +477,10 @@
       navigator.clipboard.writeText(textToCopy).then(() => {
         copyMsg.classList.remove('hidden');
         setTimeout(() => copyMsg.classList.add('hidden'), 2000);
-      }).catch(() => alert("No se pudo copiar al portapapeles"));
+      }).catch((e) => {
+        console.warn('No se pudo copiar', e);
+        alert("No se pudo copiar al portapapeles");
+      });
     };
 
     searchBtn.onclick = searchArtist;
@@ -501,9 +522,11 @@
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('a').forEach(el => {
         const url = el.getAttribute('href');
-        el.removeAttribute('href');
-        el.style.cursor = 'pointer';
-        el.onclick = () => window.location.href = url;
+        if (url) {
+          el.removeAttribute('href');
+          el.style.cursor = 'pointer';
+          el.onclick = () => window.location.href = url;
+        }
       });
     });
   </script>
