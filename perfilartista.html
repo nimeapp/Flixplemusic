@@ -5,6 +5,7 @@
   <title>Perfil Artista</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     body {
       background: black;
@@ -20,25 +21,36 @@
       gap: 1rem;
       margin-bottom: 2rem;
     }
-    header img {
+    header img#artistImage {
       border-radius: 9999px;
       width: 96px;
       height: 96px;
-      border: 4px solid #22c55e; /* verde */
+      border: 4px solid #22c55e; /* borde verde claro */
       object-fit: cover;
     }
-    .verified-icon {
+    .artist-name-container {
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-weight: 700;
+      font-size: 1.5rem; /* nombre más chico */
+      user-select: text;
+    }
+    #verifiedIcon {
+      stroke: #22c55e;
       width: 20px;
       height: 20px;
-      margin-left: 0.3rem;
+      flex-shrink: 0;
+      display: none;
     }
-    h2 {
-      margin-top: 2rem;
-      margin-bottom: 1rem;
-      font-weight: 700;
-      font-size: 1.5rem;
-      border-bottom: 2px solid #22c55e;
-      padding-bottom: 0.3rem;
+    section.stats {
+      margin-bottom: 2rem;
+      font-size: 1.1rem;
+      font-weight: 600;
+      user-select: text;
+    }
+    section.stats p {
+      margin: 0.3rem 0;
     }
     .albums, .tracks {
       display: flex;
@@ -71,21 +83,25 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
-    .stats {
-      margin-top: 2rem;
-      font-size: 1.1rem;
-    }
   </style>
 </head>
 <body>
 
   <header>
     <img id="artistImage" alt="Foto artista" src="https://via.placeholder.com/96" />
-    <h1 id="artistName" class="text-4xl font-bold flex items-center">
-      Artista
-      <img id="verifiedIcon" src="https://cdn-icons-png.flaticon.com/512/11820/11820312.png" alt="Verificado" class="verified-icon" style="display:none;" />
-    </h1>
+    <div class="artist-name-container">
+      <span id="artistName">Artista</span>
+      <svg id="verifiedIcon" xmlns="http://www.w3.org/2000/svg" class="lucide lucide-check-circle" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M9 12l2 2 4-4" />
+      </svg>
+    </div>
   </header>
+
+  <section class="stats">
+    <p><strong>Total álbumes:</strong> <span id="totalAlbums">0</span></p>
+    <p><strong>Total canciones:</strong> <span id="totalTracks">0</span></p>
+  </section>
 
   <section>
     <h2>Álbumes</h2>
@@ -95,11 +111,6 @@
   <section>
     <h2>Canciones</h2>
     <div id="tracksContainer" class="tracks">Cargando canciones...</div>
-  </section>
-
-  <section class="stats">
-    <p><strong>Total álbumes:</strong> <span id="totalAlbums">0</span></p>
-    <p><strong>Total canciones:</strong> <span id="totalTracks">0</span></p>
   </section>
 
   <script type="module">
@@ -158,9 +169,11 @@
 
         // Mostrar datos artista
         document.getElementById('artistImage').src = artist.imagen || 'https://via.placeholder.com/96';
-        document.getElementById('artistName').childNodes[0].nodeValue = artist.nombre || 'Artista';
+        document.getElementById('artistName').textContent = artist.nombre || 'Artista';
         if (artist.verificado) {
           document.getElementById('verifiedIcon').style.display = 'inline-block';
+        } else {
+          document.getElementById('verifiedIcon').style.display = 'none';
         }
 
         // Cargar álbumes donde "artista" == nombreArtista
@@ -217,6 +230,9 @@
         // Estadísticas simples
         document.getElementById('totalAlbums').textContent = albums.length;
         document.getElementById('totalTracks').textContent = tracks.length;
+
+        // Crear iconos Lucide
+        if (window.lucide) lucide.createIcons();
 
       } catch (error) {
         showError('Error al cargar datos: ' + error.message);
