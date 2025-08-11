@@ -94,7 +94,7 @@
     border-radius: 0.5rem;
     box-shadow: 0 0 10px rgba(0,0,0,0.2);
   }
-  #contenedor-perfil #avatar {
+  #contenedor-perfil #avatar-profile {
     width: 64px; height: 64px;
     background: #888;
     color: white;
@@ -159,19 +159,28 @@
     background: #dbeafe;
   }
 
-  /* Botón para cerrar perfil */
+  /* Botón cerrar perfil con flecha izquierda */
   #btn-cerrar-profile {
     position: fixed;
     top: 1rem;
-    right: 1rem;
-    background: #a855f7;
-    color: white;
+    left: 1rem;
+    background: none;
     border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 9999px;
+    color: #a855f7;
+    font-weight: bold;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
     cursor: pointer;
     z-index: 10001;
-    font-weight: bold;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  #btn-cerrar-profile.visible {
+    opacity: 1;
+    pointer-events: auto;
   }
 </style>
 </head>
@@ -201,7 +210,10 @@
 
 <!-- Contenedor Perfil (oculto inicialmente, se muestra con slide) -->
 <div id="profile-container" aria-label="Perfil de Usuario" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
-  <button id="btn-cerrar-profile" aria-label="Cerrar Perfil">× Cerrar</button>
+  <button id="btn-cerrar-profile" aria-label="Cerrar Perfil">
+    <i data-lucide="arrow-left" class="w-6 h-6"></i> Volver
+  </button>
+
   <div id="profile-content">
 
     <div id="contenedor-perfil">
@@ -314,7 +326,6 @@
 
   let usuarioActual = null;
 
-  // Función para setear avatar en menú y en perfil
   function setAvatar(initials, color, photoURL) {
     if (photoURL) {
       avatarDiv.innerHTML = `<img src="${photoURL}" alt="avatar" class="w-full h-full object-cover rounded-full">`;
@@ -331,7 +342,6 @@
     }
   }
 
-  // Carga usuario y avatar
   onAuthStateChanged(auth, async (user) => {
     if (user) {
       try {
@@ -354,26 +364,26 @@
         setAvatar('', '#555', user.photoURL);
       }
     } else {
-      // No logueado
       window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
     }
     cerrarMiInformacion();
   });
 
-  // Abrir perfil con slide
+  // Abrir perfil con slide y mostrar botón cerrar
   document.getElementById('profile-btn').addEventListener('click', () => {
     profileContainer.classList.add('visible');
     profileContainer.setAttribute('aria-hidden', 'false');
+    btnCerrarProfile.classList.add('visible');
   });
 
-  // Cerrar perfil
+  // Cerrar perfil con botón flecha
   btnCerrarProfile.addEventListener('click', () => {
     profileContainer.classList.remove('visible');
     profileContainer.setAttribute('aria-hidden', 'true');
+    btnCerrarProfile.classList.remove('visible');
     cerrarMiInformacion();
   });
 
-  // Abrir y cerrar sección mi información
   function abrirMiInformacion() {
     if (!usuarioActual) return;
     seccionMiInfo.classList.add('visible');
@@ -389,13 +399,18 @@
   btnMiInfo.addEventListener('click', abrirMiInformacion);
   btnCerrarMiInfo.addEventListener('click', cerrarMiInformacion);
 
-  // Cambiar contraseña
   btnCambiarContrasena.addEventListener('click', e => {
     e.stopPropagation();
     window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/reset_password.html';
   });
 
-  // Opcional: cerrar perfil al hacer clic fuera, o con ESC (puedes agregar si quieres)
+  // Navegación simple (puedes personalizar o eliminar si quieres)
+  function goToPage(url, btn) {
+    // Desactiva tabs actuales
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-tab'));
+    btn.classList.add('active-tab');
+    window.location.href = url;
+  }
 </script>
 
 <script>
