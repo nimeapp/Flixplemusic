@@ -302,39 +302,46 @@
     </button>
   </nav>
 
-  <!-- Contenedor Perfil -->
-  <div id="profile-container" aria-label="Perfil de Usuario" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
-    <div id="profile-content">
-      <div id="contenedor-perfil">
-        <div id="avatar-profile" class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white"></div>
-        <div>
-          <span id="user-name"></span>
-        </div>
+  <!-- Contenedor Perfil (oculto inicialmente, se muestra con slide) -->
+<div id="profile-container" aria-label="Perfil de Usuario" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
+  <div id="profile-content">
+
+    <div id="contenedor-perfil">
+      <div id="avatar-profile" class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white"></div>
+      <div>
+        <span id="user-name"></span>
       </div>
+    </div>
 
-      <div id="seccion-mi-informacion">
-        <h2 class="text-xl font-semibold mb-4 flex justify-between items-center">
-          Mi Información
-          <button id="btn-cerrar-mi-informacion" title="Cerrar información" aria-label="Cerrar información">
-            <i data-lucide="x" class="w-6 h-6"></i>
-          </button>
-        </h2>
-        <p><strong>Nombre:</strong> <span id="info-nombre"></span></p>
-        <p><strong>Correo:</strong> <span id="info-correo"></span></p>
-        <button id="btn-cambiar-contrasena" class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Cambiar contraseña</button>
-      </div>
-
-      <div id="opciones-container">
-        <button id="btn-mi-informacion" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
-          <i data-lucide="user" class="w-6 h-6 text-blue-500"></i>
-          <span>Mi información</span>
+    <div id="seccion-mi-informacion">
+      <h2 class="text-xl font-semibold mb-4 flex justify-between items-center">
+        Mi Información
+        <button id="btn-cerrar-mi-informacion" title="Cerrar información" aria-label="Cerrar información">
+          <i data-lucide="x" class="w-6 h-6"></i>
         </button>
+      </h2>
+      <p><strong>Nombre:</strong> <span id="info-nombre"></span></p>
+      <p><strong>Correo:</strong> <span id="info-correo"></span></p>
+      <button id="btn-cambiar-contrasena" class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Cambiar contraseña</button>
+    </div>
 
-        <button id="btn-feeds" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
-          <i data-lucide="newspaper" class="w-6 h-6 text-blue-500"></i>
-          <span>Feeds</span>
-        </button>
-  <a href="go:politica-uso" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+    <div id="opciones-container">
+      <button id="btn-mi-informacion" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
+        <i data-lucide="user" class="w-6 h-6 text-blue-500"></i>
+        <span>Mi información</span>
+      </button>
+
+      <button id="btn-feeds" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
+        <i data-lucide="newspaper" class="w-6 h-6 text-blue-500"></i>
+        <span>Feeds</span>
+      </button>
+
+      <a href="go:politicas-privacidad" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <i data-lucide="shield-check" class="w-6 h-6 text-blue-500"></i>
+        <span>Políticas y Privacidad</span>
+      </a>
+
+      <a href="go:politica-uso" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
         <i data-lucide="file-text" class="w-6 h-6 text-blue-500"></i>
         <span>Política de Uso</span>
       </a>
@@ -369,14 +376,9 @@
         <span>Enviar sugerencias</span>
       </a>
     </div>
-        <a href="go:politicas-privacidad" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-          <i data-lucide="shield-check" class="w-6 h-6 text-blue-500"></i>
-          <span>Políticas y Privacidad</span>
-        </a>
-      </div>
-    </div>
-    </div>
+
   </div>
+</div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
