@@ -15,14 +15,27 @@
   .slide-in {
     animation: slideInRight 0.4s ease-out forwards;
   }
+
+  /* Overlay bloqueador */
   #overlay-cerrar {
     display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.3);
     z-index: 10;
   }
+
+  /* Sección info arriba visualmente */
   #seccion-mi-informacion {
     z-index: 20;
+    max-width: 400px;
+    margin-top: 1rem;
+  }
+
+  /* Botón cambiar contraseña posicionado sobre el overlay para que sea clickeable */
+  #btn-cambiar-contrasena {
+    position: relative; /* para estar sobre overlay */
+    z-index: 30;
   }
 </style>
 </head>
@@ -39,7 +52,7 @@
   </div>
 
   <!-- Sección Mi información justo debajo del perfil -->
-  <div id="seccion-mi-informacion" class="bg-white p-4 mt-4 shadow rounded-lg hidden max-w-md">
+  <div id="seccion-mi-informacion" class="bg-white p-4 mt-4 shadow rounded-lg hidden">
     <h2 class="text-xl font-semibold mb-4 text-gray-800">Mi Información</h2>
     <p><strong>Nombre:</strong> <span id="info-nombre"></span></p>
     <p><strong>Correo:</strong> <span id="info-correo"></span></p>
@@ -151,7 +164,7 @@ seccionMiInfo.addEventListener('click', (e) => {
 
 btnCambiarContrasena.addEventListener('click', (e) => {
   e.stopPropagation();
-  e.preventDefault();
+  // Aquí redirigimos sin preventDefault para que se cumpla la navegación
   window.location.href = 'https://nimeapp.github.io/Flixplemusic/reset_password.html';
 });
 
