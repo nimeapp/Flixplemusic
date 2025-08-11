@@ -256,6 +256,7 @@
 
     // ESCUCHAR MENSAJES DEL IFRAME MENÚ
     window.addEventListener('message', event => {
+      // Validar origen si es necesario: event.origin
       if (event.data.sliderOpen === true) {
         document.getElementById('contenido-principal').style.transform = 'translateX(calc(-1 * var(--menu-slider-width)))';
       } else if (event.data.sliderOpen === false) {
