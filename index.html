@@ -7,13 +7,21 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
   <style>
+    :root{
+      --page-padding: 2rem;       /* padding general de la página */
+      --edge-inner-padding: 0.4rem; /* espacio interior dentro del carrusel para que no quede pegado al borde */
+    }
+
     body {
       font-family: 'Montserrat', sans-serif;
       background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
       color: #eee;
       min-height: 100vh;
-      padding: 2rem;
+      padding: var(--page-padding);
+      box-sizing: border-box;
     }
+
+    /* ocultar scrollbars visuales */
     .carousel::-webkit-scrollbar,
     .album-carousel::-webkit-scrollbar {
       display: none;
@@ -23,18 +31,32 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+
+    /*
+      Estas reglas hacen que el carrusel "salga" del padding del body y quede más pegado
+      a las orillas horizontales. Ajusta --page-padding si cambias el padding del body.
+    */
+    #artistCarousel,
+    .album-carousel {
+      margin-left: calc(-1 * var(--page-padding));
+      margin-right: calc(-1 * var(--page-padding));
+      width: calc(100% + 4rem); /* 2rem left + 2rem right = 4rem */
+      box-sizing: border-box;
+      padding-left: var(--edge-inner-padding);
+      padding-right: var(--edge-inner-padding);
+    }
+
+    /* estilos visuales */
     .artist-cover {
       width: 110px;
       height: 110px;
       border-radius: 50%;
       object-fit: cover;
       box-shadow: 0 4px 8px #000;
-      transition: transform 0.3s ease;
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
     }
-    .artist-cover:hover {
-      transform: scale(1.05);
-      cursor: pointer;
-    }
+    .artist-cover:hover { transform: scale(1.06); cursor: pointer; }
+
     .album-card {
       width: 160px;
       flex: none;
@@ -44,31 +66,17 @@
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
-      transition: all 0.3s ease;
+      transition: all 0.25s ease;
     }
     .album-card:hover {
       box-shadow: 0 0 15px #4ade80;
       transform: translateY(-3px);
     }
-    .album-cover {
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 4px 8px #000;
-    }
-    .album-cover img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-    .album-info {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      font-size: 0.8rem;
-    }
+
+    .album-cover { width: 100%; aspect-ratio: 1 / 1; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 8px #000; }
+    .album-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    .album-info { display:flex; flex-direction:column; justify-content:space-between; font-size:0.8rem; }
     h3.category-title {
       color: #a0f0a0;
       margin: 0 0 0.25rem 0;
@@ -76,15 +84,16 @@
       font-size: 1rem;
       user-select: none;
     }
-    .clickable {
-      cursor: pointer;
-      user-select: none;
-    }
-   * {
+    .clickable { cursor:pointer; user-select:none; }
+
+    /* Evitar selección/touch-callout (seguiste usando esto) */
+    * { -webkit-user-select: none; -webkit-touch-callout: none; }
+  
+* {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
-  </style>
+</style>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
@@ -102,6 +111,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
     const albumsRef = ref(db, 'albums');
+    const artistsRef = ref(db, 'artists');
 
     window.addEventListener('DOMContentLoaded', () => {
       const artistContainer = document.getElementById('artistCarousel');
@@ -129,20 +139,20 @@
           titulo.className = 'category-title';
 
           const wrapper = document.createElement('div');
-          wrapper.className = 'album-carousel flex overflow-x-auto gap-4 px-1 py-2';
+          wrapper.className = 'album-carousel flex overflow-x-auto gap-4 py-2'; // estilos de borde aplicados por CSS
 
           albumsArray.forEach(album => {
             const card = document.createElement('a');
-            card.href = album.url;
+            card.href = album.url || '#';
             card.target = '_blank';
             card.className = 'album-card';
             card.innerHTML = `
               <div class="album-cover">
-                <img src="${album.cover}" alt="${album.title}" />
+                <img src="${album.cover || ''}" alt="${album.title || 'Álbum'}" />
               </div>
               <div class="album-info">
-                <div class="font-bold text-white truncate" title="${album.title}">${album.title}</div>
-                <div class="text-sm text-gray-400 truncate" title="${album.artista}">${album.artista}</div>
+                <div class="font-bold text-white truncate" title="${album.title || ''}">${album.title || 'Sin título'}</div>
+                <div class="text-sm text-gray-400 truncate" title="${album.artista || ''}">${album.artista || 'Desconocido'}</div>
               </div>
             `;
             wrapper.appendChild(card);
@@ -154,76 +164,77 @@
       }
 
       function mostrarArtistas(albums) {
+        // Mapa artista => cover desde albums (solo si mostrar_en_index)
         const artistMap = new Map();
         albums.forEach(album => {
           if (album.artistaCover && album.mostrar_en_index) {
-            artistMap.set(album.artista, album.artistaCover);
+            // si ya existe, no sobreescribimos (se queda la primera portada encontrada)
+            if (!artistMap.has(album.artista)) {
+              artistMap.set(album.artista, album.artistaCover);
+            }
           }
         });
 
         artistContainer.innerHTML = '';
-        artistMap.forEach((coverUrl, artistName) => {
-          const wrapper = document.createElement('div');
-          wrapper.className = 'flex flex-col items-center gap-1 flex-none clickable';
 
-          const img = document.createElement('img');
-          img.src = coverUrl;
-          img.alt = artistName;
-          img.className = 'artist-cover';
-          img.title = artistName;
-          img.onclick = () => filtrarPorArtista(artistName);
+        // Traemos artistas y sus perfilURL (solo una vez)
+        onValue(artistsRef, (snapshot) => {
+          const artistsData = snapshot.val() || {};
 
-          const name = document.createElement('span');
-          name.textContent = artistName;
-          name.className = 'text-xs text-center text-gray-300 mt-1';
+          artistMap.forEach((coverUrl, artistName) => {
+            // Buscar en artists por nombre
+            const artistInfo = Object.values(artistsData).find(a => a.nombre === artistName);
+            let perfilURL = artistInfo ? artistInfo.perfilURL : null;
 
-          wrapper.appendChild(img);
-          wrapper.appendChild(name);
-          artistContainer.appendChild(wrapper);
-        });
-      }
+            // fallback opcional: si no existe perfil en 'artists', construir url con el patrón que usas (esto es opcional)
+            if (!perfilURL) {
+              // Si prefieres que no haga fallback, comenta la siguiente línea.
+              perfilURL = `https://nimeapp.github.io/Flixplemusic/perfilartista.html?nombre=$delartista/${encodeURIComponent(artistName)}`;
+            }
 
-      function filtrarPorArtista(artista) {
-        onValue(albumsRef, (snapshot) => {
-          const data = snapshot.val();
-          if (!data) return;
-          const albums = Object.values(data).filter(a => a.artista === artista && a.url && a.mostrar_en_index);
+            const wrapper = document.createElement('div');
+            wrapper.className = 'flex flex-col items-center gap-1 flex-none clickable';
 
-          albumsContainer.innerHTML = `<h2 class="text-2xl font-bold mb-4 w-full select-none">Álbumes de ${artista}</h2>`;
+            const img = document.createElement('img');
+            img.src = coverUrl || '';
+            img.alt = artistName;
+            img.className = 'artist-cover';
+            img.title = artistName;
 
-          const wrapper = document.createElement('div');
-          wrapper.className = 'album-carousel flex overflow-x-auto gap-4 px-1 py-2';
+            img.onclick = () => {
+              if (perfilURL) {
+                window.location.href = perfilURL;
+              } else {
+                alert('Perfil no disponible');
+              }
+            };
 
-          albums.forEach(album => {
-            const card = document.createElement('a');
-            card.href = album.url;
-            card.target = '_blank';
-            card.className = 'album-card';
-            card.innerHTML = `
-              <div class="album-cover">
-                <img src="${album.cover}" alt="${album.title}" />
-              </div>
-              <div class="album-info">
-                <div class="font-bold text-white truncate" title="${album.title}">${album.title}</div>
-                <div class="text-sm text-gray-400 truncate" title="${album.artista}">${album.artista}</div>
-              </div>
-            `;
-            wrapper.appendChild(card);
+            const name = document.createElement('span');
+            name.textContent = artistName;
+            name.className = 'text-xs text-center text-gray-300 mt-1';
+
+            wrapper.appendChild(img);
+            wrapper.appendChild(name);
+            artistContainer.appendChild(wrapper);
           });
-
-          albumsContainer.appendChild(wrapper);
         }, { onlyOnce: true });
       }
 
+      // Lee albums y renderiza todo
       onValue(albumsRef, (snapshot) => {
         const data = snapshot.val();
-        if (!data) return;
+        if (!data) {
+          artistContainer.innerHTML = '<p class="text-gray-400">No hay artistas disponibles.</p>';
+          albumsContainer.innerHTML = '<p class="text-gray-400">No hay álbumes disponibles.</p>';
+          return;
+        }
         const allAlbums = Object.values(data);
         mostrarArtistas(allAlbums);
         mostrarAlbumsPorCategoria(allAlbums);
-      });
+      }, { onlyOnce: true });
     });
-    // Bloquear clic derecho
+
+// Bloquear clic derecho
   document.addEventListener('contextmenu', function (e) {
     e.preventDefault();
   });
@@ -253,18 +264,26 @@
       el.onclick = () => window.location.href = url;
     });
   });
-
+    window.oncontextmenu = function () { return false; };
   </script>
 </head>
 <body>
 
   <section class="mb-10">
     <h2 class="text-xl font-bold mb-3 ml-1 select-none">Artistas Populares</h2>
-    <div id="artistCarousel" class="carousel flex overflow-x-auto gap-4 py-2 px-1"></div>
+    <!-- este contenedor usa la clase #artistCarousel => las reglas CSS lo "estiran" hasta los bordes -->
+    <div id="artistCarousel" class="carousel flex overflow-x-auto gap-4 py-2"></div>
   </section>
 
   <section>
     <div id="albumsCarousel" class="w-full"></div>
   </section>
+<iframe 
+  src="https://nimeapp.github.io/Flixplemusic/menu.html" 
+  style="position: fixed; bottom: 0; left: 0; width: 100%; height: 48px; border: none; z-index: 10000;" 
+  scrolling="no" 
+  aria-label="Menú inferior">
+</iframe>
+
 </body>
 </html>
