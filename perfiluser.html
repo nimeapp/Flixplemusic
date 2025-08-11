@@ -150,9 +150,8 @@ seccionMiInfo.addEventListener('click', (e) => {
 });
 
 btnCambiarContrasena.addEventListener('click', (e) => {
-  // Evita que el overlay se active
   e.stopPropagation();
-  // Redirige directamente
+  e.preventDefault();
   window.location.href = 'https://nimeapp.github.io/Flixplemusic/reset_password.html';
 });
 
