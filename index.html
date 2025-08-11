@@ -10,7 +10,7 @@
     :root{
       --page-padding: 2rem;
       --edge-inner-padding: 0.4rem;
-      --menu-slider-width: 360px; /* ancho del slider lateral */
+      --menu-slider-width: 360px; /* ancho que usaremos para el slider lateral */
     }
 
     body {
@@ -20,13 +20,15 @@
       min-height: 100vh;
       padding: var(--page-padding);
       box-sizing: border-box;
-      overflow-x: hidden; /* evitar scroll horizontal */
+      overflow-x: hidden; /* evitar scroll horizontal cuando desplazamos */
     }
 
     #contenido-principal {
       transition: transform 0.4s ease;
       position: relative;
       left: 0;
+      /* para que el contenido no se quede debajo del menú inferior */
+      padding-bottom: 56px; 
     }
 
     /* ocultar scrollbars visuales */
@@ -41,7 +43,8 @@
     }
 
     /*
-      Ajustes carrusel para salir del padding del body
+      Estas reglas hacen que el carrusel "salga" del padding del body y quede más pegado
+      a las orillas horizontales. Ajusta --page-padding si cambias el padding del body.
     */
     #artistCarousel,
     .album-carousel {
@@ -242,21 +245,17 @@
     });
     window.oncontextmenu = () => false;
 
-    // Deshabilitar href para controlar con JS
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('a').forEach(el => {
         const url = el.getAttribute('href');
-        if(url && !url.startsWith('#') && !url.startsWith('mailto:') && !url.startsWith('go:')){
-          el.removeAttribute('href');
-          el.style.cursor = 'pointer';
-          el.onclick = () => window.location.href = url;
-        }
+        el.removeAttribute('href');
+        el.style.cursor = 'pointer';
+        el.onclick = () => window.location.href = url;
       });
     });
 
-    // ESCUCHAR MENSAJES DEL IFRAME MENÚ
+    // Escuchar mensaje del iframe (menú) para abrir/cerrar slider
     window.addEventListener('message', event => {
-      // Validar origen si es necesario: event.origin
       if (event.data.sliderOpen === true) {
         document.getElementById('contenido-principal').style.transform = 'translateX(calc(-1 * var(--menu-slider-width)))';
       } else if (event.data.sliderOpen === false) {
@@ -278,10 +277,12 @@
     </section>
   </div>
 
-  <!-- iframe menú inferior -->
+  <!-- iframe para menú inferior -->
   <iframe src="https://nimeapp.github.io/Flixplemusic/menu.html" 
           id="iframe-menu" 
-          style="position: fixed; bottom: 0; left: 0; width: 100%; height: 48px; border: none; z-index: 10000;">
+          style="position: fixed; bottom: 0; left: 0; width: 100%; height: 48px; border: none; z-index: 10000;"
+          title="Menú Inferior de Navegación"
+          aria-label="Menú inferior de navegación">
   </iframe>
 
 </body>
