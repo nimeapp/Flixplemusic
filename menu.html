@@ -18,12 +18,12 @@
     position: fixed;
     bottom: 0; left: 0; right: 0;
     background-color: #000;
-    border-top: 2px solid #90ee90; /* verde claro */
+    border-top: 2px solid #90ee90;
     display: flex;
     justify-content: space-around;
     padding: 0.5rem 0;
     font-size: 10px;
-    z-index: 10001; /* superior al slider */
+    z-index: 10001;
   }
   nav a, nav button {
     background: none;
@@ -55,18 +55,18 @@
     font-size: 14px;
     user-select: none;
     color: white;
-    border: 2px solid #90ee90; /* borde verde claro */
+    border: 2px solid #90ee90;
     overflow: hidden;
   }
 
-  /* Contenedor para perfil con slide, sin ocultar menú */
+  /* Slider lateral perfil */
   #profile-container {
     position: fixed;
     top: 0;
     right: 0;
     width: 100%;
     max-width: 360px;
-    height: calc(100vh - 48px); /* altura menos menú inferior */
+    height: calc(100vh - 48px);
     background-color: #f5f6f7;
     color: black;
     font-family: sans-serif;
@@ -77,22 +77,12 @@
     transform: translateX(100%);
     transition: transform 0.4s ease;
     border-left: 1px solid #ddd;
-    bottom: 48px; /* evita tapar menú inferior */
+    bottom: 48px;
   }
   #profile-container.visible {
     transform: translateX(0);
   }
 
-  /* Animación slide-in para contenido del perfil */
-  @keyframes slideInRight {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-  #profile-content {
-    animation: slideInRight 0.4s ease-out forwards;
-  }
-
-  /* Estilos internos del perfil */
   #contenedor-perfil {
     background: white;
     padding: 1rem;
@@ -102,7 +92,7 @@
     border-radius: 0.5rem;
     box-shadow: 0 0 10px rgba(0,0,0,0.2);
   }
-  #contenedor-perfil #avatar-profile {
+  #avatar-profile {
     width: 64px; height: 64px;
     background: #888;
     color: white;
@@ -126,7 +116,6 @@
     border-radius: 0.5rem;
     box-shadow: 0 0 10px rgba(0,0,0,0.2);
     max-width: 400px;
-    position: relative;
     display: none;
     color: black;
   }
@@ -170,7 +159,6 @@
 </head>
 <body>
 
-<!-- Menú Inferior -->
 <nav>
   <a href="https://nimeapp.github.io/Flixplemusic/index.html" target="_top" aria-label="Inicio" id="link-inicio">
     <i data-lucide="home" class="text-purple-500"></i>
@@ -192,12 +180,11 @@
   </button>
 </nav>
 
-<!-- Contenedor Perfil (oculto inicialmente, se muestra con slide) -->
 <div id="profile-container" aria-label="Perfil de Usuario" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
   <div id="profile-content">
 
     <div id="contenedor-perfil">
-      <div id="avatar-profile" class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white"></div>
+      <div id="avatar-profile"></div>
       <div>
         <span id="user-name"></span>
       </div>
@@ -343,11 +330,15 @@
         setAvatar('', '#555', user.photoURL);
       }
     } else {
-      // Si no hay usuario logueado, redirige al login
       window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
     }
     cerrarMiInformacion();
   });
+
+  // Función para comunicar al padre el estado del slider
+  function enviarEstadoSlider(abierto) {
+    window.parent.postMessage({ sliderOpen: abierto }, '*');
+  }
 
   // Toggle slider perfil con botón perfil
   document.getElementById('profile-btn').addEventListener('click', () => {
@@ -355,10 +346,12 @@
     if (isVisible) {
       profileContainer.classList.remove('visible');
       profileContainer.setAttribute('aria-hidden', 'true');
+      enviarEstadoSlider(false);
       cerrarMiInformacion();
     } else {
       profileContainer.classList.add('visible');
       profileContainer.setAttribute('aria-hidden', 'false');
+      enviarEstadoSlider(true);
     }
   });
 
