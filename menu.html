@@ -33,6 +33,7 @@
     flex-direction: column;
     align-items: center;
     cursor: pointer;
+    type: button;
   }
   nav button:hover {
     opacity: 0.8;
@@ -74,7 +75,6 @@
     transform: translateX(100%);
     transition: transform 0.4s ease;
     border-left: 1px solid #ddd;
-    /* Posición encima pero sin tapar menú inferior */
     bottom: 48px; /* alto menú inferior para que no lo cubra */
   }
   #profile-container.visible {
@@ -170,22 +170,22 @@
 
 <!-- Menú Inferior -->
 <nav>
-  <button aria-label="Inicio" onclick="goToPage('https://nimeapp.github.io/Flixplemusic/index.html', this)">
+  <button type="button" aria-label="Inicio" onclick="goToPage('https://nimeapp.github.io/Flixplemusic/index.html', this)">
     <i data-lucide="home" class="text-purple-500"></i>
     <span>Inicio</span>
   </button>
 
-  <button aria-label="Buscar" onclick="goToPage('https://nimeapp.github.io/Flixplemusic/buscador.html', this)">
+  <button type="button" aria-label="Buscar" onclick="goToPage('https://nimeapp.github.io/Flixplemusic/buscador.html', this)">
     <i data-lucide="search" class="text-purple-500"></i>
     <span>Buscar</span>
   </button>
 
-  <button aria-label="Tu Lista" onclick="goToPage('https://nimeapp.github.io/Flixplemusic/tulista.html', this)">
+  <button type="button" aria-label="Tu Lista" onclick="goToPage('https://nimeapp.github.io/Flixplemusic/tulista.html', this)">
     <i data-lucide="list" class="text-purple-500"></i>
     <span>Tu Lista</span>
   </button>
 
-  <button id="profile-btn" aria-label="Perfil" style="padding:0;">
+  <button id="profile-btn" type="button" aria-label="Perfil" style="padding:0;">
     <div id="avatar"></div>
   </button>
 </nav>
@@ -379,11 +379,11 @@
     window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/reset_password.html';
   });
 
-  // Navegación simple
+  // Navegación simple para menú inferior
   function goToPage(url, btn) {
     document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-tab'));
     btn.classList.add('active-tab');
-    window.location.href = url;
+    window.location.assign(url);
   }
 </script>
 
