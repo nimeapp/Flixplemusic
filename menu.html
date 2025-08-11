@@ -23,7 +23,7 @@
     justify-content: space-around;
     padding: 0.5rem 0;
     font-size: 10px;
-    z-index: 10002; /* encima del slider */
+    z-index: 10001;
   }
   nav a, nav button {
     background: none;
@@ -57,10 +57,7 @@
     color: white;
     border: 2px solid #90ee90;
     overflow: hidden;
-    background-color: #555;
   }
-
-  /* Slider lateral perfil */
   #profile-container {
     position: fixed;
     top: 0;
@@ -74,16 +71,22 @@
     padding: 1rem;
     box-sizing: border-box;
     overflow-y: auto;
-    z-index: 10001; /* debajo del nav */
+    z-index: 10000;
     transform: translateX(100%);
     transition: transform 0.4s ease;
     border-left: 1px solid #ddd;
-    bottom: 48px; /* justo arriba del nav */
+    bottom: 48px;
   }
   #profile-container.visible {
     transform: translateX(0);
   }
-
+  @keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  #profile-content {
+    animation: slideInRight 0.4s ease-out forwards;
+  }
   #contenedor-perfil {
     background: white;
     padding: 1rem;
@@ -93,7 +96,7 @@
     border-radius: 0.5rem;
     box-shadow: 0 0 10px rgba(0,0,0,0.2);
   }
-  #avatar-profile {
+  #contenedor-perfil #avatar-profile {
     width: 64px; height: 64px;
     background: #888;
     color: white;
@@ -117,6 +120,7 @@
     border-radius: 0.5rem;
     box-shadow: 0 0 10px rgba(0,0,0,0.2);
     max-width: 400px;
+    position: relative;
     display: none;
     color: black;
   }
@@ -185,7 +189,7 @@
   <div id="profile-content">
 
     <div id="contenedor-perfil">
-      <div id="avatar-profile"></div>
+      <div id="avatar-profile" class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white"></div>
       <div>
         <span id="user-name"></span>
       </div>
@@ -336,23 +340,15 @@
     cerrarMiInformacion();
   });
 
-  // Función para comunicar al padre el estado del slider
-  function enviarEstadoSlider(abierto) {
-    window.parent.postMessage({ sliderOpen: abierto }, '*');
-  }
-
-  // Toggle slider perfil con botón perfil
   document.getElementById('profile-btn').addEventListener('click', () => {
     const isVisible = profileContainer.classList.contains('visible');
     if (isVisible) {
       profileContainer.classList.remove('visible');
       profileContainer.setAttribute('aria-hidden', 'true');
-      enviarEstadoSlider(false);
       cerrarMiInformacion();
     } else {
       profileContainer.classList.add('visible');
       profileContainer.setAttribute('aria-hidden', 'false');
-      enviarEstadoSlider(true);
     }
   });
 

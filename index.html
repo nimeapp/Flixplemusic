@@ -10,7 +10,7 @@
     :root{
       --page-padding: 2rem;
       --edge-inner-padding: 0.4rem;
-      --menu-slider-width: 360px; /* ancho que usaremos para el slider lateral */
+      --menu-slider-width: 360px; /* para referencia */
     }
 
     body {
@@ -20,15 +20,8 @@
       min-height: 100vh;
       padding: var(--page-padding);
       box-sizing: border-box;
-      overflow-x: hidden; /* evitar scroll horizontal cuando desplazamos */
-    }
-
-    #contenido-principal {
-      transition: transform 0.4s ease;
+      overflow-x: hidden;
       position: relative;
-      left: 0;
-      /* para que el contenido no se quede debajo del menú inferior */
-      padding-bottom: 56px; 
     }
 
     /* ocultar scrollbars visuales */
@@ -42,10 +35,6 @@
       scrollbar-width: none;
     }
 
-    /*
-      Estas reglas hacen que el carrusel "salga" del padding del body y quede más pegado
-      a las orillas horizontales. Ajusta --page-padding si cambias el padding del body.
-    */
     #artistCarousel,
     .album-carousel {
       margin-left: calc(-1 * var(--page-padding));
@@ -56,7 +45,6 @@
       padding-right: var(--edge-inner-padding);
     }
 
-    /* estilos visuales */
     .artist-cover {
       width: 110px;
       height: 110px;
@@ -96,13 +84,183 @@
     }
     .clickable { cursor:pointer; user-select:none; }
 
-    /* Evitar selección/touch-callout */
-    * { -webkit-user-select: none; -webkit-touch-callout: none; }
+    /* Perfil Slider Styles (copiados del menu.html para que funcione) */
+    #profile-container {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 100%;
+      max-width: 360px;
+      height: calc(100vh - 48px);
+      background-color: #f5f6f7;
+      color: black;
+      font-family: sans-serif;
+      padding: 1rem;
+      box-sizing: border-box;
+      overflow-y: auto;
+      z-index: 10000;
+      transform: translateX(100%);
+      transition: transform 0.4s ease;
+      border-left: 1px solid #ddd;
+      bottom: 48px;
+    }
+    #profile-container.visible {
+      transform: translateX(0);
+    }
+    #profile-content {
+      animation: slideInRight 0.4s ease-out forwards;
+    }
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    #contenedor-perfil {
+      background: white;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    #contenedor-perfil #avatar-profile {
+      width: 64px; height: 64px;
+      background: #888;
+      color: white;
+      font-size: 2rem;
+      font-weight: bold;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 50%;
+      overflow: hidden;
+    }
+    #user-name {
+      font-weight: 600;
+      font-size: 1.2rem;
+      color: #333;
+    }
+    #seccion-mi-informacion {
+      background: white;
+      padding: 1rem;
+      margin-top: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      max-width: 400px;
+      position: relative;
+      display: none;
+      color: black;
+    }
+    #seccion-mi-informacion.visible {
+      display: block;
+    }
+    #btn-cerrar-mi-informacion {
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+    #opciones-container {
+      background: white;
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      max-width: 500px;
+      color: black;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    #opciones-container button,
+    #opciones-container a {
+      background: #f0f0f0;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      text-decoration: none;
+      color: #2563eb;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+    #opciones-container button:hover,
+    #opciones-container a:hover {
+      background: #dbeafe;
+    }
+
+    /* Menú Inferior */
+    nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background-color: #000;
+      border-top: 2px solid #90ee90;
+      display: flex;
+      justify-content: space-around;
+      padding: 0.5rem 0;
+      font-size: 10px;
+      z-index: 10001;
+      color: white;
+    }
+    nav a, nav button {
+      background: none;
+      border: none;
+      color: inherit;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 10px;
+      user-select: none;
+    }
+    nav a:hover, nav button:hover {
+      opacity: 0.8;
+    }
+    nav a.active-tab i,
+    nav a.active-tab span {
+      color: #a855f7 !important;
+      stroke: #a855f7 !important;
+    }
+    #avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 14px;
+      user-select: none;
+      color: white;
+      border: 2px solid #90ee90;
+      overflow: hidden;
+    }
   </style>
+</head>
+<body>
+
+  <!-- Contenido principal -->
+  <div id="contenido-principal">
+    <section class="mb-10">
+      <h2 class="text-xl font-bold mb-3 ml-1 select-none">Artistas Populares</h2>
+      <div id="artistCarousel" class="carousel flex overflow-x-auto gap-4 py-2"></div>
+    </section>
+
+    <section>
+      <div id="albumsCarousel" class="w-full"></div>
+    </section>
+  </div>
+
+  <!-- Aquí se insertará el menú inferior con perfil slider -->
+  <div id="menu-container"></div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+    import { get, child } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+    import lucide from "https://cdn.jsdelivr.net/npm/lucide@latest/dist/lucide.esm.js";
 
+    // Inicializar Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
       authDomain: "flixplemusic.firebaseapp.com",
@@ -112,16 +270,141 @@
       messagingSenderId: "792301053512",
       appId: "1:792301053512:web:13878703d081f1a7b3da7d"
     };
-
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
+    const auth = getAuth(app);
+
     const albumsRef = ref(db, 'albums');
     const artistsRef = ref(db, 'artists');
 
+    // Función para cargar el menú y ejecutar scripts dentro
+    async function cargarMenu() {
+      const menuContainer = document.getElementById('menu-container');
+      try {
+        const response = await fetch('menu.html');
+        if (!response.ok) throw new Error('No se pudo cargar menú');
+        const text = await response.text();
+        // Insertar el HTML
+        menuContainer.innerHTML = text;
+
+        // Ejecutar los scripts inline del menú manualmente:
+        // El menú usa lucide icons y Firebase Auth, DB, etc.
+
+        // Cargar lucide icons
+        if (window.lucide === undefined) {
+          window.lucide = lucide;
+        }
+        lucide.createIcons();
+
+        // Inicializar Firebase Auth dentro del menú, y configurar comportamiento slider perfil:
+        initMenuProfileSlider();
+
+      } catch (e) {
+        console.error('Error cargando menú:', e);
+      }
+    }
+
+    // Función para inicializar el slider y perfil como en menu.html
+    function initMenuProfileSlider() {
+      const avatarDiv = document.getElementById('avatar');
+      const avatarProfile = document.getElementById('avatar-profile');
+      const userNameSpan = document.getElementById('user-name');
+      const profileContainer = document.getElementById('profile-container');
+
+      const btnMiInfo = document.getElementById('btn-mi-informacion');
+      const seccionMiInfo = document.getElementById('seccion-mi-informacion');
+      const btnCerrarMiInfo = document.getElementById('btn-cerrar-mi-informacion');
+      const infoNombre = document.getElementById('info-nombre');
+      const infoCorreo = document.getElementById('info-correo');
+      const btnCambiarContrasena = document.getElementById('btn-cambiar-contrasena');
+
+      let usuarioActual = null;
+
+      function setAvatar(initials, color, photoURL) {
+        if (photoURL) {
+          avatarDiv.innerHTML = `<img src="${photoURL}" alt="avatar" class="w-full h-full object-cover rounded-full">`;
+          avatarDiv.style.backgroundColor = '';
+          avatarDiv.textContent = '';
+          avatarProfile.innerHTML = avatarDiv.innerHTML;
+          avatarProfile.style.backgroundColor = '';
+          avatarProfile.textContent = '';
+        } else {
+          avatarDiv.textContent = initials || '';
+          avatarDiv.style.backgroundColor = color || '#555';
+          avatarProfile.textContent = initials || '';
+          avatarProfile.style.backgroundColor = color || '#555';
+        }
+      }
+
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          try {
+            const userRef = ref(db, 'users/' + user.uid);
+            const snapshot = await get(userRef);
+            if (snapshot.exists()) {
+              const data = snapshot.val();
+              usuarioActual = { ...data, email: data.email || user.email, displayName: data.name || user.displayName };
+              userNameSpan.textContent = data.name || user.displayName || '';
+              setAvatar(data.initials || (data.name ? data.name.charAt(0).toUpperCase() : ''), data.profileColor || '#555', data.photoURL || user.photoURL);
+            } else {
+              usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
+              userNameSpan.textContent = user.displayName || '';
+              setAvatar('', '#555', user.photoURL);
+            }
+          } catch (e) {
+            console.error('Error leyendo usuario:', e);
+            usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
+            userNameSpan.textContent = user.displayName || '';
+            setAvatar('', '#555', user.photoURL);
+          }
+        } else {
+          window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
+        }
+        cerrarMiInformacion();
+      });
+
+      // Toggle slider perfil con botón perfil
+      document.getElementById('profile-btn').addEventListener('click', () => {
+        const isVisible = profileContainer.classList.contains('visible');
+        if (isVisible) {
+          profileContainer.classList.remove('visible');
+          profileContainer.setAttribute('aria-hidden', 'true');
+          cerrarMiInformacion();
+        } else {
+          profileContainer.classList.add('visible');
+          profileContainer.setAttribute('aria-hidden', 'false');
+        }
+      });
+
+      function abrirMiInformacion() {
+        if (!usuarioActual) return;
+        seccionMiInfo.classList.add('visible');
+        seccionMiInfo.classList.remove('hidden');
+        infoNombre.textContent = usuarioActual.name || usuarioActual.displayName || 'Sin nombre';
+        infoCorreo.textContent = usuarioActual.email || 'Sin correo';
+      }
+      function cerrarMiInformacion() {
+        seccionMiInfo.classList.remove('visible');
+        seccionMiInfo.classList.add('hidden');
+      }
+
+      btnMiInfo.addEventListener('click', abrirMiInformacion);
+      btnCerrarMiInfo.addEventListener('click', cerrarMiInformacion);
+
+      btnCambiarContrasena.addEventListener('click', e => {
+        e.stopPropagation();
+        window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/reset_password.html';
+      });
+    }
+
+    // Carga menú al cargar DOM
     window.addEventListener('DOMContentLoaded', () => {
+      cargarMenu();
+
       const artistContainer = document.getElementById('artistCarousel');
       const albumsContainer = document.getElementById('albumsCarousel');
 
+      // Funciones para mostrar artistas y álbumes (copiadas de tu código original)
       function mostrarAlbumsPorCategoria(albums) {
         albumsContainer.innerHTML = '';
 
@@ -230,60 +513,30 @@
         mostrarArtistas(allAlbums);
         mostrarAlbumsPorCategoria(allAlbums);
       }, { onlyOnce: true });
-    });
 
-    // Bloqueos de seguridad
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('keydown', e => {
-      if (
-        e.key === 'F12' ||
-        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
-        (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
-      ) {
-        e.preventDefault();
-      }
-    });
-    window.oncontextmenu = () => false;
+      // Bloquear clic derecho y teclas
+      document.addEventListener('contextmenu', e => e.preventDefault());
+      document.addEventListener('keydown', e => {
+        if (
+          e.key === 'F12' ||
+          (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+          (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
+        ) {
+          e.preventDefault();
+        }
+      });
+      window.oncontextmenu = () => false;
 
-    document.addEventListener('DOMContentLoaded', () => {
+      // Rehacer comportamiento links para navegación interna
       document.querySelectorAll('a').forEach(el => {
         const url = el.getAttribute('href');
-        el.removeAttribute('href');
-        el.style.cursor = 'pointer';
-        el.onclick = () => window.location.href = url;
+        if (url && !url.startsWith('#')) {
+          el.removeAttribute('href');
+          el.style.cursor = 'pointer';
+          el.onclick = () => window.location.href = url;
+        }
       });
     });
-
-    // Escuchar mensaje del iframe (menú) para abrir/cerrar slider
-    window.addEventListener('message', event => {
-      if (event.data.sliderOpen === true) {
-        document.getElementById('contenido-principal').style.transform = 'translateX(calc(-1 * var(--menu-slider-width)))';
-      } else if (event.data.sliderOpen === false) {
-        document.getElementById('contenido-principal').style.transform = 'translateX(0)';
-      }
-    });
   </script>
-</head>
-<body>
-
-  <div id="contenido-principal">
-    <section class="mb-10">
-      <h2 class="text-xl font-bold mb-3 ml-1 select-none">Artistas Populares</h2>
-      <div id="artistCarousel" class="carousel flex overflow-x-auto gap-4 py-2"></div>
-    </section>
-
-    <section>
-      <div id="albumsCarousel" class="w-full"></div>
-    </section>
-  </div>
-
-  <!-- iframe para menú inferior -->
-  <iframe src="https://nimeapp.github.io/Flixplemusic/menu.html" 
-          id="iframe-menu" 
-          style="position: fixed; bottom: 0; left: 0; width: 100%; height: 48px; border: none; z-index: 10000;"
-          title="Menú Inferior de Navegación"
-          aria-label="Menú inferior de navegación">
-  </iframe>
-
 </body>
 </html>
