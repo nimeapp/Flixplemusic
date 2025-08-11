@@ -3,12 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Menú con Perfil Fijo</title>
+<title>Menú Inferior</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body {
     margin: 0;
-    padding-bottom: 56px;
     background-color: #000;
     color: white;
     font-family: sans-serif;
@@ -21,7 +20,6 @@
     display: flex;
     justify-content: space-around;
     padding: 0.5rem 0;
-    color: white;
     font-size: 10px;
     z-index: 9999;
   }
@@ -57,12 +55,6 @@
 </style>
 </head>
 <body>
-
-<!-- Contenido -->
-<div class="p-4 text-center">
-  <h1 class="text-2xl text-purple-500 font-bold">Página Principal</h1>
-  <p>Contenido de ejemplo arriba del menú.</p>
-</div>
 
 <!-- Menú Inferior -->
 <nav>
@@ -115,7 +107,7 @@
   }
 
   profileBtn.addEventListener('click', () => {
-    window.location.href = 'https://nimeapp.github.io/Flixplemusic/perfil.html';
+    window.location.href = 'https://nimeapp.github.io/Flixplemusic/perfiluser.html';
   });
 
   onAuthStateChanged(auth, async (user) => {
@@ -139,7 +131,6 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
   lucide.createIcons();
-
   function setActive(element, url) {
     document.querySelectorAll("nav button").forEach(el => el.classList.remove("active-tab"));
     element.classList.add("active-tab");
