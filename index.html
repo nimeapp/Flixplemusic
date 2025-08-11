@@ -10,7 +10,7 @@
     :root{
       --page-padding: 2rem;
       --edge-inner-padding: 0.4rem;
-      --menu-slider-width: 360px; /* ancho que usaremos para el slider lateral */
+      --menu-slider-width: 360px; /* ancho del slider lateral */
     }
 
     body {
@@ -20,7 +20,7 @@
       min-height: 100vh;
       padding: var(--page-padding);
       box-sizing: border-box;
-      overflow-x: hidden; /* evitar scroll horizontal cuando desplazamos */
+      overflow-x: hidden; /* evitar scroll horizontal */
     }
 
     #contenido-principal {
@@ -41,8 +41,7 @@
     }
 
     /*
-      Estas reglas hacen que el carrusel "salga" del padding del body y quede más pegado
-      a las orillas horizontales. Ajusta --page-padding si cambias el padding del body.
+      Ajustes carrusel para salir del padding del body
     */
     #artistCarousel,
     .album-carousel {
@@ -243,16 +242,19 @@
     });
     window.oncontextmenu = () => false;
 
+    // Deshabilitar href para controlar con JS
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('a').forEach(el => {
         const url = el.getAttribute('href');
-        el.removeAttribute('href');
-        el.style.cursor = 'pointer';
-        el.onclick = () => window.location.href = url;
+        if(url && !url.startsWith('#') && !url.startsWith('mailto:') && !url.startsWith('go:')){
+          el.removeAttribute('href');
+          el.style.cursor = 'pointer';
+          el.onclick = () => window.location.href = url;
+        }
       });
     });
 
-    // Escuchar mensaje del iframe (menú) para abrir/cerrar slider
+    // ESCUCHAR MENSAJES DEL IFRAME MENÚ
     window.addEventListener('message', event => {
       if (event.data.sliderOpen === true) {
         document.getElementById('contenido-principal').style.transform = 'translateX(calc(-1 * var(--menu-slider-width)))';
@@ -275,8 +277,8 @@
     </section>
   </div>
 
-  <!-- iframe para menú inferior -->
-  <iframe src="menu.html" 
+  <!-- iframe menú inferior -->
+  <iframe src="https://nimeapp.github.io/Flixplemusic/menu.html" 
           id="iframe-menu" 
           style="position: fixed; bottom: 0; left: 0; width: 100%; height: 48px; border: none; z-index: 10000;">
   </iframe>
