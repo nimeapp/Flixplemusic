@@ -23,7 +23,7 @@
     justify-content: space-around;
     padding: 0.5rem 0;
     font-size: 10px;
-    z-index: 9999;
+    z-index: 10001; /* superior al slider */
   }
   nav button {
     background: none;
@@ -56,12 +56,14 @@
     stroke: #a855f7 !important;
   }
 
-  /* Contenedor para perfil con slide */
+  /* Contenedor para perfil con slide, sin ocultar menú */
   #profile-container {
     position: fixed;
-    top: 0; left: 100%; /* inicialmente fuera de pantalla a la derecha */
+    top: 0;
+    right: 0;
     width: 100%;
-    height: 100vh;
+    max-width: 360px;
+    height: calc(100vh - 48px); /* menos altura del menú inferior */
     background-color: #f5f6f7;
     color: black;
     font-family: sans-serif;
@@ -69,10 +71,14 @@
     box-sizing: border-box;
     overflow-y: auto;
     z-index: 10000;
-    transition: left 0.4s ease;
+    transform: translateX(100%);
+    transition: transform 0.4s ease;
+    border-left: 1px solid #ddd;
+    /* Posición encima pero sin tapar menú inferior */
+    bottom: 48px; /* alto menú inferior para que no lo cubra */
   }
   #profile-container.visible {
-    left: 0; /* visible en pantalla */
+    transform: translateX(0);
   }
 
   /* Animación slide-in para contenido del perfil */
@@ -158,30 +164,6 @@
   #opciones-container a:hover {
     background: #dbeafe;
   }
-
-  /* Botón cerrar perfil con flecha izquierda */
-  #btn-cerrar-profile {
-    position: fixed;
-    top: 1rem;
-    left: 1rem;
-    background: none;
-    border: none;
-    color: #a855f7;
-    font-weight: bold;
-    font-size: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.3rem;
-    cursor: pointer;
-    z-index: 10001;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.3s ease;
-  }
-  #btn-cerrar-profile.visible {
-    opacity: 1;
-    pointer-events: auto;
-  }
 </style>
 </head>
 <body>
@@ -210,10 +192,6 @@
 
 <!-- Contenedor Perfil (oculto inicialmente, se muestra con slide) -->
 <div id="profile-container" aria-label="Perfil de Usuario" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
-  <button id="btn-cerrar-profile" aria-label="Cerrar Perfil">
-    <i data-lucide="arrow-left" class="w-6 h-6"></i> Volver
-  </button>
-
   <div id="profile-content">
 
     <div id="contenedor-perfil">
@@ -314,7 +292,6 @@
   const userNameSpan = document.getElementById('user-name');
 
   const profileContainer = document.getElementById('profile-container');
-  const btnCerrarProfile = document.getElementById('btn-cerrar-profile');
 
   const btnMiInfo = document.getElementById('btn-mi-informacion');
   const seccionMiInfo = document.getElementById('seccion-mi-informacion');
@@ -369,19 +346,17 @@
     cerrarMiInformacion();
   });
 
-  // Abrir perfil con slide y mostrar botón cerrar
+  // Toggle slider perfil con botón perfil
   document.getElementById('profile-btn').addEventListener('click', () => {
-    profileContainer.classList.add('visible');
-    profileContainer.setAttribute('aria-hidden', 'false');
-    btnCerrarProfile.classList.add('visible');
-  });
-
-  // Cerrar perfil con botón flecha
-  btnCerrarProfile.addEventListener('click', () => {
-    profileContainer.classList.remove('visible');
-    profileContainer.setAttribute('aria-hidden', 'true');
-    btnCerrarProfile.classList.remove('visible');
-    cerrarMiInformacion();
+    const isVisible = profileContainer.classList.contains('visible');
+    if (isVisible) {
+      profileContainer.classList.remove('visible');
+      profileContainer.setAttribute('aria-hidden', 'true');
+      cerrarMiInformacion();
+    } else {
+      profileContainer.classList.add('visible');
+      profileContainer.setAttribute('aria-hidden', 'false');
+    }
   });
 
   function abrirMiInformacion() {
@@ -404,9 +379,8 @@
     window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/reset_password.html';
   });
 
-  // Navegación simple (puedes personalizar o eliminar si quieres)
+  // Navegación simple
   function goToPage(url, btn) {
-    // Desactiva tabs actuales
     document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-tab'));
     btn.classList.add('active-tab');
     window.location.href = url;
