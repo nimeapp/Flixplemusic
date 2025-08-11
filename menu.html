@@ -7,14 +7,17 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body {
-    margin: 0; padding-bottom: 56px; /* espacio para menú fijo */
-    background-color: #000; color: white; font-family: sans-serif;
+    margin: 0;
+    padding-bottom: 56px;
+    background-color: #000;
+    color: white;
+    font-family: sans-serif;
   }
   nav {
     position: fixed;
     bottom: 0; left: 0; right: 0;
     background-color: #000;
-    border-top: 1px solid #444;
+    border-top: 2px solid #90ee90; /* verde claro */
     display: flex;
     justify-content: space-around;
     padding: 0.5rem 0;
@@ -44,8 +47,9 @@
     font-size: 14px;
     user-select: none;
     color: white;
+    border: 2px solid #90ee90; /* borde verde claro */
   }
-  .active-tab svg,
+  .active-tab i,
   .active-tab span {
     color: #a855f7 !important;
     stroke: #a855f7 !important;
@@ -54,8 +58,8 @@
 </head>
 <body>
 
-<!-- Aquí va el contenido principal de tu página -->
-<div style="padding: 1rem; text-align: center;">
+<!-- Contenido -->
+<div class="p-4 text-center">
   <h1 class="text-2xl text-purple-500 font-bold">Página Principal</h1>
   <p>Contenido de ejemplo arriba del menú.</p>
 </div>
@@ -63,17 +67,17 @@
 <!-- Menú Inferior -->
 <nav>
   <button onclick="setActive(this, 'https://nimeapp.github.io/Flixplemusic/index.html')" aria-label="Inicio">
-    <svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-home" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7"></path><path d="M9 22V12H15V22"></path></svg>
+    <i data-lucide="home" class="text-purple-500"></i>
     <span>Inicio</span>
   </button>
 
   <button onclick="window.location.href='https://nimeapp.github.io/Flixplemusic/buscador.html'" aria-label="Buscar">
-    <svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-search" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    <i data-lucide="search" class="text-purple-500"></i>
     <span>Buscar</span>
   </button>
 
   <button onclick="window.location.href='https://nimeapp.github.io/Flixplemusic/tulista.html'" aria-label="Tu Lista">
-    <svg xmlns="http://www.w3.org/2000/svg" class="lucide lucide-list" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+    <i data-lucide="list" class="text-purple-500"></i>
     <span>Tu Lista</span>
   </button>
 
@@ -82,6 +86,7 @@
   </button>
 </nav>
 
+<!-- Firebase -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
   import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
@@ -110,7 +115,7 @@
   }
 
   profileBtn.addEventListener('click', () => {
-    window.location.href = 'https://nimeapp.github.io/Flixplemusic/perfil.html'; // Cambia a tu página de perfil
+    window.location.href = 'https://nimeapp.github.io/Flixplemusic/perfil.html';
   });
 
   onAuthStateChanged(auth, async (user) => {
@@ -125,15 +130,16 @@
         setAvatar(initial, '#555');
       }
     } else {
-      // No hay usuario logueado, redirigir a login
       window.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
     }
   });
 </script>
 
+<!-- Lucide Icons -->
 <script src="https://unpkg.com/lucide@latest"></script>
-
 <script>
+  lucide.createIcons();
+
   function setActive(element, url) {
     document.querySelectorAll("nav button").forEach(el => el.classList.remove("active-tab"));
     element.classList.add("active-tab");
