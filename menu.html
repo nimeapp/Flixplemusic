@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Menú Inferior con Perfil Dinámico</title>
+<title>Menú Inferior con Contenido Dinámico</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body {
@@ -11,10 +11,10 @@
     background-color: #000;
     color: white;
     font-family: sans-serif;
-    overflow-x: hidden; /* Evita scroll horizontal */
+    overflow-x: hidden;
   }
 
-  /* Contenedor principal para cargar contenido dinámico */
+  /* Contenedor contenido dinámico */
   #content {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 56px; /* altura menú */
@@ -22,6 +22,16 @@
     overflow-y: auto;
     padding: 1rem;
     color: black;
+  }
+
+  /* Animación slider sólo cuando se agrega esta clase */
+  @keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  .slide-in {
+    animation: slideInRight 0.4s ease forwards;
   }
 
   nav {
@@ -61,6 +71,7 @@
     user-select: none;
     color: white;
     border: 2px solid #90ee90; /* borde verde claro */
+    overflow: hidden;
   }
 
   .active-tab i,
@@ -69,40 +80,27 @@
     stroke: #a855f7 !important;
   }
 
-  /* Animación slider */
-  @keyframes slideInRight {
-    from {
-      transform: translateX(100%);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-  .slide-in {
-    animation: slideInRight 0.4s ease-out forwards;
-  }
-
-  /* Estilos perfiluser dentro del #content */
+  /* Estilos para contenido perfil (que viene de perfiluser.html) */
   #contenedor-perfil {
     background: white;
     padding: 1rem;
     border-radius: 0.5rem;
-    box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1rem;
-    color: black;
+    margin-top: 1rem;
   }
 
   #contenedor-perfil #avatar {
-    width: 64px;
-    height: 64px;
-    font-size: 2rem;
+    width: 64px; height: 64px;
+    background: #888;
     color: white;
-    background-color: #555;
+    font-size: 2rem;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     border-radius: 50%;
     overflow: hidden;
   }
@@ -112,78 +110,78 @@
     padding: 1rem;
     margin-top: 1rem;
     border-radius: 0.5rem;
-    box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
     max-width: 400px;
-    position: relative;
     color: black;
-  }
-
-  #seccion-mi-informacion.hidden {
+    position: relative;
     display: none;
   }
 
-  #seccion-mi-informacion h2 {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+  #seccion-mi-informacion.visible {
+    display: block;
+  }
+
+  #btn-cerrar-mi-informacion {
+    background: none;
+    border: none;
+    cursor: pointer;
   }
 
   #opciones-container {
     background: white;
-    padding: 1rem;
     margin-top: 1rem;
+    padding: 1rem;
     border-radius: 0.5rem;
-    box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    max-width: 500px;
     color: black;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
+    gap: 1rem;
   }
 
   #opciones-container button,
   #opciones-container a {
-    background: #f3f4f6;
+    background: #f0f0f0;
     padding: 0.75rem;
     border-radius: 0.5rem;
+    text-decoration: none;
+    color: #2563eb;
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    text-decoration: none;
-    color: black;
+    gap: 0.5rem;
+    cursor: pointer;
   }
 
   #opciones-container button:hover,
   #opciones-container a:hover {
-    background: #e5e7eb;
+    background: #dbeafe;
   }
 </style>
 </head>
 <body>
 
 <!-- Contenedor para cargar contenido dinámico -->
-<div id="content">
-  <h2 class="text-white text-2xl">Bienvenido a la página principal</h2>
-  <p class="text-gray-400">Selecciona una opción del menú inferior para cargar contenido.</p>
-</div>
+<div id="content"></div>
 
 <!-- Menú Inferior -->
 <nav>
-  <button aria-label="Inicio" onclick="loadPage('inicio', this)">
+  <button aria-label="Inicio" onclick="loadPage('https://nimeapp.github.io/Flixplemusic/index.html', this, false)">
     <i data-lucide="home" class="text-purple-500"></i>
     <span>Inicio</span>
   </button>
 
-  <button aria-label="Buscar" onclick="loadPage('buscar', this)">
+  <button aria-label="Buscar" onclick="loadPage('https://nimeapp.github.io/Flixplemusic/buscador.html', this, false)">
     <i data-lucide="search" class="text-purple-500"></i>
     <span>Buscar</span>
   </button>
 
-  <button aria-label="Tu Lista" onclick="loadPage('lista', this)">
+  <button aria-label="Tu Lista" onclick="loadPage('https://nimeapp.github.io/Flixplemusic/tulista.html', this, false)">
     <i data-lucide="list" class="text-purple-500"></i>
     <span>Tu Lista</span>
   </button>
 
-  <button id="profile-btn" aria-label="Perfil" style="padding:0;" onclick="loadPage('perfil', this)">
+  <button id="profile-btn" aria-label="Perfil" style="padding:0;" onclick="loadPage('https://nimeapp.github.io/Flixplemusic/perfiluser.html', this, true)">
     <div id="avatar"></div>
   </button>
 </nav>
@@ -211,213 +209,170 @@
   const avatarDiv = document.getElementById('avatar');
   const contentDiv = document.getElementById('content');
 
-  let usuarioActual = null;
-
-  // Función para poner avatar en el menú
+  // Función para establecer avatar
   function setAvatar(initials, color, photoURL) {
-    if (photoURL) {
+    if(photoURL){
       avatarDiv.innerHTML = `<img src="${photoURL}" alt="avatar" class="w-full h-full object-cover rounded-full">`;
+      avatarDiv.style.backgroundColor = '';
+      avatarDiv.textContent = '';
     } else {
-      avatarDiv.textContent = initials || '';
-      avatarDiv.style.backgroundColor = color || '#555';
+      avatarDiv.textContent = initials;
+      avatarDiv.style.backgroundColor = color;
     }
   }
 
-  // Escucha estado de autenticación para avatar
+  // Carga usuario y avatar en menú
   onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      try {
-        const userRef = ref(db, 'users/' + user.uid);
-        const snapshot = await get(userRef);
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          usuarioActual = { ...data, email: data.email || user.email, displayName: data.name || user.displayName, photoURL: data.photoURL || user.photoURL };
-          setAvatar(data.initials || (data.name ? data.name.charAt(0).toUpperCase() : ''), data.profileColor || '#555', data.photoURL || user.photoURL);
-        } else {
-          usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
-          setAvatar(user.email ? user.email.charAt(0).toUpperCase() : '', '#555', user.photoURL);
-        }
-      } catch (err) {
-        console.error('Error al leer usuario de la BD:', err);
-        usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
-        setAvatar(user.email ? user.email.charAt(0).toUpperCase() : '', '#555', user.photoURL);
+    if(user){
+      const userRef = ref(db, 'users/' + user.uid);
+      const snapshot = await get(userRef);
+      if(snapshot.exists()){
+        const data = snapshot.val();
+        setAvatar(data.initials || '', data.profileColor || '#555', data.photoURL || user.photoURL);
+      } else {
+        const initial = user.email ? user.email.charAt(0).toUpperCase() : '';
+        setAvatar(initial, '#555');
       }
     } else {
-      window.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
+      // Si no hay usuario, redirige al login fuera del iframe
+      window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
     }
   });
 
-  // Función para cargar páginas simuladas (inicio, buscar, lista) o perfil dinámico
-  async function loadPage(page, button) {
-    // Marca el botón activo
-    document.querySelectorAll("nav button").forEach(el => el.classList.remove("active-tab"));
-    if (button) button.classList.add("active-tab");
+  // Función para cargar una página dentro del div #content
+  // con opción para animar slider sólo para perfil
+  window.loadPage = async function(url, button, withSlide) {
+    // Marca botón activo
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-tab'));
+    if(button) button.classList.add('active-tab');
 
-    if(page === 'perfil') {
-      loadPerfil();
-    } else {
-      // Aquí puedes cargar otras páginas estáticas o simples
-      contentDiv.classList.remove('slide-in');
-      void contentDiv.offsetWidth; // reflow para reiniciar animación
+    try {
+      const res = await fetch(url);
+      if(!res.ok) throw new Error('No se pudo cargar la página');
 
-      if(page === 'inicio') {
-        contentDiv.innerHTML = `<h2 class="text-black text-2xl font-semibold">Inicio</h2><p>Contenido de la página inicio.</p>`;
-      } else if(page === 'buscar') {
-        contentDiv.innerHTML = `<h2 class="text-black text-2xl font-semibold">Buscar</h2><p>Contenido de la página buscar.</p>`;
-      } else if(page === 'lista') {
-        contentDiv.innerHTML = `<h2 class="text-black text-2xl font-semibold">Tu Lista</h2><p>Contenido de la página tu lista.</p>`;
+      const text = await res.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, 'text/html');
+      // Obtiene solo el contenido del body
+      const bodyContent = doc.body.innerHTML;
+
+      // Inyecta contenido
+      contentDiv.innerHTML = bodyContent;
+
+      // Si es perfil, añade animación slide-in
+      if(withSlide){
+        contentDiv.classList.remove('slide-in');
+        // Trigger reflow para reiniciar animación
+        void contentDiv.offsetWidth;
+        contentDiv.classList.add('slide-in');
       } else {
-        contentDiv.innerHTML = `<h2 class="text-black text-2xl font-semibold">Página no encontrada</h2>`;
+        contentDiv.classList.remove('slide-in');
       }
-      contentDiv.classList.add('slide-in');
+
+      // Reactiva iconos lucide en contenido nuevo
+      lucide.createIcons();
+
+      // Inicializa lógica de perfil si cargaste perfiluser.html
+      if(withSlide){
+        initPerfilUser();
+      }
+
+    } catch(err){
+      console.error(err);
+      alert('Error al cargar la página.');
     }
-  }
+  };
 
-  // Función para cargar perfil con animación y lógica completa
-  async function loadPerfil() {
-    // Contenido HTML del perfil (simplificado y adaptado)
-    const perfilHTML = `
-      <div id="contenedor-perfil" class="slide-in">
-        <div id="avatarPerfil" class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white"></div>
-        <div class="flex flex-wrap items-center gap-2">
-          <span id="user-name" class="text-lg font-semibold text-gray-800"></span>
-        </div>
-      </div>
+  // Inicializar contenido perfil (igual que en perfiluser.html)
+  function initPerfilUser(){
+    const avatarProfile = contentDiv.querySelector('#avatar');
+    const userNameSpan = contentDiv.querySelector('#user-name');
+    const btnMiInfo = contentDiv.querySelector('#btn-mi-informacion');
+    const seccionMiInfo = contentDiv.querySelector('#seccion-mi-informacion');
+    const btnCerrarMiInfo = contentDiv.querySelector('#btn-cerrar-mi-informacion');
+    const infoNombre = contentDiv.querySelector('#info-nombre');
+    const infoCorreo = contentDiv.querySelector('#info-correo');
+    const btnCambiarContrasena = contentDiv.querySelector('#btn-cambiar-contrasena');
 
-      <div id="seccion-mi-informacion" class="hidden mt-4 p-4 bg-white rounded-lg shadow max-w-md relative text-black">
-        <h2 class="text-xl font-semibold mb-4 flex justify-between items-center">
-          Mi Información
-          <button id="btn-cerrar-mi-informacion" type="button" title="Cerrar" class="text-gray-500 hover:text-gray-700 focus:outline-none">
-            <i data-lucide="x" class="w-6 h-6"></i>
-          </button>
-        </h2>
+    let usuarioActual = null;
 
-        <p class="mb-2"><strong>Nombre:</strong> <span id="info-nombre"></span></p>
-        <p class="mb-4"><strong>Correo:</strong> <span id="info-correo"></span></p>
-
-        <button id="btn-cambiar-contrasena" type="button" class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md focus:outline-none">
-          Cambiar contraseña
-        </button>
-      </div>
-
-      <div id="opciones-container" class="bg-white mt-4 p-4 grid grid-cols-2 gap-3 shadow rounded-lg text-black">
-        <button id="btn-mi-informacion" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
-          <i data-lucide="user" class="w-6 h-6 text-blue-500"></i>
-          <span>Mi información</span>
-        </button>
-
-        <button id="btn-feeds" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
-          <i data-lucide="newspaper" class="w-6 h-6 text-blue-500"></i>
-          <span>Feeds</span>
-        </button>
-
-        <a href="go:politicas-privacidad" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-          <i data-lucide="shield-check" class="w-6 h-6 text-blue-500"></i>
-          <span>Políticas y Privacidad</span>
-        </a>
-
-        <a href="go:politica-uso" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-          <i data-lucide="file-text" class="w-6 h-6 text-blue-500"></i>
-          <span>Política de Uso</span>
-        </a>
-
-        <a href="go:cookies" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-          <i data-lucide="cookie" class="w-6 h-6 text-blue-500"></i>
-          <span>Cookies</span>
-        </a>
-
-        <a href="go:ayuda" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-          <i data-lucide="help-circle" class="w-6 h-6 text-blue-500"></i>
-          <span>Ayuda</span>
-        </a>
-
-        <a href="go:contacto" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-          <i data-lucide="mail" class="w-6 h-6 text-blue-500"></i>
-          <span>Contacto</span>
-        </a>
-
-        <a href="go:acerca" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-          <i data-lucide="info" class="w-6 h-6 text-blue-500"></i>
-          <span>Acerca de</span>
-        </a>
-
-        <a href="go:compartir" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-          <i data-lucide="share-2" class="w-6 h-6 text-blue-500"></i>
-          <span>Compartir la app</span>
-        </a>
-
-        <a href="go:sugerencias" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-          <i data-lucide="message-circle" class="w-6 h-6 text-blue-500"></i>
-          <span>Enviar sugerencias</span>
-        </a>
-      </div>
-    `;
-
-    // Inyecta contenido
-    contentDiv.innerHTML = perfilHTML;
-
-    // Reinicia animación slide-in
-    contentDiv.classList.remove('slide-in');
-    void contentDiv.offsetWidth;
-    contentDiv.classList.add('slide-in');
-
-    // Inicializa iconos lucide
-    lucide.createIcons();
-
-    // Elementos nuevos
-    const avatarPerfil = document.getElementById('avatarPerfil');
-    const userNameSpan = document.getElementById('user-name');
-    const btnMiInfo = document.getElementById('btn-mi-informacion');
-    const seccionMiInfo = document.getElementById('seccion-mi-informacion');
-    const btnCerrarMiInfo = document.getElementById('btn-cerrar-mi-informacion');
-    const infoNombre = document.getElementById('info-nombre');
-    const infoCorreo = document.getElementById('info-correo');
-    const btnCambiarContrasena = document.getElementById('btn-cambiar-contrasena');
-
-    // Rellenar avatar y nombre perfil
-    if(usuarioActual) {
-      if(usuarioActual.photoURL) {
-        avatarPerfil.innerHTML = `<img src="${usuarioActual.photoURL}" alt="avatar" class="w-full h-full object-cover rounded-full">`;
+    // Carga usuario Firebase para perfil
+    onAuthStateChanged(auth, async (user) => {
+      if(user){
+        try {
+          const userRef = ref(db, 'users/' + user.uid);
+          const snapshot = await get(userRef);
+          if(snapshot.exists()){
+            const data = snapshot.val();
+            usuarioActual = { ...data, email: data.email || user.email, displayName: data.name || user.displayName };
+            userNameSpan.textContent = data.name || user.displayName || '';
+            if(data.photoURL || user.photoURL){
+              avatarProfile.innerHTML = `<img src="${data.photoURL || user.photoURL}" alt="avatar" class="w-full h-full object-cover rounded-full">`;
+              avatarProfile.style.backgroundColor = '';
+              avatarProfile.textContent = '';
+            } else {
+              const initials = data.initials || (data.name ? data.name.charAt(0).toUpperCase() : '');
+              avatarProfile.textContent = initials;
+              avatarProfile.style.backgroundColor = data.profileColor || '#555';
+            }
+          } else {
+            usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
+            userNameSpan.textContent = user.displayName || '';
+            if(user.photoURL){
+              avatarProfile.innerHTML = `<img src="${user.photoURL}" alt="avatar" class="w-full h-full object-cover rounded-full">`;
+              avatarProfile.style.backgroundColor = '';
+              avatarProfile.textContent = '';
+            } else {
+              avatarProfile.textContent = '';
+              avatarProfile.style.backgroundColor = '#555';
+            }
+          }
+        } catch(e){
+          console.error('Error leyendo usuario en perfil:', e);
+          usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
+          userNameSpan.textContent = user.displayName || '';
+          avatarProfile.textContent = '';
+          avatarProfile.style.backgroundColor = '#555';
+        }
+        cerrarMiInformacion();
       } else {
-        const initials = usuarioActual.initials || (usuarioActual.displayName ? usuarioActual.displayName.charAt(0).toUpperCase() : '');
-        avatarPerfil.textContent = initials;
-        avatarPerfil.style.backgroundColor = usuarioActual.profileColor || '#555';
+        usuarioActual = null;
+        userNameSpan.textContent = 'No has iniciado sesión';
+        avatarProfile.textContent = '';
+        avatarProfile.style.backgroundColor = '#555';
+        cerrarMiInformacion();
       }
-      userNameSpan.textContent = usuarioActual.displayName || '';
-    }
+    });
 
-    // Mostrar sección "Mi información"
-    function abrirMiInformacion() {
+    // Funciones abrir/cerrar sección info
+    function abrirMiInformacion(){
       if(!usuarioActual) return;
-      seccionMiInfo.classList.remove('hidden');
-      infoNombre.textContent = usuarioActual.displayName || 'Sin nombre';
+      seccionMiInfo.classList.add('visible');
+      infoNombre.textContent = usuarioActual.name || usuarioActual.displayName || 'Sin nombre';
       infoCorreo.textContent = usuarioActual.email || 'Sin correo';
     }
-    function cerrarMiInformacion() {
-      seccionMiInfo.classList.add('hidden');
+    function cerrarMiInformacion(){
+      seccionMiInfo.classList.remove('visible');
     }
 
-    btnMiInfo.addEventListener('click', abrirMiInformacion);
-    btnCerrarMiInfo.addEventListener('click', cerrarMiInformacion);
+    btnMiInfo?.addEventListener('click', abrirMiInformacion);
+    btnCerrarMiInfo?.addEventListener('click', cerrarMiInformacion);
 
-    btnCambiarContrasena.addEventListener('click', e => {
+    btnCambiarContrasena?.addEventListener('click', e => {
       e.stopPropagation();
-      window.location.href = 'https://nimeapp.github.io/Flixplemusic/reset_password.html';
+      window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/reset_password.html';
     });
   }
 
-  // Carga la página inicio por defecto y activa su botón
-  window.addEventListener('DOMContentLoaded', () => {
-    const inicioBtn = document.querySelector('nav button[aria-label="Inicio"]');
-    if(inicioBtn) {
-      loadPage('inicio', inicioBtn);
-    }
-  });
-
+  // Opcional: cargar página inicio automáticamente si quieres (o deja vacío)
+  // loadPage('https://nimeapp.github.io/Flixplemusic/index.html', null, false);
 </script>
 
 <!-- Lucide Icons -->
 <script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  lucide.createIcons();
+</script>
 
 </body>
 </html>
