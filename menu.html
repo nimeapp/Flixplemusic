@@ -25,7 +25,7 @@
     font-size: 10px;
     z-index: 10001; /* superior al slider */
   }
-  nav button {
+  nav a, nav button {
     background: none;
     border: none;
     color: inherit;
@@ -33,9 +33,17 @@
     flex-direction: column;
     align-items: center;
     cursor: pointer;
+    text-decoration: none;
+    font-size: 10px;
+    user-select: none;
   }
-  nav button:hover {
+  nav a:hover, nav button:hover {
     opacity: 0.8;
+  }
+  nav a.active-tab i,
+  nav a.active-tab span {
+    color: #a855f7 !important;
+    stroke: #a855f7 !important;
   }
   #avatar {
     width: 32px; height: 32px;
@@ -49,11 +57,6 @@
     color: white;
     border: 2px solid #90ee90; /* borde verde claro */
     overflow: hidden;
-  }
-  .active-tab i,
-  .active-tab span {
-    color: #a855f7 !important;
-    stroke: #a855f7 !important;
   }
 
   /* Contenedor para perfil con slide, sin ocultar menú */
@@ -169,22 +172,22 @@
 
 <!-- Menú Inferior -->
 <nav>
-  <button type="button" aria-label="Inicio" onclick="goToPage('https://nimeapp.github.io/Flixplemusic/index.html', this)">
+  <a href="https://nimeapp.github.io/Flixplemusic/index.html" target="_top" aria-label="Inicio" id="link-inicio">
     <i data-lucide="home" class="text-purple-500"></i>
     <span>Inicio</span>
-  </button>
+  </a>
 
-  <button type="button" aria-label="Buscar" onclick="goToPage('https://nimeapp.github.io/Flixplemusic/buscador.html', this)">
+  <a href="https://nimeapp.github.io/Flixplemusic/buscador.html" target="_top" aria-label="Buscar" id="link-buscar">
     <i data-lucide="search" class="text-purple-500"></i>
     <span>Buscar</span>
-  </button>
+  </a>
 
-  <button type="button" aria-label="Tu Lista" onclick="goToPage('https://nimeapp.github.io/Flixplemusic/tulista.html', this)">
+  <a href="https://nimeapp.github.io/Flixplemusic/tulista.html" target="_top" aria-label="Tu Lista" id="link-tulista">
     <i data-lucide="list" class="text-purple-500"></i>
     <span>Tu Lista</span>
-  </button>
+  </a>
 
-  <button id="profile-btn" type="button" aria-label="Perfil" style="padding:0;">
+  <button id="profile-btn" aria-label="Perfil" style="padding:0;">
     <div id="avatar"></div>
   </button>
 </nav>
@@ -223,18 +226,45 @@
         <span>Feeds</span>
       </button>
 
-      <!-- Ejemplo enlaces internos manejados con goToPage -->
-      <a href="#" data-url="https://nimeapp.github.io/Flixplemusic/politicas-privacidad.html" class="nav-link flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+      <a href="go:politicas-privacidad" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
         <i data-lucide="shield-check" class="w-6 h-6 text-blue-500"></i>
         <span>Políticas y Privacidad</span>
       </a>
 
-      <a href="#" data-url="https://nimeapp.github.io/Flixplemusic/politica-uso.html" class="nav-link flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+      <a href="go:politica-uso" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
         <i data-lucide="file-text" class="w-6 h-6 text-blue-500"></i>
         <span>Política de Uso</span>
       </a>
 
-      <!-- Más enlaces iguales -->
+      <a href="go:cookies" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <i data-lucide="cookie" class="w-6 h-6 text-blue-500"></i>
+        <span>Cookies</span>
+      </a>
+
+      <a href="go:ayuda" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <i data-lucide="help-circle" class="w-6 h-6 text-blue-500"></i>
+        <span>Ayuda</span>
+      </a>
+
+      <a href="go:contacto" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <i data-lucide="mail" class="w-6 h-6 text-blue-500"></i>
+        <span>Contacto</span>
+      </a>
+
+      <a href="go:acerca" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <i data-lucide="info" class="w-6 h-6 text-blue-500"></i>
+        <span>Acerca de</span>
+      </a>
+
+      <a href="go:compartir" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <i data-lucide="share-2" class="w-6 h-6 text-blue-500"></i>
+        <span>Compartir la app</span>
+      </a>
+
+      <a href="go:sugerencias" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <i data-lucide="message-circle" class="w-6 h-6 text-blue-500"></i>
+        <span>Enviar sugerencias</span>
+      </a>
     </div>
 
   </div>
@@ -350,25 +380,6 @@
     e.stopPropagation();
     window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/reset_password.html';
   });
-
-  // Navegación simple para menú inferior
-  function goToPage(url, btn) {
-    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active-tab'));
-    if(btn) btn.classList.add('active-tab');
-    window.location.assign(url);
-  }
-
-  // Manejar enlaces con clase nav-link para que abran en la misma pestaña sin recargar todo
-  document.querySelectorAll('.nav-link').forEach(link => {
-    link.addEventListener('click', e => {
-      e.preventDefault();
-      const url = link.dataset.url;
-      if (url) {
-        goToPage(url);
-      }
-    });
-  });
-
 </script>
 
 <script>
