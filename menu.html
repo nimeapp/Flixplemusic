@@ -1,390 +1,215 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Menú Inferior con Perfil Slider</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-<style>
-  body {
-    margin: 0;
-    background-color: #000;
-    color: white;
-    font-family: sans-serif;
-    overflow-x: hidden;
-  }
-  nav {
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    background-color: #000;
-    border-top: 2px solid #90ee90; /* verde claro */
-    display: flex;
-    justify-content: space-around;
-    padding: 0.5rem 0;
-    font-size: 10px;
-    z-index: 10001; /* superior al slider */
-  }
-  nav a, nav button {
-    background: none;
-    border: none;
-    color: inherit;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
-    text-decoration: none;
-    font-size: 10px;
-    user-select: none;
-  }
-  nav a:hover, nav button:hover {
-    opacity: 0.8;
-  }
-  nav a.active-tab i,
-  nav a.active-tab span {
-    color: #a855f7 !important;
-    stroke: #a855f7 !important;
-  }
-  #avatar {
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 14px;
-    user-select: none;
-    color: white;
-    border: 2px solid #90ee90; /* borde verde claro */
-    overflow: hidden;
-  }
-
-  /* Contenedor para perfil con slide, sin ocultar menú */
-  #profile-container {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 100%;
-    max-width: 360px;
-    height: calc(100vh - 48px); /* menos altura del menú inferior */
-    background-color: #f5f6f7;
-    color: black;
-    font-family: sans-serif;
-    padding: 1rem;
-    box-sizing: border-box;
-    overflow-y: auto;
-    z-index: 10000;
-    transform: translateX(100%);
-    transition: transform 0.4s ease;
-    border-left: 1px solid #ddd;
-    bottom: 48px; /* alto menú inferior para que no lo cubra */
-  }
-  #profile-container.visible {
-    transform: translateX(0);
-  }
-
-  /* Animación slide-in para contenido del perfil */
-  @keyframes slideInRight {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-  #profile-content {
-    animation: slideInRight 0.4s ease-out forwards;
-  }
-
-  /* Estilos internos del perfil */
-  #contenedor-perfil {
-    background: white;
-    padding: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-  }
-  #contenedor-perfil #avatar-profile {
-    width: 64px; height: 64px;
-    background: #888;
-    color: white;
-    font-size: 2rem;
-    font-weight: bold;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50%;
-    overflow: hidden;
-  }
-  #user-name {
-    font-weight: 600;
-    font-size: 1.2rem;
-    color: #333;
-  }
-  #seccion-mi-informacion {
-    background: white;
-    padding: 1rem;
-    margin-top: 1rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    max-width: 400px;
-    position: relative;
-    display: none;
-    color: black;
-  }
-  #seccion-mi-informacion.visible {
-    display: block;
-  }
-  #btn-cerrar-mi-informacion {
-    background: none;
-    border: none;
-    cursor: pointer;
-  }
-  #opciones-container {
-    background: white;
-    margin-top: 1rem;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    max-width: 500px;
-    color: black;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-  #opciones-container button,
-  #opciones-container a {
-    background: #f0f0f0;
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-    text-decoration: none;
-    color: #2563eb;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-  }
-  #opciones-container button:hover,
-  #opciones-container a:hover {
-    background: #dbeafe;
-  }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Menú Inferior (menu.html)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root { --menu-height: 60px; }
+    body{ margin:0; font-family:sans-serif; background:#000; color:#fff; }
+    nav{
+      position:fixed; bottom:0; left:0; right:0;
+      height:var(--menu-height);
+      background:#000; border-top:2px solid #90ee90;
+      display:flex; justify-content:space-around; align-items:center;
+      z-index:10001;
+      box-sizing:border-box; padding:0.5rem 0;
+    }
+    nav a, nav button{
+      display:flex; flex-direction:column; align-items:center;
+      gap:4px; color:inherit; background:none; border:none;
+      text-decoration:none; cursor:pointer; font-size:12px;
+    }
+    #avatar{ width:36px; height:36px; border-radius:50%; border:2px solid #90ee90; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+    /* Panel perfil (slide) */
+    #profile-container{
+      position:fixed;
+      top:0; right:0;
+      width:100%; max-width:360px;
+      height:calc(100vh - var(--menu-height));
+      background:#f5f6f7; color:#000;
+      padding:1rem; box-sizing:border-box; overflow:auto;
+      transform:translateX(100%); transition:transform .35s ease;
+      z-index:10002; border-left:1px solid #ddd;
+      bottom: var(--menu-height);
+    }
+    #profile-container.visible{ transform: translateX(0); }
+    #contenedor-perfil{ background:#fff; padding:1rem; border-radius:.5rem; display:flex; gap:1rem; align-items:center; box-shadow:0 0 10px rgba(0,0,0,.15); }
+    #avatar-profile{ width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#888; color:#fff; font-size:2rem; overflow:hidden; }
+    #seccion-mi-informacion{ display:none; background:#fff; padding:1rem; border-radius:.5rem; margin-top:1rem; box-shadow:0 0 10px rgba(0,0,0,.12); }
+    #seccion-mi-informacion.visible{ display:block; }
+    #opciones-container{ margin-top:1rem; background:#fff; padding:1rem; border-radius:.5rem; box-shadow:0 0 10px rgba(0,0,0,.12); display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
+    #opciones-container a, #opciones-container button{ display:flex; gap:.5rem; align-items:center; padding:.6rem; background:#f0f0f0; border-radius:.5rem; color:#2563eb; text-decoration:none; }
+  </style>
 </head>
 <body>
+  <nav>
+    <a href="https://nimeapp.github.io/Flixplemusic/index.html" target="_top" aria-label="Inicio">
+      <i data-lucide="home"></i><span style="font-size:11px">Inicio</span>
+    </a>
 
-<!-- Menú Inferior -->
-<nav>
-  <a href="https://nimeapp.github.io/Flixplemusic/index.html" target="_top" aria-label="Inicio" id="link-inicio">
-    <i data-lucide="home" class="text-purple-500"></i>
-    <span>Inicio</span>
-  </a>
+    <a href="https://nimeapp.github.io/Flixplemusic/buscador.html" target="_top" aria-label="Buscar">
+      <i data-lucide="search"></i><span style="font-size:11px">Buscar</span>
+    </a>
 
-  <a href="https://nimeapp.github.io/Flixplemusic/buscador.html" target="_top" aria-label="Buscar" id="link-buscar">
-    <i data-lucide="search" class="text-purple-500"></i>
-    <span>Buscar</span>
-  </a>
+    <a href="https://nimeapp.github.io/Flixplemusic/tulista.html" target="_top" aria-label="Tu Lista">
+      <i data-lucide="list"></i><span style="font-size:11px">Tu Lista</span>
+    </a>
 
-  <a href="https://nimeapp.github.io/Flixplemusic/tulista.html" target="_top" aria-label="Tu Lista" id="link-tulista">
-    <i data-lucide="list" class="text-purple-500"></i>
-    <span>Tu Lista</span>
-  </a>
+    <button id="profile-btn" aria-label="Perfil" title="Abrir perfil">
+      <div id="avatar">U</div>
+      <span style="font-size:11px">Perfil</span>
+    </button>
+  </nav>
 
-  <button id="profile-btn" aria-label="Perfil" style="padding:0;">
-    <div id="avatar"></div>
-  </button>
-</nav>
+  <!-- Panel perfil (oculto inicialmente) -->
+  <div id="profile-container" role="dialog" aria-hidden="true" aria-label="Panel de perfil">
+    <div id="profile-content">
+      <div id="contenedor-perfil">
+        <div id="avatar-profile">U</div>
+        <div>
+          <div id="user-name" style="font-weight:600;color:#333">Usuario</div>
+          <div style="color:#666;font-size:.9rem">ver perfil</div>
+        </div>
+      </div>
 
-<!-- Contenedor Perfil (oculto inicialmente, se muestra con slide) -->
-<div id="profile-container" aria-label="Perfil de Usuario" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
-  <div id="profile-content">
+      <div id="seccion-mi-informacion">
+        <h2 style="display:flex;justify-content:space-between;align-items:center;margin:0 0 1rem 0">
+          <span>Mi Información</span>
+          <button id="btn-cerrar-mi-informacion" title="Cerrar"><i data-lucide="x"></i></button>
+        </h2>
+        <p><strong>Nombre:</strong> <span id="info-nombre">Sin nombre</span></p>
+        <p><strong>Correo:</strong> <span id="info-correo">Sin correo</span></p>
+        <button id="btn-cambiar-contrasena" style="margin-top:.6rem;padding:.5rem .8rem;background:#0ea5a5;color:#fff;border-radius:.4rem;border:none;cursor:pointer">Cambiar contraseña</button>
+      </div>
 
-    <div id="contenedor-perfil">
-      <div id="avatar-profile" class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white"></div>
-      <div>
-        <span id="user-name"></span>
+      <div id="opciones-container">
+        <button id="btn-mi-informacion" type="button"><i data-lucide="user"></i><span>Mi información</span></button>
+        <button id="btn-feeds" type="button"><i data-lucide="newspaper"></i><span>Feeds</span></button>
+
+        <a href="go:politicas-privacidad"><i data-lucide="shield-check"></i><span>Políticas</span></a>
+        <a href="go:politica-uso"><i data-lucide="file-text"></i><span>Política de Uso</span></a>
+        <a href="go:cookies"><i data-lucide="cookie"></i><span>Cookies</span></a>
+        <a href="go:ayuda"><i data-lucide="help-circle"></i><span>Ayuda</span></a>
+        <a href="go:contacto"><i data-lucide="mail"></i><span>Contacto</span></a>
+        <a href="go:acerca"><i data-lucide="info"></i><span>Acerca de</span></a>
       </div>
     </div>
-
-    <div id="seccion-mi-informacion">
-      <h2 class="text-xl font-semibold mb-4 flex justify-between items-center">
-        Mi Información
-        <button id="btn-cerrar-mi-informacion" title="Cerrar información" aria-label="Cerrar información">
-          <i data-lucide="x" class="w-6 h-6"></i>
-        </button>
-      </h2>
-      <p><strong>Nombre:</strong> <span id="info-nombre"></span></p>
-      <p><strong>Correo:</strong> <span id="info-correo"></span></p>
-      <button id="btn-cambiar-contrasena" class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Cambiar contraseña</button>
-    </div>
-
-    <div id="opciones-container">
-      <button id="btn-mi-informacion" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
-        <i data-lucide="user" class="w-6 h-6 text-blue-500"></i>
-        <span>Mi información</span>
-      </button>
-
-      <button id="btn-feeds" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
-        <i data-lucide="newspaper" class="w-6 h-6 text-blue-500"></i>
-        <span>Feeds</span>
-      </button>
-
-      <a href="go:politicas-privacidad" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="shield-check" class="w-6 h-6 text-blue-500"></i>
-        <span>Políticas y Privacidad</span>
-      </a>
-
-      <a href="go:politica-uso" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="file-text" class="w-6 h-6 text-blue-500"></i>
-        <span>Política de Uso</span>
-      </a>
-
-      <a href="go:cookies" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="cookie" class="w-6 h-6 text-blue-500"></i>
-        <span>Cookies</span>
-      </a>
-
-      <a href="go:ayuda" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="help-circle" class="w-6 h-6 text-blue-500"></i>
-        <span>Ayuda</span>
-      </a>
-
-      <a href="go:contacto" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="mail" class="w-6 h-6 text-blue-500"></i>
-        <span>Contacto</span>
-      </a>
-
-      <a href="go:acerca" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="info" class="w-6 h-6 text-blue-500"></i>
-        <span>Acerca de</span>
-      </a>
-
-      <a href="go:compartir" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="share-2" class="w-6 h-6 text-blue-500"></i>
-        <span>Compartir la app</span>
-      </a>
-
-      <a href="go:sugerencias" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="message-circle" class="w-6 h-6 text-blue-500"></i>
-        <span>Enviar sugerencias</span>
-      </a>
-    </div>
-
   </div>
-</div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-  import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+  <script type="module">
+    // (Opcional) Inicialización Firebase si usas auth para mostrar avatar/nombre.
+    // Si no usas Firebase aquí, puedes eliminar este bloque o dejarlo vacío.
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+    import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
-    authDomain: "flixplemusic.firebaseapp.com",
-    databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
-    projectId: "flixplemusic",
-    storageBucket: "flixplemusic.firebasestorage.app",
-    messagingSenderId: "792301053512",
-    appId: "1:792301053512:web:13878703d081f1a7b3da7d"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+      authDomain: "flixplemusic.firebaseapp.com",
+      databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+      projectId: "flixplemusic",
+      storageBucket: "flixplemusic.firebasestorage.app",
+      messagingSenderId: "792301053512",
+      appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getDatabase(app);
+    let avatarDiv = document.getElementById('avatar');
+    let avatarProfile = document.getElementById('avatar-profile');
+    let userNameSpan = document.getElementById('user-name');
 
-  const avatarDiv = document.getElementById('avatar');
-  const avatarProfile = document.getElementById('avatar-profile');
-  const userNameSpan = document.getElementById('user-name');
+    // Si quieres mostrar info real desde Firebase, descomenta lo siguiente y configura.
+    try {
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getDatabase(app);
 
-  const profileContainer = document.getElementById('profile-container');
-
-  const btnMiInfo = document.getElementById('btn-mi-informacion');
-  const seccionMiInfo = document.getElementById('seccion-mi-informacion');
-  const btnCerrarMiInfo = document.getElementById('btn-cerrar-mi-informacion');
-
-  const infoNombre = document.getElementById('info-nombre');
-  const infoCorreo = document.getElementById('info-correo');
-  const btnCambiarContrasena = document.getElementById('btn-cambiar-contrasena');
-
-  let usuarioActual = null;
-
-  function setAvatar(initials, color, photoURL) {
-    if (photoURL) {
-      avatarDiv.innerHTML = `<img src="${photoURL}" alt="avatar" class="w-full h-full object-cover rounded-full">`;
-      avatarDiv.style.backgroundColor = '';
-      avatarDiv.textContent = '';
-      avatarProfile.innerHTML = avatarDiv.innerHTML;
-      avatarProfile.style.backgroundColor = '';
-      avatarProfile.textContent = '';
-    } else {
-      avatarDiv.textContent = initials || '';
-      avatarDiv.style.backgroundColor = color || '#555';
-      avatarProfile.textContent = initials || '';
-      avatarProfile.style.backgroundColor = color || '#555';
-    }
-  }
-
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      try {
-        const userRef = ref(db, 'users/' + user.uid);
-        const snapshot = await get(userRef);
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          usuarioActual = { ...data, email: data.email || user.email, displayName: data.name || user.displayName };
-          userNameSpan.textContent = data.name || user.displayName || '';
-          setAvatar(data.initials || (data.name ? data.name.charAt(0).toUpperCase() : ''), data.profileColor || '#555', data.photoURL || user.photoURL);
+      onAuthStateChanged(auth, async (user) => {
+        if (user) {
+          // ejemplo: mostrar un nombre simple
+          userNameSpan.textContent = user.displayName || user.email || 'Usuario';
+          avatarDiv.textContent = (user.displayName && user.displayName.charAt(0).toUpperCase()) || 'U';
+          avatarProfile.textContent = avatarDiv.textContent;
         } else {
-          usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
-          userNameSpan.textContent = user.displayName || '';
-          setAvatar('', '#555', user.photoURL);
+          // si no hay user, dejar valores por defecto
         }
-      } catch (e) {
-        console.error('Error leyendo usuario:', e);
-        usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
-        userNameSpan.textContent = user.displayName || '';
-        setAvatar('', '#555', user.photoURL);
+      });
+    } catch (e) {
+      // si Firebase no es necesario o provoca errores en tu entorno, ignora.
+      // console.warn('Firebase no inicializado en menu.html:', e);
+    }
+
+    // Control del slider + comunicación con la página padre (para expandir el iframe)
+    const profileContainer = document.getElementById('profile-container');
+    const profileBtn = document.getElementById('profile-btn');
+    const btnCerrarMiInfo = document.getElementById('btn-cerrar-mi-informacion');
+    const btnMiInfo = document.getElementById('btn-mi-informacion');
+    const seccionMiInfo = document.getElementById('seccion-mi-informacion');
+    const btnCambiarContrasena = document.getElementById('btn-cambiar-contrasena');
+
+    function abrirMiInformacionInterno() {
+      seccionMiInfo.classList.add('visible');
+    }
+    function cerrarMiInformacionInterno() {
+      seccionMiInfo.classList.remove('visible');
+    }
+
+    profileBtn.addEventListener('click', () => {
+      const isVisible = profileContainer.classList.contains('visible');
+      if (isVisible) {
+        // cerrar
+        profileContainer.classList.remove('visible');
+        profileContainer.setAttribute('aria-hidden','true');
+        cerrarMiInformacionInterno();
+        // avisar al padre que colapse
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'menu:closeProfile' }, '*');
+        }
+      } else {
+        // abrir
+        profileContainer.classList.add('visible');
+        profileContainer.setAttribute('aria-hidden','false');
+        // avisar al padre que expanda
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'menu:openProfile' }, '*');
+        }
       }
-    } else {
-      window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
-    }
-    cerrarMiInformacion();
-  });
+    });
 
-  // Toggle slider perfil con botón perfil
-  document.getElementById('profile-btn').addEventListener('click', () => {
-    const isVisible = profileContainer.classList.contains('visible');
-    if (isVisible) {
+    btnCerrarMiInfo.addEventListener('click', () => {
       profileContainer.classList.remove('visible');
-      profileContainer.setAttribute('aria-hidden', 'true');
-      cerrarMiInformacion();
-    } else {
-      profileContainer.classList.add('visible');
-      profileContainer.setAttribute('aria-hidden', 'false');
-    }
-  });
+      profileContainer.setAttribute('aria-hidden','true');
+      cerrarMiInformacionInterno();
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({ type: 'menu:closeProfile' }, '*');
+      }
+    });
 
-  function abrirMiInformacion() {
-    if (!usuarioActual) return;
-    seccionMiInfo.classList.add('visible');
-    seccionMiInfo.classList.remove('hidden');
-    infoNombre.textContent = usuarioActual.name || usuarioActual.displayName || 'Sin nombre';
-    infoCorreo.textContent = usuarioActual.email || 'Sin correo';
-  }
-  function cerrarMiInformacion() {
-    seccionMiInfo.classList.remove('visible');
-    seccionMiInfo.classList.add('hidden');
-  }
+    btnMiInfo.addEventListener('click', abrirMiInformacionInterno);
+    btnCambiarContrasena.addEventListener('click', (e) => {
+      e.stopPropagation();
+      // abrir en top
+      window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/reset_password.html';
+    });
 
-  btnMiInfo.addEventListener('click', abrirMiInformacion);
-  btnCerrarMiInfo.addEventListener('click', cerrarMiInformacion);
+    // Escuchar mensajes del padre (por ejemplo: forzar cerrar)
+    window.addEventListener('message', (ev) => {
+      const data = ev && ev.data;
+      if (!data || !data.type) return;
+      if (data.type === 'menu:forceClose') {
+        profileContainer.classList.remove('visible');
+        profileContainer.setAttribute('aria-hidden','true');
+        cerrarMiInformacionInterno();
+      }
+    });
 
-  btnCambiarContrasena.addEventListener('click', e => {
-    e.stopPropagation();
-    window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/reset_password.html';
-  });
-</script>
+  </script>
 
-<script>
-  lucide.createIcons();
-</script>
-
+  <script>
+    // renderizar lucide icons (no-module)
+    lucide.createIcons();
+  </script>
 </body>
 </html>
