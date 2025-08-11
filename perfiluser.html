@@ -3,16 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Perfil de Usuario con Menú Inferior</title>
+<title>Perfil de Usuario</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
-  body { 
-    background-color: #f5f6f7; 
-    font-family: sans-serif; 
-    margin: 0; 
-    padding-bottom: 56px; /* espacio para menú fijo */
-  }
+  body { background-color: #f5f6f7; font-family: sans-serif; }
   @keyframes slideInRight {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
@@ -20,87 +15,116 @@
   .slide-in {
     animation: slideInRight 0.4s ease-out forwards;
   }
-  #seccion-mi-informacion {
-    z-index: 20;
-  }
-  /* Estilos iframe menú */
-  #menu-iframe {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 56px; /* igual altura del menú */
-    border: none;
-    z-index: 9999;
-    background-color: transparent;
-  }
+  #seccion-mi-informacion { z-index: 20; }
 </style>
 </head>
 <body class="min-h-screen p-2 relative">
 
 <div class="slide-in">
 
-  <!-- Contenedor perfil (sin correo visible, solo nombre) -->
-  <div id="contenedor-perfil" class="bg-white p-4 flex items-center gap-4 shadow mt-2 rounded-lg max-w-md mx-auto">
+  <!-- Contenedor perfil -->
+  <div id="contenedor-perfil" class="bg-white p-4 flex items-center gap-4 shadow mt-2 rounded-lg">
     <div id="avatar" class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white"></div>
     <div class="flex flex-wrap items-center gap-2">
       <span id="user-name" class="text-lg font-semibold text-gray-800"></span>
     </div>
   </div>
 
-  <!-- Sección Mi información justo debajo del perfil -->
-  <div id="seccion-mi-informacion" class="bg-white p-4 mt-4 shadow rounded-lg hidden max-w-md mx-auto relative">
+  <!-- Sección Mi información (aparece justo debajo del perfil) -->
+  <div id="seccion-mi-informacion" class="bg-white p-4 mt-4 shadow rounded-lg hidden max-w-md relative">
     <h2 class="text-xl font-semibold mb-4 text-gray-800 flex justify-between items-center">
       Mi Información
-      <button id="btn-cerrar-mi-informacion" title="Cerrar" class="text-gray-500 hover:text-gray-700 focus:outline-none">
+      <button id="btn-cerrar-mi-informacion" type="button" title="Cerrar" class="text-gray-500 hover:text-gray-700 focus:outline-none">
         <i data-lucide="x" class="w-6 h-6"></i>
       </button>
     </h2>
-    <p><strong>Nombre:</strong> <span id="info-nombre"></span></p>
-    <p><strong>Correo:</strong> <span id="info-correo"></span></p>
-    <button id="btn-cambiar-contrasena" class="mt-6 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md focus:outline-none">
+
+    <p class="mb-2"><strong>Nombre:</strong> <span id="info-nombre"></span></p>
+    <p class="mb-4"><strong>Correo:</strong> <span id="info-correo"></span></p>
+
+    <button id="btn-cambiar-contrasena" type="button" class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md focus:outline-none">
       Cambiar contraseña
     </button>
   </div>
 
-  <!-- Cuadrícula de opciones -->
-  <div id="cuadricula-opciones" class="bg-white mt-4 p-4 grid grid-cols-2 gap-3 shadow rounded-lg max-w-md mx-auto">
+  <!-- Un único contenedor para todas las opciones (mismo estilo) -->
+  <div id="opciones-container" class="bg-white mt-4 p-4 grid grid-cols-2 gap-3 shadow rounded-lg">
+    <!-- Mi información (botón interactivo) -->
     <button id="btn-mi-informacion" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
       <i data-lucide="user" class="w-6 h-6 text-blue-500"></i>
       <span>Mi información</span>
     </button>
-    <div class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
-      <i data-lucide="users" class="w-6 h-6 text-blue-500"></i>
-      <span>Grupos</span>
-    </div>
-    <div class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
+
+    <!-- Feeds (ejemplo como botón; cámbialo por enlace si lo necesitas) -->
+    <button id="btn-feeds" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
       <i data-lucide="newspaper" class="w-6 h-6 text-blue-500"></i>
       <span>Feeds</span>
-    </div>
-    <div class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
-      <i data-lucide="search" class="w-6 h-6 text-blue-500"></i>
-      <span>Explorar personas</span>
-    </div>
-    <div class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
-      <i data-lucide="play-circle" class="w-6 h-6 text-blue-500"></i>
-      <span>Reels</span>
-    </div>
-    <div class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg">
-      <i data-lucide="clock" class="w-6 h-6 text-blue-500"></i>
-      <span>Recuerdos</span>
-    </div>
+    </button>
+
+    <!-- Políticas y Privacidad -->
+    <a href="go:politicas-privacidad" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+      <i data-lucide="shield-check" class="w-6 h-6 text-blue-500"></i>
+      <span>Políticas y Privacidad</span>
+    </a>
+
+    <!-- Política de Uso -->
+    <a href="go:politica-uso" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+      <i data-lucide="file-text" class="w-6 h-6 text-blue-500"></i>
+      <span>Política de Uso</span>
+    </a>
+
+    <!-- Cookies -->
+    <a href="go:cookies" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+      <i data-lucide="cookie" class="w-6 h-6 text-blue-500"></i>
+      <span>Cookies</span>
+    </a>
+
+    <!-- Ayuda -->
+    <a href="go:ayuda" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+      <i data-lucide="help-circle" class="w-6 h-6 text-blue-500"></i>
+      <span>Ayuda</span>
+    </a>
+
+    <!-- Soporte -->
+    <a href="go:soporte" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+      <i data-lucide="tool" class="w-6 h-6 text-blue-500"></i>
+      <span>Soporte</span>
+    </a>
+
+    <!-- Contacto -->
+    <a href="go:contacto" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+      <i data-lucide="mail" class="w-6 h-6 text-blue-500"></i>
+      <span>Contacto</span>
+    </a>
+
+    <!-- Acerca de -->
+    <a href="go:acerca" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+      <i data-lucide="info" class="w-6 h-6 text-blue-500"></i>
+      <span>Acerca de</span>
+    </a>
+
+    <!-- Compartir la app -->
+    <a href="go:compartir" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+      <i data-lucide="share-2" class="w-6 h-6 text-blue-500"></i>
+      <span>Compartir la app</span>
+    </a>
+
+    <!-- Enviar sugerencias -->
+    <a href="go:sugerencias" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+      <i data-lucide="message-circle" class="w-6 h-6 text-blue-500"></i>
+      <span>Enviar sugerencias</span>
+    </a>
   </div>
 
 </div>
 
-<!-- Iframe con menú inferior externo -->
-<iframe id="menu-iframe" src="https://nimeapp.github.io/Flixplemusic/menu.html" scrolling="no" aria-label="Menú Inferior"></iframe>
-
+<!-- Script principal (Firebase + lógica UI) -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
+/* ---------- CONFIG FIREBASE (mantén tu configuración) ---------- */
 const firebaseConfig = {
   apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
   authDomain: "flixplemusic.firebaseapp.com",
@@ -115,6 +139,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
+/* ---------- ELEMENTOS DOM ---------- */
 const avatarDiv = document.getElementById('avatar');
 const userNameSpan = document.getElementById('user-name');
 
@@ -126,21 +151,23 @@ const infoNombre = document.getElementById('info-nombre');
 const infoCorreo = document.getElementById('info-correo');
 const btnCambiarContrasena = document.getElementById('btn-cambiar-contrasena');
 
+/* ---------- ESTADO ---------- */
 let usuarioActual = null;
 
+/* ---------- HELPERS ---------- */
 function setAvatar(initials, color, photoURL) {
   if (photoURL) {
     avatarDiv.innerHTML = `<img src="${photoURL}" alt="avatar" class="w-full h-full object-cover rounded-full">`;
   } else {
-    avatarDiv.textContent = initials;
-    avatarDiv.style.backgroundColor = color;
+    avatarDiv.textContent = initials || '';
+    avatarDiv.style.backgroundColor = color || '#555';
   }
 }
 
+/* ---------- ACCIONES UI ---------- */
 function abrirMiInformacion() {
   if (!usuarioActual) return;
   seccionMiInfo.classList.remove('hidden');
-
   infoNombre.textContent = usuarioActual.name || usuarioActual.displayName || 'Sin nombre';
   infoCorreo.textContent = usuarioActual.email || 'Sin correo';
 }
@@ -149,34 +176,41 @@ function cerrarMiInformacion() {
   seccionMiInfo.classList.add('hidden');
 }
 
-btnMiInfo.addEventListener('click', () => {
-  abrirMiInformacion();
-});
+/* Eventos */
+btnMiInfo.addEventListener('click', abrirMiInformacion);
+btnCerrarMiInfo.addEventListener('click', cerrarMiInformacion);
 
-btnCerrarMiInfo.addEventListener('click', () => {
-  cerrarMiInformacion();
-});
-
+/* Asegura que sea type="button" y solo redirija */
 btnCambiarContrasena.addEventListener('click', (e) => {
+  // evitar comportamiento inesperado (no hay overlay ahora)
   e.stopPropagation();
-  e.preventDefault();
+  // redirigir a la URL que proporcionaste
   window.location.href = 'https://nimeapp.github.io/Flixplemusic/reset_password.html';
 });
 
+/* ---------- CARGA USUARIO FIREBASE ---------- */
 onAuthStateChanged(auth, async (user) => {
   if (user) {
-    const userRef = ref(db, 'users/' + user.uid);
-    const snapshot = await get(userRef);
-    if (snapshot.exists()) {
-      const data = snapshot.val();
-      usuarioActual = {...data, email: data.email || user.email};
-      userNameSpan.textContent = data.name || user.displayName || '';
-      setAvatar(data.initials || '', data.profileColor || '#555', data.photoURL || user.photoURL);
-    } else {
+    try {
+      const userRef = ref(db, 'users/' + user.uid);
+      const snapshot = await get(userRef);
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        usuarioActual = { ...data, email: data.email || user.email, displayName: data.name || user.displayName };
+        userNameSpan.textContent = data.name || user.displayName || '';
+        setAvatar(data.initials || (data.name ? data.name.charAt(0).toUpperCase() : ''), data.profileColor || '#555', data.photoURL || user.photoURL);
+      } else {
+        usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
+        userNameSpan.textContent = user.displayName || '';
+        setAvatar('', '#555', user.photoURL);
+      }
+    } catch (err) {
+      console.error('Error al leer usuario de la BD:', err);
       usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
       userNameSpan.textContent = user.displayName || '';
       setAvatar('', '#555', user.photoURL);
     }
+    // inicio: sección oculta
     cerrarMiInformacion();
   } else {
     usuarioActual = null;
@@ -187,6 +221,7 @@ onAuthStateChanged(auth, async (user) => {
 });
 </script>
 
+<!-- Inicializa iconos Lucide -->
 <script>
   lucide.createIcons();
 </script>
