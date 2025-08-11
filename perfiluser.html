@@ -7,7 +7,11 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lucide@latest"></script>
 <style>
-  body { background-color: #f5f6f7; font-family: sans-serif; }
+  body { 
+    background-color: #f5f6f7; 
+    font-family: sans-serif; 
+    padding-bottom: 4rem; /* espacio para el menú inferior */
+  }
   @keyframes slideInRight {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
@@ -76,6 +80,13 @@
   </div>
 
 </div>
+
+<!-- Iframe Menú inferior -->
+<iframe 
+  src="https://nimeapp.github.io/Flixplemusic/menu.html" 
+  class="fixed bottom-0 left-0 w-full h-16 border-t border-gray-300 bg-white shadow-md"
+  style="z-index:9999;"
+></iframe>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
