@@ -337,6 +337,7 @@
 
   // Función para comunicar al padre el estado del slider
   function enviarEstadoSlider(abierto) {
+    // Enviamos un mensaje para que el padre adapte el scroll y demás.
     window.parent.postMessage({ sliderOpen: abierto }, '*');
   }
 
