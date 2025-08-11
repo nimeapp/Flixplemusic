@@ -7,93 +7,88 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
   <style>
-    :root{
-      --page-padding: 2rem;       /* padding general de la página */
-      --edge-inner-padding: 0.4rem; /* espacio interior dentro del carrusel para que no quede pegado al borde */
-    }
-
+    :root{ --page-padding:2rem; --edge-inner-padding:.4rem; --menu-height:60px; }
     body {
-      font-family: 'Montserrat', sans-serif;
-      background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
-      color: #eee;
-      min-height: 100vh;
-      padding: var(--page-padding);
-      box-sizing: border-box;
+      font-family:'Montserrat',sans-serif;
+      background:linear-gradient(135deg,#121212 0%,#1e1e1e 100%);
+      color:#eee; min-height:100vh;
+      padding:var(--page-padding); box-sizing:border-box;
+      padding-bottom: calc(var(--menu-height) + 8px); /* espacio para el iframe menú */
     }
 
-    /* ocultar scrollbars visuales */
-    .carousel::-webkit-scrollbar,
-    .album-carousel::-webkit-scrollbar {
-      display: none;
-    }
-    .carousel,
-    .album-carousel {
-      -ms-overflow-style: none;
-      scrollbar-width: none;
-    }
-
-    /*
-      Estas reglas hacen que el carrusel "salga" del padding del body y quede más pegado
-      a las orillas horizontales. Ajusta --page-padding si cambias el padding del body.
-    */
-    #artistCarousel,
-    .album-carousel {
+    /* carrusel y estilos */
+    .carousel::-webkit-scrollbar, .album-carousel::-webkit-scrollbar { display:none; }
+    .carousel, .album-carousel { -ms-overflow-style:none; scrollbar-width:none; }
+    #artistCarousel, .album-carousel {
       margin-left: calc(-1 * var(--page-padding));
       margin-right: calc(-1 * var(--page-padding));
-      width: calc(100% + 4rem); /* 2rem left + 2rem right = 4rem */
-      box-sizing: border-box;
-      padding-left: var(--edge-inner-padding);
-      padding-right: var(--edge-inner-padding);
+      width: calc(100% + 4rem); box-sizing:border-box;
+      padding-left: var(--edge-inner-padding); padding-right: var(--edge-inner-padding);
+    }
+    .artist-cover{ width:110px; height:110px; border-radius:50%; object-fit:cover; box-shadow:0 4px 8px #000; transition:transform .22s; }
+    .artist-cover:hover{ transform:scale(1.06); cursor:pointer; }
+    .album-card{ width:160px; flex:none; background:#222; border-radius:16px; padding:.75rem; display:flex; flex-direction:column; gap:.5rem; }
+    .album-card:hover{ box-shadow:0 0 15px #4ade80; transform:translateY(-3px); }
+    .album-cover{ width:100%; aspect-ratio:1/1; border-radius:12px; overflow:hidden; }
+    .album-cover img{ width:100%; height:100%; object-fit:cover; display:block; }
+    h3.category-title{ color:#a0f0a0; margin:0 0 .25rem 0; font-weight:600; font-size:1rem; user-select:none; }
+    .clickable{ cursor:pointer; }
+
+    /* iframe del menú (estado normal) */
+    #menuFrame {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: var(--menu-height);
+      border: none;
+      z-index: 9999;
+      transition: all 260ms ease;
+      pointer-events: auto;
+      background: transparent;
     }
 
-    /* estilos visuales */
-    .artist-cover {
-      width: 110px;
-      height: 110px;
-      border-radius: 50%;
-      object-fit: cover;
-      box-shadow: 0 4px 8px #000;
-      transition: transform 0.22s ease, box-shadow 0.22s ease;
-    }
-    .artist-cover:hover { transform: scale(1.06); cursor: pointer; }
-
-    .album-card {
-      width: 160px;
-      flex: none;
-      background: #222;
-      border-radius: 16px;
-      padding: 0.75rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-      transition: all 0.25s ease;
-    }
-    .album-card:hover {
-      box-shadow: 0 0 15px #4ade80;
-      transform: translateY(-3px);
+    /* backdrop (cuando el iframe se expande) */
+    #menuBackdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 2147483646; /* por debajo del iframe expandido */
     }
 
-    .album-cover { width: 100%; aspect-ratio: 1 / 1; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 8px #000; }
-    .album-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-    .album-info { display:flex; flex-direction:column; justify-content:space-between; font-size:0.8rem; }
-    h3.category-title {
-      color: #a0f0a0;
-      margin: 0 0 0.25rem 0;
-      font-weight: 600;
-      font-size: 1rem;
-      user-select: none;
+    /* cuando el iframe tiene la clase expanded lo dejamos fullscreen */
+    #menuFrame.expanded {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100vh;
+      z-index: 2147483647;
     }
-    .clickable { cursor:pointer; user-select:none; }
 
-    /* Evitar selección/touch-callout (seguiste usando esto) */
+    /* evitar selección */
     * { -webkit-user-select: none; -webkit-touch-callout: none; }
-  
-* {
-  -webkit-user-select: none;
-  -webkit-touch-callout: none;
-}
-</style>
+  </style>
+</head>
+<body>
+
+  <section class="mb-10">
+    <h2 class="text-xl font-bold mb-3 ml-1 select-none">Artistas Populares</h2>
+    <div id="artistCarousel" class="carousel flex overflow-x-auto gap-4 py-2"></div>
+  </section>
+
+  <section>
+    <div id="albumsCarousel" class="w-full"></div>
+  </section>
+
+  <!-- Backdrop que se muestra cuando el iframe se expande -->
+  <div id="menuBackdrop" aria-hidden="true"></div>
+
+  <!-- Iframe del menú (carga menu.html) -->
+  <iframe id="menuFrame" src="https://nimeapp.github.io/Flixplemusic/menu.html" aria-label="Menú inferior"></iframe>
+
+  <!-- Scripts: Firebase + lógica del feed -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
@@ -117,15 +112,13 @@
       const artistContainer = document.getElementById('artistCarousel');
       const albumsContainer = document.getElementById('albumsCarousel');
 
-      function mostrarAlbumsPorCategoria(albums) {
+      function mostrarAlbumsPorCategoria(albums){
         albumsContainer.innerHTML = '';
-
         const visibles = albums.filter(a => a.url && a.mostrar_en_index);
         if (visibles.length === 0) {
           albumsContainer.innerHTML = '<p class="text-center w-full text-gray-400">No hay álbumes visibles.</p>';
           return;
         }
-
         const categoriasMap = new Map();
         visibles.forEach(album => {
           const cat = album.categoria || 'Sin categoría';
@@ -139,7 +132,7 @@
           titulo.className = 'category-title';
 
           const wrapper = document.createElement('div');
-          wrapper.className = 'album-carousel flex overflow-x-auto gap-4 py-2'; // estilos de borde aplicados por CSS
+          wrapper.className = 'album-carousel flex overflow-x-auto gap-4 py-2';
 
           albumsArray.forEach(album => {
             const card = document.createElement('a');
@@ -163,12 +156,10 @@
         });
       }
 
-      function mostrarArtistas(albums) {
-        // Mapa artista => cover desde albums (solo si mostrar_en_index)
+      function mostrarArtistas(albums){
         const artistMap = new Map();
         albums.forEach(album => {
           if (album.artistaCover && album.mostrar_en_index) {
-            // si ya existe, no sobreescribimos (se queda la primera portada encontrada)
             if (!artistMap.has(album.artista)) {
               artistMap.set(album.artista, album.artistaCover);
             }
@@ -176,19 +167,12 @@
         });
 
         artistContainer.innerHTML = '';
-
-        // Traemos artistas y sus perfilURL (solo una vez)
         onValue(artistsRef, (snapshot) => {
           const artistsData = snapshot.val() || {};
-
           artistMap.forEach((coverUrl, artistName) => {
-            // Buscar en artists por nombre
             const artistInfo = Object.values(artistsData).find(a => a.nombre === artistName);
             let perfilURL = artistInfo ? artistInfo.perfilURL : null;
-
-            // fallback opcional: si no existe perfil en 'artists', construir url con el patrón que usas (esto es opcional)
             if (!perfilURL) {
-              // Si prefieres que no haga fallback, comenta la siguiente línea.
               perfilURL = `https://nimeapp.github.io/Flixplemusic/perfilartista.html?nombre=$delartista/${encodeURIComponent(artistName)}`;
             }
 
@@ -202,11 +186,8 @@
             img.title = artistName;
 
             img.onclick = () => {
-              if (perfilURL) {
-                window.location.href = perfilURL;
-              } else {
-                alert('Perfil no disponible');
-              }
+              if (perfilURL) window.location.href = perfilURL;
+              else alert('Perfil no disponible');
             };
 
             const name = document.createElement('span');
@@ -220,7 +201,6 @@
         }, { onlyOnce: true });
       }
 
-      // Lee albums y renderiza todo
       onValue(albumsRef, (snapshot) => {
         const data = snapshot.val();
         if (!data) {
@@ -232,58 +212,97 @@
         mostrarArtistas(allAlbums);
         mostrarAlbumsPorCategoria(allAlbums);
       }, { onlyOnce: true });
+
     });
-
-// Bloquear clic derecho
-  document.addEventListener('contextmenu', function (e) {
-    e.preventDefault();
-  });
-
-  // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
-  document.addEventListener('keydown', function (e) {
-    if (
-      e.key === 'F12' ||
-      (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
-      (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
-    ) {
-      e.preventDefault();
-    }
-  });
-
-  // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
-  window.oncontextmenu = function () {
-    return false;
-  };
-
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('a').forEach(el => {
-      const url = el.getAttribute('href');
-      el.removeAttribute('href');
-      el.style.cursor = 'pointer';
-      el.onclick = () => window.location.href = url;
-    });
-  });
-    window.oncontextmenu = function () { return false; };
   </script>
-</head>
-<body>
 
-  <section class="mb-10">
-    <h2 class="text-xl font-bold mb-3 ml-1 select-none">Artistas Populares</h2>
-    <!-- este contenedor usa la clase #artistCarousel => las reglas CSS lo "estiran" hasta los bordes -->
-    <div id="artistCarousel" class="carousel flex overflow-x-auto gap-4 py-2"></div>
-  </section>
+  <!-- Código que controla la expansión / colapso del iframe cuando el menú pide abrir el perfil -->
+  <script>
+    (function () {
+      const menuFrame = document.getElementById('menuFrame');
+      const menuBackdrop = document.getElementById('menuBackdrop');
+      const MENU_HEIGHT = 60; // debe coincidir con --menu-height
+      // Inicializar estilo
+      function initMenuFrame() {
+        menuFrame.style.position = 'fixed';
+        menuFrame.style.bottom = '0';
+        menuFrame.style.left = '0';
+        menuFrame.style.width = '100%';
+        menuFrame.style.height = MENU_HEIGHT + 'px';
+        menuFrame.style.border = 'none';
+        menuFrame.style.zIndex = '9999';
+        document.body.style.paddingBottom = (MENU_HEIGHT + 8) + 'px';
+      }
+      initMenuFrame();
 
-  <section>
-    <div id="albumsCarousel" class="w-full"></div>
-  </section>
-<iframe 
-  src="https://nimeapp.github.io/Flixplemusic/menu.html" 
-  style="position: fixed; bottom: 0; left: 0; width: 100%; height: 48px; border: none; z-index: 10000;" 
-  scrolling="no" 
-  aria-label="Menú inferior">
-</iframe>
+      function expandMenu() {
+        if (menuFrame.classList.contains('expanded')) return;
+        menuFrame.classList.add('expanded');
+        menuBackdrop.style.display = 'block';
+        // evitar scroll fondo
+        document.documentElement.style.overflow = 'hidden';
+        document.body.style.overflow = 'hidden';
+        // iframe a fullscreen
+        menuFrame.style.position = 'fixed';
+        menuFrame.style.top = '0';
+        menuFrame.style.left = '0';
+        menuFrame.style.width = '100%';
+        menuFrame.style.height = '100vh';
+        menuFrame.style.zIndex = '2147483647';
+      }
 
+      function collapseMenu() {
+        if (!menuFrame.classList.contains('expanded')) return;
+        menuFrame.classList.remove('expanded');
+        menuBackdrop.style.display = 'none';
+        document.documentElement.style.overflow = '';
+        document.body.style.overflow = '';
+        menuFrame.style.position = 'fixed';
+        menuFrame.style.bottom = '0';
+        menuFrame.style.top = '';
+        menuFrame.style.left = '0';
+        menuFrame.style.width = '100%';
+        menuFrame.style.height = MENU_HEIGHT + 'px';
+        menuFrame.style.zIndex = '9999';
+        // avisar al iframe que cierre su slider (por si quedó abierto)
+        try {
+          menuFrame.contentWindow.postMessage({ type: 'menu:forceClose' }, '*');
+        } catch (e) { /* cross-origin seguro: postMessage igual funciona */ }
+      }
+
+      // Escuchar mensajes entrantes del iframe (menu)
+      window.addEventListener('message', (ev) => {
+        const data = ev && ev.data;
+        if (!data || !data.type) return;
+        if (data.type === 'menu:openProfile') {
+          expandMenu();
+        } else if (data.type === 'menu:closeProfile' || data.type === 'menu:forceCloseParent') {
+          collapseMenu();
+        }
+      });
+
+      // Click en backdrop colapsa
+      menuBackdrop.addEventListener('click', collapseMenu);
+      // ESC colapsa
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') collapseMenu(); });
+
+      // Si la página recarga, asegurar estilo
+      window.addEventListener('resize', () => { if (!menuFrame.classList.contains('expanded')) initMenuFrame(); });
+    })();
+  </script>
+
+  <!-- Bloqueos (opcionales, estaban en tu código) -->
+  <script>
+    // Bloquear clic derecho
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    // Bloquear algunas teclas
+    document.addEventListener('keydown', e => {
+      if (e.key === 'F12' ||
+          (e.ctrlKey && e.shiftKey && ['I','J','C'].includes(e.key.toUpperCase())) ||
+          (e.ctrlKey && ['U','S','P'].includes(e.key.toUpperCase()))) {
+        e.preventDefault();
+      }
+    });
+  </script>
 </body>
 </html>
