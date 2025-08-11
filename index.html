@@ -4,13 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Feed de Música</title>
+
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Montserrat Font -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+  <!-- Lucide Icons ESM (para módulo JS) -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/lucide@latest/dist/lucide.esm.js"></script>
+
   <style>
     :root{
       --page-padding: 2rem;
       --edge-inner-padding: 0.4rem;
-      --menu-slider-width: 360px; /* para referencia */
+      --menu-slider-width: 360px;
     }
 
     body {
@@ -22,9 +28,11 @@
       box-sizing: border-box;
       overflow-x: hidden;
       position: relative;
+      margin: 0;
+      padding-bottom: 56px; /* espacio para menú inferior fijo */
     }
 
-    /* ocultar scrollbars visuales */
+    /* Scrollbars ocultas para carouseles */
     .carousel::-webkit-scrollbar,
     .album-carousel::-webkit-scrollbar {
       display: none;
@@ -84,14 +92,14 @@
     }
     .clickable { cursor:pointer; user-select:none; }
 
-    /* Perfil Slider Styles (copiados del menu.html para que funcione) */
+    /* Perfil Slider Styles */
     #profile-container {
       position: fixed;
       top: 0;
       right: 0;
       width: 100%;
       max-width: 360px;
-      height: calc(100vh - 48px);
+      height: calc(100vh - 56px); /* menos menú inferior */
       background-color: #f5f6f7;
       color: black;
       font-family: sans-serif;
@@ -102,7 +110,7 @@
       transform: translateX(100%);
       transition: transform 0.4s ease;
       border-left: 1px solid #ddd;
-      bottom: 48px;
+      bottom: 56px; /* para no tapar menú inferior */
     }
     #profile-container.visible {
       transform: translateX(0);
@@ -250,17 +258,112 @@
     </section>
   </div>
 
-  <!-- Aquí se insertará el menú inferior con perfil slider -->
-  <div id="menu-container"></div>
+  <!-- Menú Inferior con Perfil Slider -->
+  <nav>
+    <a href="https://nimeapp.github.io/Flixplemusic/index.html" target="_top" aria-label="Inicio" id="link-inicio">
+      <i data-lucide="home" class="text-purple-500"></i>
+      <span>Inicio</span>
+    </a>
 
+    <a href="https://nimeapp.github.io/Flixplemusic/buscador.html" target="_top" aria-label="Buscar" id="link-buscar">
+      <i data-lucide="search" class="text-purple-500"></i>
+      <span>Buscar</span>
+    </a>
+
+    <a href="https://nimeapp.github.io/Flixplemusic/tulista.html" target="_top" aria-label="Tu Lista" id="link-tulista">
+      <i data-lucide="list" class="text-purple-500"></i>
+      <span>Tu Lista</span>
+    </a>
+
+    <button id="profile-btn" aria-label="Perfil" style="padding:0;">
+      <div id="avatar"></div>
+    </button>
+  </nav>
+
+  <!-- Contenedor Perfil (slider oculto inicialmente) -->
+  <div id="profile-container" aria-label="Perfil de Usuario" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
+    <div id="profile-content">
+      <div id="contenedor-perfil">
+        <div id="avatar-profile" class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white"></div>
+        <div>
+          <span id="user-name"></span>
+        </div>
+      </div>
+
+      <div id="seccion-mi-informacion">
+        <h2 class="text-xl font-semibold mb-4 flex justify-between items-center">
+          Mi Información
+          <button id="btn-cerrar-mi-informacion" title="Cerrar información" aria-label="Cerrar información">
+            <i data-lucide="x" class="w-6 h-6"></i>
+          </button>
+        </h2>
+        <p><strong>Nombre:</strong> <span id="info-nombre"></span></p>
+        <p><strong>Correo:</strong> <span id="info-correo"></span></p>
+        <button id="btn-cambiar-contrasena" class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Cambiar contraseña</button>
+      </div>
+
+      <div id="opciones-container">
+        <button id="btn-mi-informacion" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
+          <i data-lucide="user" class="w-6 h-6 text-blue-500"></i>
+          <span>Mi información</span>
+        </button>
+
+        <button id="btn-feeds" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
+          <i data-lucide="newspaper" class="w-6 h-6 text-blue-500"></i>
+          <span>Feeds</span>
+        </button>
+
+        <a href="go:politicas-privacidad" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+          <i data-lucide="shield-check" class="w-6 h-6 text-blue-500"></i>
+          <span>Políticas y Privacidad</span>
+        </a>
+
+        <a href="go:politica-uso" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+          <i data-lucide="file-text" class="w-6 h-6 text-blue-500"></i>
+          <span>Política de Uso</span>
+        </a>
+
+        <a href="go:cookies" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+          <i data-lucide="cookie" class="w-6 h-6 text-blue-500"></i>
+          <span>Cookies</span>
+        </a>
+
+        <a href="go:ayuda" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+          <i data-lucide="help-circle" class="w-6 h-6 text-blue-500"></i>
+          <span>Ayuda</span>
+        </a>
+
+        <a href="go:contacto" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+          <i data-lucide="mail" class="w-6 h-6 text-blue-500"></i>
+          <span>Contacto</span>
+        </a>
+
+        <a href="go:acerca" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+          <i data-lucide="info" class="w-6 h-6 text-blue-500"></i>
+          <span>Acerca de</span>
+        </a>
+
+        <a href="go:compartir" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+          <i data-lucide="share-2" class="w-6 h-6 text-blue-500"></i>
+          <span>Compartir la app</span>
+        </a>
+
+        <a href="go:sugerencias" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+          <i data-lucide="message-circle" class="w-6 h-6 text-blue-500"></i>
+          <span>Enviar sugerencias</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-    import { get, child } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
     import lucide from "https://cdn.jsdelivr.net/npm/lucide@latest/dist/lucide.esm.js";
 
-    // Inicializar Firebase
+    // Firebase config e inicialización
     const firebaseConfig = {
       apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
       authDomain: "flixplemusic.firebaseapp.com",
@@ -274,37 +377,213 @@
     const db = getDatabase(app);
     const auth = getAuth(app);
 
+    // Iconos Lucide
+    lucide.createIcons();
+
+    // Referencias a nodos DB
     const albumsRef = ref(db, 'albums');
     const artistsRef = ref(db, 'artists');
 
-    // Función para cargar el menú y ejecutar scripts dentro
-    async function cargarMenu() {
-      const menuContainer = document.getElementById('menu-container');
-      try {
-        const response = await fetch('menu.html');
-        if (!response.ok) throw new Error('No se pudo cargar menú');
-        const text = await response.text();
-        // Insertar el HTML
-        menuContainer.innerHTML = text;
+    // Elementos DOM para contenido
+    const artistContainer = document.getElementById('artistCarousel');
+    const albumsContainer = document.getElementById('albumsCarousel');
 
-        // Ejecutar los scripts inline del menú manualmente:
-        // El menú usa lucide icons y Firebase Auth, DB, etc.
+    // Usuario actual global
+    let usuarioActual = null;
 
-        // Cargar lucide icons
-        if (window.lucide === undefined) {
-          window.lucide = lucide;
-        }
-        lucide.createIcons();
-
-        // Inicializar Firebase Auth dentro del menú, y configurar comportamiento slider perfil:
-        initMenuProfileSlider();
-
-      } catch (e) {
-        console.error('Error cargando menú:', e);
+    // Función para poner avatar en menú y slider
+    function setAvatar(initials, color, photoURL) {
+      const avatarDiv = document.getElementById('avatar');
+      const avatarProfile = document.getElementById('avatar-profile');
+      if (photoURL) {
+        avatarDiv.innerHTML = `<img src="${photoURL}" alt="avatar" class="w-full h-full object-cover rounded-full">`;
+        avatarDiv.style.backgroundColor = '';
+        avatarDiv.textContent = '';
+        avatarProfile.innerHTML = avatarDiv.innerHTML;
+        avatarProfile.style.backgroundColor = '';
+        avatarProfile.textContent = '';
+      } else {
+        avatarDiv.textContent = initials || '';
+        avatarDiv.style.backgroundColor = color || '#555';
+        avatarProfile.textContent = initials || '';
+        avatarProfile.style.backgroundColor = color || '#555';
       }
     }
 
-    // Función para inicializar el slider y perfil como en menu.html
+    // Autenticación y carga usuario
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const userRef = ref(db, 'users/' + user.uid);
+          const snapshot = await get(userRef);
+          if (snapshot.exists()) {
+            const data = snapshot.val();
+            usuarioActual = { ...data, email: data.email || user.email, displayName: data.name || user.displayName };
+            document.getElementById('user-name').textContent = data.name || user.displayName || '';
+            setAvatar(data.initials || (data.name ? data.name.charAt(0).toUpperCase() : ''), data.profileColor || '#555', data.photoURL || user.photoURL);
+          } else {
+            usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
+            document.getElementById('user-name').textContent = user.displayName || '';
+            setAvatar('', '#555', user.photoURL);
+          }
+        } catch (e) {
+          console.error('Error leyendo usuario:', e);
+          usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
+          document.getElementById('user-name').textContent = user.displayName || '';
+          setAvatar('', '#555', user.photoURL);
+        }
+      } else {
+        window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
+      }
+      cerrarMiInformacion();
+    });
+
+    // Función para mostrar álbumes por categoría
+    function mostrarAlbumsPorCategoria(albums) {
+      albumsContainer.innerHTML = '';
+
+      const visibles = albums.filter(a => a.url && a.mostrar_en_index);
+      if (visibles.length === 0) {
+        albumsContainer.innerHTML = '<p class="text-center w-full text-gray-400">No hay álbumes visibles.</p>';
+        return;
+      }
+
+      const categoriasMap = new Map();
+      visibles.forEach(album => {
+        const cat = album.categoria || 'Sin categoría';
+        if (!categoriasMap.has(cat)) categoriasMap.set(cat, []);
+        categoriasMap.get(cat).push(album);
+      });
+
+      categoriasMap.forEach((albumsArray, categoria) => {
+        const titulo = document.createElement('h3');
+        titulo.textContent = categoria;
+        titulo.className = 'category-title';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'album-carousel flex overflow-x-auto gap-4 py-2';
+
+        albumsArray.forEach(album => {
+          const card = document.createElement('a');
+          card.href = album.url || '#';
+          card.target = '_blank';
+          card.className = 'album-card';
+          card.innerHTML = `
+            <div class="album-cover">
+              <img src="${album.cover || ''}" alt="${album.title || 'Álbum'}" />
+            </div>
+            <div class="album-info">
+              <div class="font-bold text-white truncate" title="${album.title || ''}">${album.title || 'Sin título'}</div>
+              <div class="text-sm text-gray-400 truncate" title="${album.artista || ''}">${album.artista || 'Desconocido'}</div>
+            </div>
+          `;
+          wrapper.appendChild(card);
+        });
+
+        albumsContainer.appendChild(titulo);
+        albumsContainer.appendChild(wrapper);
+      });
+    }
+
+    // Función para mostrar artistas en carrusel
+    function mostrarArtistas(albums) {
+      const artistMap = new Map();
+      albums.forEach(album => {
+        if (album.artistaCover && album.mostrar_en_index) {
+          if (!artistMap.has(album.artista)) {
+            artistMap.set(album.artista, album.artistaCover);
+          }
+        }
+      });
+
+      artistContainer.innerHTML = '';
+
+      onValue(artistsRef, (snapshot) => {
+        const artistsData = snapshot.val() || {};
+
+        artistMap.forEach((coverUrl, artistName) => {
+          const artistInfo = Object.values(artistsData).find(a => a.nombre === artistName);
+          let perfilURL = artistInfo ? artistInfo.perfilURL : null;
+
+          if (!perfilURL) {
+            perfilURL = `https://nimeapp.github.io/Flixplemusic/perfilartista.html?nombre=$delartista/${encodeURIComponent(artistName)}`;
+          }
+
+          const wrapper = document.createElement('div');
+          wrapper.className = 'flex flex-col items-center gap-1 flex-none clickable';
+
+          const img = document.createElement('img');
+          img.src = coverUrl || '';
+          img.alt = artistName;
+          img.className = 'artist-cover';
+          img.title = artistName;
+
+          img.onclick = () => {
+            if (perfilURL) {
+              window.location.href = perfilURL;
+            } else {
+              alert('Perfil no disponible');
+            }
+          };
+
+          const name = document.createElement('span');
+          name.textContent = artistName;
+          name.className = 'text-xs text-center text-gray-300 mt-1';
+
+          wrapper.appendChild(img);
+          wrapper.appendChild(name);
+          artistContainer.appendChild(wrapper);
+        });
+      }, { onlyOnce: true });
+    }
+
+    // Bloquear clic derecho y teclas devtools
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+        (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
+      ) {
+        e.preventDefault();
+      }
+    });
+    window.oncontextmenu = () => false;
+
+    // Rehacer comportamiento links para navegación
+    function habilitarLinks() {
+      document.querySelectorAll('a').forEach(el => {
+        const url = el.getAttribute('href');
+        if (url && !url.startsWith('#') && !url.startsWith('go:')) {
+          el.removeAttribute('href');
+          el.style.cursor = 'pointer';
+          el.onclick = () => window.location.href = url;
+        }
+      });
+    }
+
+    // Inicializar la app (carga datos y config menú)
+    window.addEventListener('DOMContentLoaded', () => {
+      // Cargar datos
+      onValue(albumsRef, (snapshot) => {
+        const data = snapshot.val();
+        if (!data) {
+          artistContainer.innerHTML = '<p class="text-gray-400">No hay artistas disponibles.</p>';
+          albumsContainer.innerHTML = '<p class="text-gray-400">No hay álbumes disponibles.</p>';
+          return;
+        }
+        const allAlbums = Object.values(data);
+        mostrarArtistas(allAlbums);
+        mostrarAlbumsPorCategoria(allAlbums);
+      }, { onlyOnce: true });
+
+      habilitarLinks();
+
+      // Inicializar menú slider
+      initMenuProfileSlider();
+    });
+
+    // Funciones menú perfil slider y botones
     function initMenuProfileSlider() {
       const avatarDiv = document.getElementById('avatar');
       const avatarProfile = document.getElementById('avatar-profile');
@@ -318,52 +597,6 @@
       const infoCorreo = document.getElementById('info-correo');
       const btnCambiarContrasena = document.getElementById('btn-cambiar-contrasena');
 
-      let usuarioActual = null;
-
-      function setAvatar(initials, color, photoURL) {
-        if (photoURL) {
-          avatarDiv.innerHTML = `<img src="${photoURL}" alt="avatar" class="w-full h-full object-cover rounded-full">`;
-          avatarDiv.style.backgroundColor = '';
-          avatarDiv.textContent = '';
-          avatarProfile.innerHTML = avatarDiv.innerHTML;
-          avatarProfile.style.backgroundColor = '';
-          avatarProfile.textContent = '';
-        } else {
-          avatarDiv.textContent = initials || '';
-          avatarDiv.style.backgroundColor = color || '#555';
-          avatarProfile.textContent = initials || '';
-          avatarProfile.style.backgroundColor = color || '#555';
-        }
-      }
-
-      onAuthStateChanged(auth, async (user) => {
-        if (user) {
-          try {
-            const userRef = ref(db, 'users/' + user.uid);
-            const snapshot = await get(userRef);
-            if (snapshot.exists()) {
-              const data = snapshot.val();
-              usuarioActual = { ...data, email: data.email || user.email, displayName: data.name || user.displayName };
-              userNameSpan.textContent = data.name || user.displayName || '';
-              setAvatar(data.initials || (data.name ? data.name.charAt(0).toUpperCase() : ''), data.profileColor || '#555', data.photoURL || user.photoURL);
-            } else {
-              usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
-              userNameSpan.textContent = user.displayName || '';
-              setAvatar('', '#555', user.photoURL);
-            }
-          } catch (e) {
-            console.error('Error leyendo usuario:', e);
-            usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
-            userNameSpan.textContent = user.displayName || '';
-            setAvatar('', '#555', user.photoURL);
-          }
-        } else {
-          window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
-        }
-        cerrarMiInformacion();
-      });
-
-      // Toggle slider perfil con botón perfil
       document.getElementById('profile-btn').addEventListener('click', () => {
         const isVisible = profileContainer.classList.contains('visible');
         if (isVisible) {
@@ -396,147 +629,7 @@
         window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/reset_password.html';
       });
     }
-
-    // Carga menú al cargar DOM
-    window.addEventListener('DOMContentLoaded', () => {
-      cargarMenu();
-
-      const artistContainer = document.getElementById('artistCarousel');
-      const albumsContainer = document.getElementById('albumsCarousel');
-
-      // Funciones para mostrar artistas y álbumes (copiadas de tu código original)
-      function mostrarAlbumsPorCategoria(albums) {
-        albumsContainer.innerHTML = '';
-
-        const visibles = albums.filter(a => a.url && a.mostrar_en_index);
-        if (visibles.length === 0) {
-          albumsContainer.innerHTML = '<p class="text-center w-full text-gray-400">No hay álbumes visibles.</p>';
-          return;
-        }
-
-        const categoriasMap = new Map();
-        visibles.forEach(album => {
-          const cat = album.categoria || 'Sin categoría';
-          if (!categoriasMap.has(cat)) categoriasMap.set(cat, []);
-          categoriasMap.get(cat).push(album);
-        });
-
-        categoriasMap.forEach((albumsArray, categoria) => {
-          const titulo = document.createElement('h3');
-          titulo.textContent = categoria;
-          titulo.className = 'category-title';
-
-          const wrapper = document.createElement('div');
-          wrapper.className = 'album-carousel flex overflow-x-auto gap-4 py-2';
-
-          albumsArray.forEach(album => {
-            const card = document.createElement('a');
-            card.href = album.url || '#';
-            card.target = '_blank';
-            card.className = 'album-card';
-            card.innerHTML = `
-              <div class="album-cover">
-                <img src="${album.cover || ''}" alt="${album.title || 'Álbum'}" />
-              </div>
-              <div class="album-info">
-                <div class="font-bold text-white truncate" title="${album.title || ''}">${album.title || 'Sin título'}</div>
-                <div class="text-sm text-gray-400 truncate" title="${album.artista || ''}">${album.artista || 'Desconocido'}</div>
-              </div>
-            `;
-            wrapper.appendChild(card);
-          });
-
-          albumsContainer.appendChild(titulo);
-          albumsContainer.appendChild(wrapper);
-        });
-      }
-
-      function mostrarArtistas(albums) {
-        const artistMap = new Map();
-        albums.forEach(album => {
-          if (album.artistaCover && album.mostrar_en_index) {
-            if (!artistMap.has(album.artista)) {
-              artistMap.set(album.artista, album.artistaCover);
-            }
-          }
-        });
-
-        artistContainer.innerHTML = '';
-
-        onValue(artistsRef, (snapshot) => {
-          const artistsData = snapshot.val() || {};
-
-          artistMap.forEach((coverUrl, artistName) => {
-            const artistInfo = Object.values(artistsData).find(a => a.nombre === artistName);
-            let perfilURL = artistInfo ? artistInfo.perfilURL : null;
-
-            if (!perfilURL) {
-              perfilURL = `https://nimeapp.github.io/Flixplemusic/perfilartista.html?nombre=$delartista/${encodeURIComponent(artistName)}`;
-            }
-
-            const wrapper = document.createElement('div');
-            wrapper.className = 'flex flex-col items-center gap-1 flex-none clickable';
-
-            const img = document.createElement('img');
-            img.src = coverUrl || '';
-            img.alt = artistName;
-            img.className = 'artist-cover';
-            img.title = artistName;
-
-            img.onclick = () => {
-              if (perfilURL) {
-                window.location.href = perfilURL;
-              } else {
-                alert('Perfil no disponible');
-              }
-            };
-
-            const name = document.createElement('span');
-            name.textContent = artistName;
-            name.className = 'text-xs text-center text-gray-300 mt-1';
-
-            wrapper.appendChild(img);
-            wrapper.appendChild(name);
-            artistContainer.appendChild(wrapper);
-          });
-        }, { onlyOnce: true });
-      }
-
-      onValue(albumsRef, (snapshot) => {
-        const data = snapshot.val();
-        if (!data) {
-          artistContainer.innerHTML = '<p class="text-gray-400">No hay artistas disponibles.</p>';
-          albumsContainer.innerHTML = '<p class="text-gray-400">No hay álbumes disponibles.</p>';
-          return;
-        }
-        const allAlbums = Object.values(data);
-        mostrarArtistas(allAlbums);
-        mostrarAlbumsPorCategoria(allAlbums);
-      }, { onlyOnce: true });
-
-      // Bloquear clic derecho y teclas
-      document.addEventListener('contextmenu', e => e.preventDefault());
-      document.addEventListener('keydown', e => {
-        if (
-          e.key === 'F12' ||
-          (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
-          (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
-        ) {
-          e.preventDefault();
-        }
-      });
-      window.oncontextmenu = () => false;
-
-      // Rehacer comportamiento links para navegación interna
-      document.querySelectorAll('a').forEach(el => {
-        const url = el.getAttribute('href');
-        if (url && !url.startsWith('#')) {
-          el.removeAttribute('href');
-          el.style.cursor = 'pointer';
-          el.onclick = () => window.location.href = url;
-        }
-      });
-    });
   </script>
+
 </body>
 </html>
