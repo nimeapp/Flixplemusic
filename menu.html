@@ -58,22 +58,22 @@
 
 <!-- Menú Inferior -->
 <nav>
-  <button onclick="setActive(this, 'https://nimeapp.github.io/Flixplemusic/index.html')" aria-label="Inicio">
+  <button aria-label="Inicio" onclick="goToPage('https://nimeapp.github.io/Flixplemusic/index.html', this)">
     <i data-lucide="home" class="text-purple-500"></i>
     <span>Inicio</span>
   </button>
 
-  <button onclick="window.location.href='https://nimeapp.github.io/Flixplemusic/buscador.html'" aria-label="Buscar">
+  <button aria-label="Buscar" onclick="goToPage('https://nimeapp.github.io/Flixplemusic/buscador.html', this)">
     <i data-lucide="search" class="text-purple-500"></i>
     <span>Buscar</span>
   </button>
 
-  <button onclick="window.location.href='https://nimeapp.github.io/Flixplemusic/tulista.html'" aria-label="Tu Lista">
+  <button aria-label="Tu Lista" onclick="goToPage('https://nimeapp.github.io/Flixplemusic/tulista.html', this)">
     <i data-lucide="list" class="text-purple-500"></i>
     <span>Tu Lista</span>
   </button>
 
-  <button id="profile-btn" aria-label="Perfil" style="padding:0;">
+  <button id="profile-btn" aria-label="Perfil" style="padding:0;" onclick="goToPage('https://nimeapp.github.io/Flixplemusic/perfiluser.html', this)">
     <div id="avatar"></div>
   </button>
 </nav>
@@ -99,16 +99,11 @@
   const db = getDatabase(app);
 
   const avatarDiv = document.getElementById('avatar');
-  const profileBtn = document.getElementById('profile-btn');
 
   function setAvatar(initials, color) {
     avatarDiv.textContent = initials;
     avatarDiv.style.backgroundColor = color;
   }
-
-  profileBtn.addEventListener('click', () => {
-    window.location.href = 'https://nimeapp.github.io/Flixplemusic/perfiluser.html';
-  });
 
   onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -122,7 +117,7 @@
         setAvatar(initial, '#555');
       }
     } else {
-      window.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
+      window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
     }
   });
 </script>
@@ -131,10 +126,13 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <script>
   lucide.createIcons();
-  function setActive(element, url) {
+
+  function goToPage(url, button) {
+    // Marca el botón activo visualmente
     document.querySelectorAll("nav button").forEach(el => el.classList.remove("active-tab"));
-    element.classList.add("active-tab");
-    window.location.href = url;
+    if(button) button.classList.add("active-tab");
+    // Carga la página en toda la ventana, fuera del iframe
+    window.top.location.href = url;
   }
 </script>
 
