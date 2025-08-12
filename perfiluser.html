@@ -16,6 +16,27 @@
     animation: slideInRight 0.4s ease-out forwards;
   }
   #seccion-mi-informacion { z-index: 20; }
+
+  /* Estilos botón Logout */
+  #btn-logout {
+    background-color: rgba(139, 92, 246, 0.3); /* morado brillante casi transparente */
+    border: 2px solid rgba(132, 204, 22, 0.3); /* verde claro casi transparente */
+    color: #8b5cf6; /* morado brillante para texto */
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    border-radius: 9999px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+    width: 100%;  /* Ocupa todo el ancho del contenedor */
+    justify-content: center; /* Centrar contenido horizontalmente */
+  }
+  #btn-logout:hover {
+    background-color: rgba(139, 92, 246, 0.5);
+    border-color: rgba(132, 204, 22, 0.6);
+  }
 </style>
 </head>
 <body class="min-h-screen p-2 relative">
@@ -23,9 +44,9 @@
 <div class="slide-in">
 
   <!-- Contenedor perfil -->
-  <div id="contenedor-perfil" class="bg-white p-4 flex items-center gap-4 shadow mt-2 rounded-lg">
+  <div id="contenedor-perfil" class="bg-white p-4 flex items-center gap-4 shadow mt-2 rounded-lg flex-wrap">
     <div id="avatar" class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white"></div>
-    <div class="flex flex-wrap items-center gap-2">
+    <div class="flex flex-wrap items-center gap-2 flex-grow min-w-[150px]">
       <span id="user-name" class="text-lg font-semibold text-gray-800"></span>
     </div>
   </div>
@@ -49,13 +70,14 @@
 
   <!-- Un único contenedor para todas las opciones (mismo estilo) -->
   <div id="opciones-container" class="bg-white mt-4 p-4 grid grid-cols-2 gap-3 shadow rounded-lg">
+
     <!-- Mi información (botón interactivo) -->
     <button id="btn-mi-informacion" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
       <i data-lucide="user" class="w-6 h-6 text-blue-500"></i>
       <span>Mi información</span>
     </button>
 
-    <!-- Feeds (ejemplo como botón; cámbialo por enlace si lo necesitas) -->
+    <!-- Feeds -->
     <button id="btn-feeds" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
       <i data-lucide="newspaper" class="w-6 h-6 text-blue-500"></i>
       <span>Feeds</span>
@@ -85,12 +107,6 @@
       <span>Ayuda</span>
     </a>
 
-    <!-- Soporte -->
-    <a href="go:soporte" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-      <i data-lucide="tool" class="w-6 h-6 text-blue-500"></i>
-      <span>Soporte</span>
-    </a>
-
     <!-- Contacto -->
     <a href="go:contacto" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
       <i data-lucide="mail" class="w-6 h-6 text-blue-500"></i>
@@ -114,6 +130,12 @@
       <i data-lucide="message-circle" class="w-6 h-6 text-blue-500"></i>
       <span>Enviar sugerencias</span>
     </a>
+
+    <!-- Botón Logout, ocupa 2 columnas para todo el ancho -->
+    <button id="btn-logout" type="button" title="Cerrar sesión" class="col-span-2">
+      <i data-lucide="log-out" class="w-5 h-5"></i>
+      <span>Cerrar sesión</span>
+    </button>
   </div>
 
 </div>
@@ -121,7 +143,7 @@
 <!-- Script principal (Firebase + lógica UI) -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 /* ---------- CONFIG FIREBASE (mantén tu configuración) ---------- */
@@ -150,6 +172,8 @@ const btnCerrarMiInfo = document.getElementById('btn-cerrar-mi-informacion');
 const infoNombre = document.getElementById('info-nombre');
 const infoCorreo = document.getElementById('info-correo');
 const btnCambiarContrasena = document.getElementById('btn-cambiar-contrasena');
+
+const btnLogout = document.getElementById('btn-logout');
 
 /* ---------- ESTADO ---------- */
 let usuarioActual = null;
@@ -180,12 +204,20 @@ function cerrarMiInformacion() {
 btnMiInfo.addEventListener('click', abrirMiInformacion);
 btnCerrarMiInfo.addEventListener('click', cerrarMiInformacion);
 
-/* Asegura que sea type="button" y solo redirija */
 btnCambiarContrasena.addEventListener('click', (e) => {
-  // evitar comportamiento inesperado (no hay overlay ahora)
   e.stopPropagation();
-  // redirigir a la URL que proporcionaste
   window.location.href = 'https://nimeapp.github.io/Flixplemusic/reset_password.html';
+});
+
+/* Evento logout */
+btnLogout.addEventListener('click', async () => {
+  try {
+    await signOut(auth);
+  } catch (err) {
+    console.error('Error al cerrar sesión:', err);
+  }
+  // Redirigir siempre, aunque falle el signOut
+  window.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
 });
 
 /* ---------- CARGA USUARIO FIREBASE ---------- */
@@ -210,7 +242,6 @@ onAuthStateChanged(auth, async (user) => {
       userNameSpan.textContent = user.displayName || '';
       setAvatar('', '#555', user.photoURL);
     }
-    // inicio: sección oculta
     cerrarMiInformacion();
   } else {
     usuarioActual = null;
