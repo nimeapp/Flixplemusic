@@ -267,6 +267,22 @@
     #opciones-container a:hover {
       background: #dbeafe;
     }
+.btn-logout {
+  background-color: rgba(139, 92, 246, 0.3); /* morado brillante casi transparente */
+  border: 2px solid rgba(132, 204, 22, 0.3); /* verde claro casi transparente */
+  color: #8b5cf6; /* morado brillante para texto */
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+  justify-content: center;
+  width: 100%;
+}
+
+.btn-logout:hover {
+  background-color: rgba(139, 92, 246, 0.5);
+  border-color: rgba(132, 204, 22, 0.6);
+}
+
   </style>
 </head>
 <body>
@@ -376,6 +392,10 @@
         <span>Enviar sugerencias</span>
       </a>
     </div>
+    <button id="btn-logout" class="btn-logout flex items-center gap-2 p-3 rounded-lg hover:bg-gray-200 focus:outline-none col-span-2" type="button" title="Cerrar sesión">
+  <i data-lucide="log-out" class="w-5 h-5 text-purple-600"></i>
+  <span>Cerrar sesión</span>
+</button>
 
   </div>
 </div>
@@ -414,6 +434,21 @@
     const btnCambiarContrasena = document.getElementById('btn-cambiar-contrasena');
 
     let usuarioActual = null;
+
+
+import { signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+
+const btnLogout = document.getElementById('btn-logout');
+
+btnLogout.addEventListener('click', async () => {
+  try {
+    await signOut(auth);
+    window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+    alert('No se pudo cerrar sesión. Intenta de nuevo.');
+  }
+});
 
     // Función para asignar avatar
     function setAvatar(initials, color, photoURL) {
