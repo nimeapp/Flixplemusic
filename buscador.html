@@ -236,6 +236,7 @@
     const db = getDatabase(app);
     const albumsRef = ref(db, "albums");
     const tracksRef = ref(db, "tracks");
+    const artistsRef = ref(db, "artists"); // <-- nuevo nodo artists
 
     const searchInput = document.getElementById("searchInput");
     const resultsContainer = document.getElementById("searchResults");
@@ -244,9 +245,10 @@
     let allAlbums = [];
     let allTracks = [];
     let allTracksMap = new Map(); // Para id + datos track
+    let allArtistsMap = new Map(); // Para buscar perfilURL por nombre (clave: nombre.toLowerCase())
     let filterType = "all";
 
-    // Mostrar todos artistas
+    // Mostrar todos artistas (ahora redirige al perfilURL)
     function mostrarTodosArtistas() {
       resultsContainer.innerHTML = "";
       filterButtons.style.display = "flex";
@@ -266,7 +268,14 @@
       artistasArray.forEach(([name, cover]) => {
         const item = document.createElement("div");
         item.className = "artist-item";
-        item.onclick = () => mostrarTracksDeArtista(name);
+
+        // cuando se haga clic, redirigir al perfil almacenado en artists o fallback al perfil base
+        item.onclick = () => {
+          const artistRecord = allArtistsMap.get((name || "").toLowerCase());
+          const perfil = (artistRecord && artistRecord.perfilURL) ||
+            `https://nimeapp.github.io/Flixplemusic/perfilartista.html?nombre=${encodeURIComponent(name)}`;
+          window.location.href = perfil;
+        };
 
         const img = document.createElement("img");
         img.src = cover;
@@ -284,7 +293,7 @@
       resultsContainer.appendChild(list);
     }
 
-    // Mostrar tracks de un artista específico
+    // Mostrar tracks de un artista específico (se mantiene por si se necesita otra vista)
     function mostrarTracksDeArtista(artista) {
       resultsContainer.innerHTML = "";
       filterButtons.style.display = "flex";
@@ -362,7 +371,6 @@
       resultsContainer.appendChild(list);
     }
 
-  
     function renderSearchResults(results) {
       resultsContainer.innerHTML = "";
 
@@ -387,7 +395,13 @@
             img.src = artist.cover;
             img.alt = artist.name;
             img.className = "artist-cover";
-            img.onclick = () => mostrarTracksDeArtista(artist.name);
+            img.onclick = () => {
+              // usar la url incluida en el objeto artista o buscar en allArtistsMap y fallback
+              const perfil = artist.url ||
+                allArtistsMap.get((artist.name || "").toLowerCase())?.perfilURL ||
+                `https://nimeapp.github.io/Flixplemusic/perfilartista.html?nombre=${encodeURIComponent(artist.name)}`;
+              window.location.href = perfil;
+            };
             const name = document.createElement("span");
             name.textContent = artist.name;
             name.className = "text-xs text-center text-gray-300 mt-1";
@@ -469,7 +483,12 @@
             img.src = artist.cover;
             img.alt = artist.name;
             img.className = "artist-cover";
-            img.onclick = () => mostrarTracksDeArtista(artist.name);
+            img.onclick = () => {
+              const perfil = artist.url ||
+                allArtistsMap.get((artist.name || "").toLowerCase())?.perfilURL ||
+                `https://nimeapp.github.io/Flixplemusic/perfilartista.html?nombre=${encodeURIComponent(artist.name)}`;
+              window.location.href = perfil;
+            };
             const name = document.createElement("span");
             name.textContent = artist.name;
             name.className = "text-xs text-center text-gray-300 mt-1";
@@ -511,7 +530,6 @@
       }
     }
 
-    
     function buscar(query) {
       const q = query.toLowerCase();
       const resultados = { albums: [], artists: [], tracks: [] };
@@ -522,9 +540,14 @@
           artistasUnicos.set(album.artista, album.artistaCover);
         }
       });
-      artistasUnicos.forEach((cover, name) =>
-        resultados.artists.push({ name, cover })
-      );
+
+      // Para cada artista único obtenemos su perfilURL (si existe) al crear el resultado
+      artistasUnicos.forEach((cover, name) => {
+        const artistRecord = allArtistsMap.get((name || "").toLowerCase());
+        const perfil = (artistRecord && artistRecord.perfilURL) ||
+          `https://nimeapp.github.io/Flixplemusic/perfilartista.html?nombre=${encodeURIComponent(name)}`;
+        resultados.artists.push({ name, cover, url: perfil });
+      });
 
       allAlbums.forEach((album) => {
         if (
@@ -551,7 +574,7 @@
             artist: track.artist,
             cover: track.cover,
             url: track.url,
-            _id: track._id,  
+            _id: track._id,
             id: track.id,
           });
         }
@@ -560,11 +583,12 @@
       renderSearchResults(resultados);
     }
 
-   
+    // Escuchar cambios en albums
     onValue(albumsRef, (snapshot) => {
       allAlbums = snapshot.val() ? Object.values(snapshot.val()) : [];
     });
 
+    // Escuchar cambios en tracks
     onValue(tracksRef, (snapshot) => {
       const data = snapshot.val() || {};
       allTracks = [];
@@ -574,6 +598,19 @@
         allTracks.push(trackWithId);
         allTracksMap.set(id, trackWithId);
       }
+    });
+
+    // Escuchar cambios en artists y poblar mapa por nombre (lowercase)
+    onValue(artistsRef, (snapshot) => {
+      const data = snapshot.val() || {};
+      allArtistsMap.clear();
+      // data puede ser objeto con keys
+      Object.values(data).forEach((artist) => {
+        if (!artist) return;
+        const nombre = (artist.nombre || "").toString();
+        if (!nombre) return;
+        allArtistsMap.set(nombre.toLowerCase(), artist);
+      });
     });
 
     searchInput.addEventListener("input", (e) => {
@@ -597,36 +634,36 @@
         filterButtons.style.display = "none";
       }
     };
-       // Bloquear clic derecho
-  document.addEventListener('contextmenu', function (e) {
-    e.preventDefault();
-  });
 
-  // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
-  document.addEventListener('keydown', function (e) {
-    if (
-      e.key === 'F12' ||
-      (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
-      (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
-    ) {
+    // Bloquear clic derecho
+    document.addEventListener('contextmenu', function (e) {
       e.preventDefault();
-    }
-  });
-
-  // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
-  window.oncontextmenu = function () {
-    return false;
-  };
-
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('a').forEach(el => {
-      const url = el.getAttribute('href');
-      el.removeAttribute('href');
-      el.style.cursor = 'pointer';
-      el.onclick = () => window.location.href = url;
     });
-  });
+
+    // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
+    document.addEventListener('keydown', function (e) {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+        (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
+      ) {
+        e.preventDefault();
+      }
+    });
+
+    // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
+    window.oncontextmenu = function () {
+      return false;
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('a').forEach(el => {
+        const url = el.getAttribute('href');
+        el.removeAttribute('href');
+        el.style.cursor = 'pointer';
+        el.onclick = () => window.location.href = url;
+      });
+    });
 
   </script>
 </head>
