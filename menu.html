@@ -1,381 +1,298 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Menú Inferior con Perfil Slider</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
-<style>
-  body {
-    margin: 0;
-    background-color: #000;
-    color: white;
-    font-family: sans-serif;
-    overflow-x: hidden;
-  }
-  nav {
-    position: fixed;
-    bottom: 0; left: 0; right: 0;
-    background-color: #000;
-    border-top: 2px solid #90ee90;
-    display: flex;
-    justify-content: space-around;
-    padding: 0.5rem 0;
-    font-size: 10px;
-    z-index: 10001;
-  }
-  nav a, nav button {
-    background: none;
-    border: none;
-    color: inherit;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
-    text-decoration: none;
-    font-size: 10px;
-    user-select: none;
-  }
-  nav a:hover, nav button:hover {
-    opacity: 0.8;
-  }
-  nav a.active-tab i,
-  nav a.active-tab span {
-    color: #a855f7 !important;
-    stroke: #a855f7 !important;
-  }
-  #avatar {
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 14px;
-    user-select: none;
-    color: white;
-    border: 2px solid #90ee90;
-    overflow: hidden;
-  }
-  #profile-container {
-    position: fixed;
-    top: 0;
-    right: 0;
-    width: 100%;
-    max-width: 360px;
-    height: calc(100vh - 48px);
-    background-color: #f5f6f7;
-    color: black;
-    font-family: sans-serif;
-    padding: 1rem;
-    box-sizing: border-box;
-    overflow-y: auto;
-    z-index: 10000;
-    transform: translateX(100%);
-    transition: transform 0.4s ease;
-    border-left: 1px solid #ddd;
-    bottom: 48px;
-  }
-  #profile-container.visible {
-    transform: translateX(0);
-  }
-  @keyframes slideInRight {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-  #profile-content {
-    animation: slideInRight 0.4s ease-out forwards;
-  }
-  #contenedor-perfil {
-    background: white;
-    padding: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-  }
-  #contenedor-perfil #avatar-profile {
-    width: 64px; height: 64px;
-    background: #888;
-    color: white;
-    font-size: 2rem;
-    font-weight: bold;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50%;
-    overflow: hidden;
-  }
-  #user-name {
-    font-weight: 600;
-    font-size: 1.2rem;
-    color: #333;
-  }
-  #seccion-mi-informacion {
-    background: white;
-    padding: 1rem;
-    margin-top: 1rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    max-width: 400px;
-    position: relative;
-    display: none;
-    color: black;
-  }
-  #seccion-mi-informacion.visible {
-    display: block;
-  }
-  #btn-cerrar-mi-informacion {
-    background: none;
-    border: none;
-    cursor: pointer;
-  }
-  #opciones-container {
-    background: white;
-    margin-top: 1rem;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 0 10px rgba(0,0,0,0.2);
-    max-width: 500px;
-    color: black;
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-  #opciones-container button,
-  #opciones-container a {
-    background: #f0f0f0;
-    padding: 0.75rem;
-    border-radius: 0.5rem;
-    text-decoration: none;
-    color: #2563eb;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-  }
-  #opciones-container button:hover,
-  #opciones-container a:hover {
-    background: #dbeafe;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Feed de Música con Menú Inferior</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    :root {
+      --page-padding: 2rem;
+      --edge-inner-padding: 0.4rem;
+    }
+
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background: linear-gradient(135deg, #121212 0%, #1e1e1e 100%);
+      color: #eee;
+      min-height: 100vh;
+      padding: var(--page-padding);
+      box-sizing: border-box;
+      overflow-x: hidden;
+      padding-bottom: 60px;
+    }
+
+    /* Ocultar scrollbars visuales */
+    .carousel::-webkit-scrollbar,
+    .album-carousel::-webkit-scrollbar { display: none; }
+    .carousel, .album-carousel { -ms-overflow-style: none; scrollbar-width: none; }
+
+    #artistCarousel, .album-carousel {
+      margin-left: calc(-1 * var(--page-padding));
+      margin-right: calc(-1 * var(--page-padding));
+      width: calc(100% + 4rem);
+      padding-left: var(--edge-inner-padding);
+      padding-right: var(--edge-inner-padding);
+    }
+
+    .artist-cover {
+      width: 110px; height: 110px;
+      border-radius: 50%; object-fit: cover;
+      box-shadow: 0 4px 8px #000;
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
+    }
+    .artist-cover:hover { transform: scale(1.06); cursor: pointer; }
+
+    .album-card {
+      width: 160px; flex: none;
+      background: #222; border-radius: 16px;
+      padding: 0.75rem;
+      display: flex; flex-direction: column; gap: 0.5rem;
+      transition: all 0.25s ease;
+    }
+    .album-card:hover { box-shadow: 0 0 15px #4ade80; transform: translateY(-3px); }
+
+    .album-cover { width: 100%; aspect-ratio: 1 / 1; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 8px #000; }
+    .album-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    h3.category-title { color: #a0f0a0; margin-bottom: 0.25rem; font-weight: 600; font-size: 1rem; user-select: none; }
+    .clickable { cursor: pointer; user-select: none; }
+
+    * { -webkit-user-select: none; -webkit-touch-callout: none; }
+
+    /* Menú inferior */
+    nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background-color: #000;
+      border-top: 2px solid #90ee90;
+      display: flex; justify-content: space-around;
+      padding: 0.5rem 0; font-size: 10px;
+      z-index: 10001;
+    }
+    nav a, nav button {
+      background: none; border: none;
+      color: inherit; display: flex; flex-direction: column; align-items: center;
+      cursor: pointer; text-decoration: none; font-size: 10px;
+    }
+    nav a.active-tab i, nav a.active-tab span { color: #a855f7 !important; stroke: #a855f7 !important; }
+    #avatar { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #90ee90; overflow: hidden; background-color: #555; }
+
+    /* Perfil lateral */
+    #profile-container {
+      position: fixed; top: 0; right: 0;
+      width: 100%; max-width: 360px;
+      height: 100vh; background-color: #f5f6f7; color: black;
+      padding: 1rem; overflow-y: auto;
+      z-index: 10000; transform: translateX(100%);
+      transition: transform 0.4s ease; border-left: 1px solid #ddd;
+    }
+    #profile-container.visible { transform: translateX(0); }
+    #contenedor-perfil { background: white; padding: 1rem; display: flex; align-items: center; gap: 1rem; border-radius: 0.5rem; }
+    #avatar-profile { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; background: #888; color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; }
+    #user-name { font-weight: 600; font-size: 1.2rem; }
+    #seccion-mi-informacion { background: white; padding: 1rem; margin-top: 1rem; border-radius: 0.5rem; display: none; }
+    #seccion-mi-informacion.visible { display: block; }
+    #opciones-container { background: white; margin-top: 1rem; padding: 1rem; border-radius: 0.5rem; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+    .btn-logout { background-color: rgba(139, 92, 246, 0.3); border: 2px solid rgba(132, 204, 22, 0.3); color: #8b5cf6; font-weight: 600; width: 100%; }
+    .btn-logout:hover { background-color: rgba(139, 92, 246, 0.5); border-color: rgba(132, 204, 22, 0.6); }
+  </style>
 </head>
 <body>
 
-<nav>
-  <a href="https://nimeapp.github.io/Flixplemusic/index.html" target="_top" aria-label="Inicio" id="link-inicio">
-    <i data-lucide="home" class="text-purple-500"></i>
-    <span>Inicio</span>
-  </a>
+  <section class="mb-10">
+    <h2 class="text-xl font-bold mb-3 ml-1">Artistas Populares</h2>
+    <div id="artistCarousel" class="carousel flex overflow-x-auto gap-4 py-2"></div>
+  </section>
 
-  <a href="https://nimeapp.github.io/Flixplemusic/buscador.html" target="_top" aria-label="Buscar" id="link-buscar">
-    <i data-lucide="search" class="text-purple-500"></i>
-    <span>Buscar</span>
-  </a>
+  <section>
+    <div id="albumsCarousel" class="w-full"></div>
+  </section>
 
-  <a href="https://nimeapp.github.io/Flixplemusic/tulista.html" target="_top" aria-label="Tu Lista" id="link-tulista">
-    <i data-lucide="list" class="text-purple-500"></i>
-    <span>Tu Lista</span>
-  </a>
+  <!-- Menú Inferior -->
+  <nav>
+    <a href="index.html" id="link-inicio"><i data-lucide="home" class="text-purple-500"></i><span>Inicio</span></a>
+    <a href="buscador.html" id="link-buscar"><i data-lucide="search" class="text-purple-500"></i><span>Buscar</span></a>
+    <a href="tulista.html" id="link-tulista"><i data-lucide="list" class="text-purple-500"></i><span>Tu Lista</span></a>
+    <button id="profile-btn"><div id="avatar"></div></button>
+  </nav>
 
-  <button id="profile-btn" aria-label="Perfil" style="padding:0;">
-    <div id="avatar"></div>
-  </button>
-</nav>
-
-<div id="profile-container" aria-label="Perfil de Usuario" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
-  <div id="profile-content">
-
+  <!-- Perfil -->
+  <div id="profile-container">
     <div id="contenedor-perfil">
-      <div id="avatar-profile" class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white"></div>
-      <div>
-        <span id="user-name"></span>
-      </div>
+      <div id="avatar-profile"></div>
+      <div><span id="user-name"></span></div>
     </div>
 
     <div id="seccion-mi-informacion">
-      <h2 class="text-xl font-semibold mb-4 flex justify-between items-center">
-        Mi Información
-        <button id="btn-cerrar-mi-informacion" title="Cerrar información" aria-label="Cerrar información">
-          <i data-lucide="x" class="w-6 h-6"></i>
-        </button>
+      <h2 class="flex justify-between items-center">Mi Información
+        <button id="btn-cerrar-mi-informacion"><i data-lucide="x"></i></button>
       </h2>
       <p><strong>Nombre:</strong> <span id="info-nombre"></span></p>
       <p><strong>Correo:</strong> <span id="info-correo"></span></p>
-      <button id="btn-cambiar-contrasena" class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Cambiar contraseña</button>
+      <button id="btn-cambiar-contrasena" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded-md">Cambiar contraseña</button>
     </div>
 
     <div id="opciones-container">
-      <button id="btn-mi-informacion" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
-        <i data-lucide="user" class="w-6 h-6 text-blue-500"></i>
-        <span>Mi información</span>
-      </button>
-
-      <button id="btn-feeds" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
-        <i data-lucide="newspaper" class="w-6 h-6 text-blue-500"></i>
-        <span>Feeds</span>
-      </button>
-
-      <a href="go:politicas-privacidad" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="shield-check" class="w-6 h-6 text-blue-500"></i>
-        <span>Políticas y Privacidad</span>
-      </a>
-
-      <a href="go:politica-uso" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="file-text" class="w-6 h-6 text-blue-500"></i>
-        <span>Política de Uso</span>
-      </a>
-
-      <a href="go:cookies" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="cookie" class="w-6 h-6 text-blue-500"></i>
-        <span>Cookies</span>
-      </a>
-
-      <a href="go:ayuda" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="help-circle" class="w-6 h-6 text-blue-500"></i>
-        <span>Ayuda</span>
-      </a>
-
-      <a href="go:contacto" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="mail" class="w-6 h-6 text-blue-500"></i>
-        <span>Contacto</span>
-      </a>
-
-      <a href="go:acerca" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="info" class="w-6 h-6 text-blue-500"></i>
-        <span>Acerca de</span>
-      </a>
-
-      <a href="go:compartir" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="share-2" class="w-6 h-6 text-blue-500"></i>
-        <span>Compartir la app</span>
-      </a>
-
-      <a href="go:sugerencias" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-        <i data-lucide="message-circle" class="w-6 h-6 text-blue-500"></i>
-        <span>Enviar sugerencias</span>
-      </a>
+      <button id="btn-mi-informacion"><i data-lucide="user" class="text-blue-500"></i>Mi información</button>
+      <button id="btn-feeds"><i data-lucide="newspaper" class="text-blue-500"></i>Feeds</button>
+      <a href="#"><i data-lucide="shield-check" class="text-blue-500"></i>Políticas</a>
+      <a href="#"><i data-lucide="file-text" class="text-blue-500"></i>Uso</a>
+      <a href="#"><i data-lucide="cookie" class="text-blue-500"></i>Cookies</a>
+      <a href="#"><i data-lucide="help-circle" class="text-blue-500"></i>Ayuda</a>
+      <button id="btn-logout" class="btn-logout col-span-2"><i data-lucide="log-out" class="text-purple-600"></i>Cerrar sesión</button>
     </div>
-
   </div>
-</div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-  import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-  import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+    import { getDatabase, ref, get, onValue } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
-    authDomain: "flixplemusic.firebaseapp.com",
-    databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
-    projectId: "flixplemusic",
-    storageBucket: "flixplemusic.firebasestorage.app",
-    messagingSenderId: "792301053512",
-    appId: "1:792301053512:web:13878703d081f1a7b3da7d"
-  };
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+      authDomain: "flixplemusic.firebaseapp.com",
+      databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+      projectId: "flixplemusic",
+      storageBucket: "flixplemusic.appspot.com",
+      messagingSenderId: "792301053512",
+      appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+    };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getDatabase(app);
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
 
-  const avatarDiv = document.getElementById('avatar');
-  const avatarProfile = document.getElementById('avatar-profile');
-  const userNameSpan = document.getElementById('user-name');
+    const avatarDiv = document.getElementById('avatar');
+    const avatarProfile = document.getElementById('avatar-profile');
+    const userNameSpan = document.getElementById('user-name');
+    const profileContainer = document.getElementById('profile-container');
+    const btnMiInfo = document.getElementById('btn-mi-informacion');
+    const seccionMiInfo = document.getElementById('seccion-mi-informacion');
+    const btnCerrarMiInfo = document.getElementById('btn-cerrar-mi-informacion');
+    const infoNombre = document.getElementById('info-nombre');
+    const infoCorreo = document.getElementById('info-correo');
+    const btnCambiarContrasena = document.getElementById('btn-cambiar-contrasena');
+    const btnLogout = document.getElementById('btn-logout');
+    let usuarioActual = null;
 
-  const profileContainer = document.getElementById('profile-container');
-
-  const btnMiInfo = document.getElementById('btn-mi-informacion');
-  const seccionMiInfo = document.getElementById('seccion-mi-informacion');
-  const btnCerrarMiInfo = document.getElementById('btn-cerrar-mi-informacion');
-
-  const infoNombre = document.getElementById('info-nombre');
-  const infoCorreo = document.getElementById('info-correo');
-  const btnCambiarContrasena = document.getElementById('btn-cambiar-contrasena');
-
-  let usuarioActual = null;
-
-  function setAvatar(initials, color, photoURL) {
-    if (photoURL) {
-      avatarDiv.innerHTML = `<img src="${photoURL}" alt="avatar" class="w-full h-full object-cover rounded-full">`;
-      avatarDiv.style.backgroundColor = '';
-      avatarDiv.textContent = '';
-      avatarProfile.innerHTML = avatarDiv.innerHTML;
-      avatarProfile.style.backgroundColor = '';
-      avatarProfile.textContent = '';
-    } else {
-      avatarDiv.textContent = initials || '';
-      avatarDiv.style.backgroundColor = color || '#555';
-      avatarProfile.textContent = initials || '';
-      avatarProfile.style.backgroundColor = color || '#555';
+    function setAvatar(initials, color, photoURL) {
+      if (photoURL) {
+        avatarDiv.innerHTML = `<img src="${photoURL}" class="w-full h-full object-cover rounded-full">`;
+        avatarProfile.innerHTML = `<img src="${photoURL}" class="w-full h-full object-cover rounded-full">`;
+      } else {
+        avatarDiv.textContent = initials || '';
+        avatarDiv.style.backgroundColor = color || '#555';
+        avatarProfile.textContent = initials || '';
+        avatarProfile.style.backgroundColor = color || '#555';
+      }
     }
-  }
 
-  onAuthStateChanged(auth, async (user) => {
-    if (user) {
-      try {
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
         const userRef = ref(db, 'users/' + user.uid);
         const snapshot = await get(userRef);
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          usuarioActual = { ...data, email: data.email || user.email, displayName: data.name || user.displayName };
-          userNameSpan.textContent = data.name || user.displayName || '';
-          setAvatar(data.initials || (data.name ? data.name.charAt(0).toUpperCase() : ''), data.profileColor || '#555', data.photoURL || user.photoURL);
-        } else {
-          usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
-          userNameSpan.textContent = user.displayName || '';
-          setAvatar('', '#555', user.photoURL);
-        }
-      } catch (e) {
-        console.error('Error leyendo usuario:', e);
-        usuarioActual = { displayName: user.displayName, email: user.email, photoURL: user.photoURL };
-        userNameSpan.textContent = user.displayName || '';
-        setAvatar('', '#555', user.photoURL);
+        const data = snapshot.exists() ? snapshot.val() : {};
+        usuarioActual = { ...data, email: user.email, displayName: data.name || user.displayName };
+        userNameSpan.textContent = usuarioActual.displayName || '';
+        setAvatar(data.initials || (usuarioActual.displayName?.charAt(0)), data.profileColor || '#555', data.photoURL || user.photoURL);
+      } else {
+        window.location.href = 'loginuser.html';
       }
-    } else {
-      window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
-    }
-    cerrarMiInformacion();
-  });
-
-  document.getElementById('profile-btn').addEventListener('click', () => {
-    const isVisible = profileContainer.classList.contains('visible');
-    if (isVisible) {
-      profileContainer.classList.remove('visible');
-      profileContainer.setAttribute('aria-hidden', 'true');
       cerrarMiInformacion();
-    } else {
-      profileContainer.classList.add('visible');
-      profileContainer.setAttribute('aria-hidden', 'false');
+    });
+
+    document.getElementById('profile-btn').addEventListener('click', () => profileContainer.classList.toggle('visible'));
+    function abrirMiInformacion() {
+      if (!usuarioActual) return;
+      seccionMiInfo.classList.add('visible');
+      infoNombre.textContent = usuarioActual.displayName || 'Sin nombre';
+      infoCorreo.textContent = usuarioActual.email || 'Sin correo';
     }
-  });
+    function cerrarMiInformacion() { seccionMiInfo.classList.remove('visible'); }
+    btnMiInfo.addEventListener('click', abrirMiInformacion);
+    btnCerrarMiInfo.addEventListener('click', cerrarMiInformacion);
+    btnCambiarContrasena.addEventListener('click', () => window.location.href = 'reset_password.html');
+    btnLogout.addEventListener('click', async () => { await signOut(auth); window.location.href = 'loginuser.html'; });
 
-  function abrirMiInformacion() {
-    if (!usuarioActual) return;
-    seccionMiInfo.classList.add('visible');
-    seccionMiInfo.classList.remove('hidden');
-    infoNombre.textContent = usuarioActual.name || usuarioActual.displayName || 'Sin nombre';
-    infoCorreo.textContent = usuarioActual.email || 'Sin correo';
-  }
-  function cerrarMiInformacion() {
-    seccionMiInfo.classList.remove('visible');
-    seccionMiInfo.classList.add('hidden');
-  }
+    // Feed musical
+    const albumsRef = ref(db, 'albums');
+    const artistsRef = ref(db, 'artists');
+    const artistContainer = document.getElementById('artistCarousel');
+    const albumsContainer = document.getElementById('albumsCarousel');
 
-  btnMiInfo.addEventListener('click', abrirMiInformacion);
-  btnCerrarMiInfo.addEventListener('click', cerrarMiInformacion);
+    function mostrarAlbumsPorCategoria(albums) {
+      albumsContainer.innerHTML = '';
+      const visibles = albums.filter(a => a.url && a.mostrar_en_index);
+      const categoriasMap = new Map();
+      visibles.forEach(album => {
+        const cat = album.categoria || 'Sin categoría';
+        if (!categoriasMap.has(cat)) categoriasMap.set(cat, []);
+        categoriasMap.get(cat).push(album);
+      });
+      categoriasMap.forEach((albumsArray, categoria) => {
+        const titulo = document.createElement('h3');
+        titulo.textContent = categoria;
+        titulo.className = 'category-title';
+        const wrapper = document.createElement('div');
+        wrapper.className = 'album-carousel flex overflow-x-auto gap-4 py-2';
+        albumsArray.forEach(album => {
+          const card = document.createElement('a');
+          card.href = album.url || '#';
+          card.className = 'album-card';
+          card.innerHTML = `
+            <div class="album-cover"><img src="${album.cover || ''}" alt="${album.title || 'Álbum'}" /></div>
+            <div class="font-bold text-white truncate">${album.title || 'Sin título'}</div>
+            <div class="text-sm text-gray-400 truncate">${album.artista || 'Desconocido'}</div>
+          `;
+          wrapper.appendChild(card);
+        });
+        albumsContainer.appendChild(titulo);
+        albumsContainer.appendChild(wrapper);
+      });
+    }
 
-  btnCambiarContrasena.addEventListener('click', e => {
-    e.stopPropagation();
-    window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/reset_password.html';
-  });
-</script>
+    function mostrarArtistas(albums) {
+      const artistMap = new Map();
+      albums.forEach(album => {
+        if (album.artistaCover && album.mostrar_en_index && !artistMap.has(album.artista)) {
+          artistMap.set(album.artista, album.artistaCover);
+        }
+      });
+      artistContainer.innerHTML = '';
+      onValue(artistsRef, (snapshot) => {
+        const artistsData = snapshot.val() || {};
+        artistMap.forEach((coverUrl, artistName) => {
+          const artistInfo = Object.values(artistsData).find(a => a.nombre === artistName);
+          const perfilURL = artistInfo?.perfilURL || `perfilartista.html?nombre=${encodeURIComponent(artistName)}`;
+          const wrapper = document.createElement('div');
+          wrapper.className = 'flex flex-col items-center gap-1 flex-none clickable';
+          const img = document.createElement('img');
+          img.src = coverUrl || '';
+          img.alt = artistName;
+          img.className = 'artist-cover';
+          img.onclick = () => window.location.href = perfilURL;
+          const name = document.createElement('span');
+          name.textContent = artistName;
+          name.className = 'text-xs text-center text-gray-300 mt-1';
+          wrapper.appendChild(img); wrapper.appendChild(name);
+          artistContainer.appendChild(wrapper);
+        });
+      }, { onlyOnce: true });
+    }
 
-<script>
-  lucide.createIcons();
-</script>
+    onValue(albumsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (!data) return;
+      const allAlbums = Object.values(data);
+      mostrarArtistas(allAlbums);
+      mostrarAlbumsPorCategoria(allAlbums);
+    }, { onlyOnce: true });
 
+    lucide.createIcons();
+  </script>
 </body>
 </html>
