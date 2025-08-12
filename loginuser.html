@@ -23,6 +23,7 @@
 <body class="min-h-screen flex items-center justify-center p-6 text-white">
 
 <div class="w-full max-w-md p-8 rounded-2xl borde-verde border-2">
+  <!-- Login -->
   <div id="container-login">
     <h1 class="text-3xl font-bold text-center morado mb-6">Iniciar Sesión</h1>
     <input id="login-email" type="email" placeholder="Correo electrónico"
@@ -30,7 +31,7 @@
     <div class="relative mb-4">
       <input id="login-password" type="password" placeholder="Contraseña"
         class="w-full p-3 rounded-lg borde-verde border bg-black text-white placeholder-gray-400 focus:outline-none pr-10" />
-      <span id="toggle-login-password" class="absolute right-3 top-3 cursor-pointer text-morado">
+      <span id="toggle-login-password" class="absolute right-3 top-3 cursor-pointer morado">
         <i data-lucide="eye"></i>
       </span>
     </div>
@@ -49,6 +50,7 @@
     <p class="text-center morado">¿No tienes cuenta? <span id="show-register" class="cursor-pointer underline">Crear cuenta</span></p>
   </div>
 
+  <!-- Registro -->
   <div id="container-register" class="hidden">
     <h1 class="text-3xl font-bold text-center morado mb-6">Crear Cuenta</h1>
     <input id="reg-name" type="text" placeholder="Nombre de usuario"
@@ -58,14 +60,14 @@
     <div class="relative mb-4">
       <input id="reg-password" type="password" placeholder="Contraseña"
         class="w-full p-3 rounded-lg borde-verde border bg-black text-white placeholder-gray-400 focus:outline-none pr-10" />
-      <span id="toggle-reg-password" class="absolute right-3 top-3 cursor-pointer text-morado">
+      <span id="toggle-reg-password" class="absolute right-3 top-3 cursor-pointer morado">
         <i data-lucide="eye"></i>
       </span>
     </div>
     <div class="relative mb-4">
       <input id="reg-password-confirm" type="password" placeholder="Confirmar contraseña"
         class="w-full p-3 rounded-lg borde-verde border bg-black text-white placeholder-gray-400 focus:outline-none pr-10" />
-      <span id="toggle-reg-password-confirm" class="absolute right-3 top-3 cursor-pointer text-morado">
+      <span id="toggle-reg-password-confirm" class="absolute right-3 top-3 cursor-pointer morado">
         <i data-lucide="eye"></i>
       </span>
     </div>
@@ -94,7 +96,7 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 const firebaseConfig = {
@@ -111,163 +113,53 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getDatabase(app);
 
-const containerLogin = document.getElementById('container-login');
-const containerRegister = document.getElementById('container-register');
-const showRegister = document.getElementById('show-register');
-const showLogin = document.getElementById('show-login');
 const loginEmail = document.getElementById('login-email');
 const loginPassword = document.getElementById('login-password');
-const btnLogin = document.getElementById('btn-login');
 const rememberMeCheckbox = document.getElementById('remember-me');
 const regName = document.getElementById('reg-name');
 const regEmail = document.getElementById('reg-email');
 const regPassword = document.getElementById('reg-password');
 const regPasswordConfirm = document.getElementById('reg-password-confirm');
-const btnRegister = document.getElementById('btn-register');
-const forgotPasswordLink = document.getElementById('forgot-password');
-const modalMsg = document.getElementById('modal-msg');
-const modalContent = document.getElementById('modal-content');
-const modalForgot = document.getElementById('modal-forgot');
-const forgotEmail = document.getElementById('forgot-email');
-const cancelForgot = document.getElementById('cancel-forgot');
-const sendForgot = document.getElementById('send-forgot');
 
-function showModal(message) {
-  modalContent.textContent = message;
+function showModal(msg) {
+  const modalMsg = document.getElementById('modal-msg');
+  const modalContent = document.getElementById('modal-content');
+  modalContent.textContent = msg;
   modalMsg.classList.remove('hidden');
   modalMsg.addEventListener('click', () => modalMsg.classList.add('hidden'), { once: true });
 }
 
-function showForgotModal() {
-  forgotEmail.value = '';
-  modalForgot.classList.remove('hidden');
+function togglePassword(input, toggleId) {
+  const iconSpan = document.getElementById(toggleId);
+  const icon = iconSpan.querySelector('i');
+  input.type = input.type === "password" ? "text" : "password";
+  icon.setAttribute('data-lucide', input.type === "password" ? 'eye' : 'eye-off');
+  lucide.createIcons();
 }
 
-function hideForgotModal() {
-  modalForgot.classList.add('hidden');
-}
+// Mostrar contraseñas
+document.getElementById('toggle-login-password').addEventListener('click', () => togglePassword(loginPassword, 'toggle-login-password'));
+document.getElementById('toggle-reg-password').addEventListener('click', () => togglePassword(regPassword, 'toggle-reg-password'));
+document.getElementById('toggle-reg-password-confirm').addEventListener('click', () => togglePassword(regPasswordConfirm, 'toggle-reg-password-confirm'));
 
-showRegister.addEventListener('click', () => {
-  containerLogin.classList.add('hidden');
-  containerRegister.classList.remove('hidden');
+// Cambio entre login y registro
+document.getElementById('show-register').addEventListener('click', () => {
+  document.getElementById('container-login').classList.add('hidden');
+  document.getElementById('container-register').classList.remove('hidden');
 });
-showLogin.addEventListener('click', () => {
-  containerRegister.classList.add('hidden');
-  containerLogin.classList.remove('hidden');
+document.getElementById('show-login').addEventListener('click', () => {
+  document.getElementById('container-register').classList.add('hidden');
+  document.getElementById('container-login').classList.remove('hidden');
 });
 
+// Validación de contraseña
 function validarPassword(pwd) {
   return /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/.test(pwd);
 }
 
-async function sendPasswordReset(email) {
-  try {
-    await sendPasswordResetEmail(auth, email, { url: 'https://nimeapp.github.io/Flixplemusic/reset_password.html' });
-    showModal('Se ha enviado un enlace para cambiar tu contraseña.');
-  } catch {
-    showModal('Correo no válido o no registrado.');
-  }
-}
-
-forgotPasswordLink.addEventListener('click', showForgotModal);
-cancelForgot.addEventListener('click', hideForgotModal);
-sendForgot.addEventListener('click', () => {
-  const email = forgotEmail.value.trim();
-  if (email) {
-    sendPasswordReset(email);
-    hideForgotModal();
-  } else {
-    showModal('Ingresa un correo válido.');
-  }
-});
-
-function togglePassword(input, toggleId) {
-  const iconSpan = document.getElementById(toggleId);
-  const icon = iconSpan.querySelector('i');
-  if (input.type === "password") {
-    input.type = "text";
-    icon.setAttribute('data-lucide', 'eye-off');
-  } else {
-    input.type = "password";
-    icon.setAttribute('data-lucide', 'eye');
-  }
-  lucide.createIcons();
-}
-
-document.getElementById('toggle-login-password').addEventListener('click', () => {
-  togglePassword(loginPassword, 'toggle-login-password');
-});
-document.getElementById('toggle-reg-password').addEventListener('click', () => {
-  togglePassword(regPassword, 'toggle-reg-password');
-});
-document.getElementById('toggle-reg-password-confirm').addEventListener('click', () => {
-  togglePassword(regPasswordConfirm, 'toggle-reg-password-confirm');
-});
-
-// Función para obtener hasta dos iniciales de nombre
-function getInitials(name) {
-  const parts = name.trim().split(/\s+/);
-  if(parts.length === 1) {
-    return parts[0].charAt(0).toUpperCase();
-  } else {
-    return (parts[0].charAt(0) + parts[1].charAt(0)).toUpperCase();
-  }
-}
-
-// Función para obtener color aleatorio para fondo (hex)
-function getRandomColor() {
-  const colors = [
-    "#bb00ff", "#00ff80", "#ff0055", "#ff7700", "#00aaff", "#ffaa00", "#00ffaa", "#ff00aa"
-  ];
-  return colors[Math.floor(Math.random() * colors.length)];
-}
-
-btnRegister.addEventListener('click', async () => {
-  if (!regName.value || !regEmail.value || !regPassword.value || !regPasswordConfirm.value) {
-    showModal('Completa todos los campos.');
-    return;
-  }
-  if (regPassword.value !== regPasswordConfirm.value) {
-    showModal('Las contraseñas no coinciden.');
-    return;
-  }
-  if (!validarPassword(regPassword.value)) {
-    showModal('La contraseña debe tener al menos 8 caracteres, mayúscula, número y símbolo.');
-    return;
-  }
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, regEmail.value.trim(), regPassword.value);
-    
-    const initials = getInitials(regName.value);
-    const profileColor = getRandomColor();
-
-    await set(ref(db, 'users/' + userCredential.user.uid), { 
-      name: regName.value.trim(), 
-      email: regEmail.value.trim(), 
-      initials: initials,
-      profileColor: profileColor,
-      createdAt: new Date().toISOString() 
-    });
-
-    const actionCodeSettings = {
-      url: 'https://nimeapp.github.io/Flixplemusic/loginuser.html',
-      handleCodeInApp: false,
-    };
-
-    await sendEmailVerification(userCredential.user, actionCodeSettings);
-    showModal('Cuenta creada. Verifica tu correo.');
-    containerRegister.classList.add('hidden');
-    containerLogin.classList.remove('hidden');
-  } catch {
-    showModal('El correo ya está registrado o es inválido.');
-  }
-});
-
-btnLogin.addEventListener('click', async () => {
-  if (!loginEmail.value || !loginPassword.value) {
-    showModal('Ingresa correo y contraseña.');
-    return;
-  }
+// Login
+document.getElementById('btn-login').addEventListener('click', async () => {
+  if (!loginEmail.value || !loginPassword.value) return showModal('Ingresa correo y contraseña.');
   try {
     await signInWithEmailAndPassword(auth, loginEmail.value.trim(), loginPassword.value);
     if (rememberMeCheckbox.checked) {
@@ -278,19 +170,68 @@ btnLogin.addEventListener('click', async () => {
       localStorage.clear();
     }
     window.location.href = 'https://nimeapp.github.io/Flixplemusic/index.html';
-  } catch {
-    showModal('Correo o contraseña incorrectos.');
+  } catch (err) {
+    showModal(err.message);
   }
 });
 
-window.addEventListener('load', async () => {
-  if (localStorage.getItem('rememberMe')) {
-    try {
-      await signInWithEmailAndPassword(auth, localStorage.getItem('email'), localStorage.getItem('password'));
-      window.location.href = 'https://nimeapp.github.io/Flixplemusic/index.html';
-    } catch {
-      localStorage.clear();
-    }
+// Registro
+document.getElementById('btn-register').addEventListener('click', async () => {
+  if (!regName.value || !regEmail.value || !regPassword.value || !regPasswordConfirm.value)
+    return showModal('Completa todos los campos.');
+  if (regPassword.value !== regPasswordConfirm.value)
+    return showModal('Las contraseñas no coinciden.');
+  if (!validarPassword(regPassword.value))
+    return showModal('La contraseña debe tener al menos 8 caracteres, mayúscula, número y símbolo.');
+
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, regEmail.value.trim(), regPassword.value);
+    const initials = regName.value.trim().split(/\s+/).map(w => w[0].toUpperCase()).slice(0,2).join('');
+    const colors = ["#bb00ff", "#00ff80", "#ff0055", "#ff7700", "#00aaff", "#ffaa00", "#00ffaa", "#ff00aa"];
+    const profileColor = colors[Math.floor(Math.random() * colors.length)];
+
+    await set(ref(db, 'users/' + userCredential.user.uid), { 
+      name: regName.value.trim(), 
+      email: regEmail.value.trim(), 
+      initials, profileColor,
+      createdAt: new Date().toISOString() 
+    });
+
+    await sendEmailVerification(userCredential.user, { url: 'https://nimeapp.github.io/Flixplemusic/loginuser.html' });
+    showModal('Cuenta creada. Verifica tu correo.');
+    document.getElementById('container-register').classList.add('hidden');
+    document.getElementById('container-login').classList.remove('hidden');
+  } catch (err) {
+    showModal(err.message);
+  }
+});
+
+// Recuperar contraseña
+document.getElementById('forgot-password').addEventListener('click', () => {
+  document.getElementById('forgot-email').value = '';
+  document.getElementById('modal-forgot').classList.remove('hidden');
+});
+document.getElementById('cancel-forgot').addEventListener('click', () => {
+  document.getElementById('modal-forgot').classList.add('hidden');
+});
+document.getElementById('send-forgot').addEventListener('click', async () => {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email) return showModal('Ingresa un correo válido.');
+  try {
+    await sendPasswordResetEmail(auth, email, { url: 'https://nimeapp.github.io/Flixplemusic/reset_password.html' });
+    showModal('Se ha enviado un enlace para cambiar tu contraseña.');
+    document.getElementById('modal-forgot').classList.add('hidden');
+  } catch (err) {
+    showModal(err.message);
+  }
+});
+
+// Rellenar datos si recordar contraseña está activo
+window.addEventListener('load', () => {
+  if (localStorage.getItem('rememberMe') === 'true') {
+    loginEmail.value = localStorage.getItem('email') || '';
+    loginPassword.value = localStorage.getItem('password') || '';
+    rememberMeCheckbox.checked = true;
   }
 });
 
