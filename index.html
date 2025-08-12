@@ -318,101 +318,86 @@
     </button>
   </nav>
 
-   <!-- Contenedor perfil -->
-  <div id="contenedor-perfil" class="bg-white p-4 flex items-center gap-4 shadow mt-2 rounded-lg flex-wrap">
-    <div id="avatar" class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white"></div>
-    <div class="flex flex-wrap items-center gap-2 flex-grow min-w-[150px]">
-      <span id="user-name" class="text-lg font-semibold text-gray-800"></span>
+  <!-- Contenedor Perfil (oculto inicialmente, se muestra con slide) -->
+<div id="profile-container" aria-label="Perfil de Usuario" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
+  <div id="profile-content">
+
+    <div id="contenedor-perfil">
+      <div id="avatar-profile" class="w-16 h-16 rounded-full bg-gray-300 flex items-center justify-center text-xl font-bold text-white"></div>
+      <div>
+        <span id="user-name"></span>
+      </div>
     </div>
-  </div>
 
-  <!-- Sección Mi información (aparece justo debajo del perfil) -->
-  <div id="seccion-mi-informacion" class="bg-white p-4 mt-4 shadow rounded-lg hidden max-w-md relative">
-    <h2 class="text-xl font-semibold mb-4 text-gray-800 flex justify-between items-center">
-      Mi Información
-      <button id="btn-cerrar-mi-informacion" type="button" title="Cerrar" class="text-gray-500 hover:text-gray-700 focus:outline-none">
-        <i data-lucide="x" class="w-6 h-6"></i>
+    <div id="seccion-mi-informacion">
+      <h2 class="text-xl font-semibold mb-4 flex justify-between items-center">
+        Mi Información
+        <button id="btn-cerrar-mi-informacion" title="Cerrar información" aria-label="Cerrar información">
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </h2>
+      <p><strong>Nombre:</strong> <span id="info-nombre"></span></p>
+      <p><strong>Correo:</strong> <span id="info-correo"></span></p>
+      <button id="btn-cambiar-contrasena" class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Cambiar contraseña</button>
+    </div>
+
+    <div id="opciones-container">
+      <button id="btn-mi-informacion" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
+        <i data-lucide="user" class="w-6 h-6 text-blue-500"></i>
+        <span>Mi información</span>
       </button>
-    </h2>
 
-    <p class="mb-2"><strong>Nombre:</strong> <span id="info-nombre"></span></p>
-    <p class="mb-4"><strong>Correo:</strong> <span id="info-correo"></span></p>
+      <button id="btn-feeds" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
+        <i data-lucide="newspaper" class="w-6 h-6 text-blue-500"></i>
+        <span>Feeds</span>
+      </button>
 
-    <button id="btn-cambiar-contrasena" type="button" class="mt-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md focus:outline-none">
-      Cambiar contraseña
-    </button>
+      <a href="go:politicas-privacidad" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <i data-lucide="shield-check" class="w-6 h-6 text-blue-500"></i>
+        <span>Políticas y Privacidad</span>
+      </a>
+
+      <a href="go:politica-uso" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <i data-lucide="file-text" class="w-6 h-6 text-blue-500"></i>
+        <span>Política de Uso</span>
+      </a>
+
+      <a href="go:cookies" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <i data-lucide="cookie" class="w-6 h-6 text-blue-500"></i>
+        <span>Cookies</span>
+      </a>
+
+      <a href="go:ayuda" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <i data-lucide="help-circle" class="w-6 h-6 text-blue-500"></i>
+        <span>Ayuda</span>
+      </a>
+
+      <a href="go:contacto" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <i data-lucide="mail" class="w-6 h-6 text-blue-500"></i>
+        <span>Contacto</span>
+      </a>
+
+      <a href="go:acerca" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <i data-lucide="info" class="w-6 h-6 text-blue-500"></i>
+        <span>Acerca de</span>
+      </a>
+
+      <a href="go:compartir" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <i data-lucide="share-2" class="w-6 h-6 text-blue-500"></i>
+        <span>Compartir la app</span>
+      </a>
+
+      <a href="go:sugerencias" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
+        <i data-lucide="message-circle" class="w-6 h-6 text-blue-500"></i>
+        <span>Enviar sugerencias</span>
+      </a>
+    </div>
+    <button id="btn-logout" class="btn-logout flex items-center gap-2 p-3 rounded-lg hover:bg-gray-200 focus:outline-none col-span-2" type="button" title="Cerrar sesión">
+  <i data-lucide="log-out" class="w-5 h-5 text-purple-600"></i>
+  <span>Cerrar sesión</span>
+</button>
+
   </div>
-
-  <!-- Un único contenedor para todas las opciones (mismo estilo) -->
-  <div id="opciones-container" class="bg-white mt-4 p-4 grid grid-cols-2 gap-3 shadow rounded-lg">
-
-    <!-- Mi información (botón interactivo) -->
-    <button id="btn-mi-informacion" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
-      <i data-lucide="user" class="w-6 h-6 text-blue-500"></i>
-      <span>Mi información</span>
-    </button>
-
-    <!-- Feeds -->
-    <button id="btn-feeds" type="button" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none">
-      <i data-lucide="newspaper" class="w-6 h-6 text-blue-500"></i>
-      <span>Feeds</span>
-    </button>
-
-    <!-- Políticas y Privacidad -->
-    <a href="go:politicas-privacidad" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-      <i data-lucide="shield-check" class="w-6 h-6 text-blue-500"></i>
-      <span>Políticas y Privacidad</span>
-    </a>
-
-    <!-- Política de Uso -->
-    <a href="go:politica-uso" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-      <i data-lucide="file-text" class="w-6 h-6 text-blue-500"></i>
-      <span>Política de Uso</span>
-    </a>
-
-    <!-- Cookies -->
-    <a href="go:cookies" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-      <i data-lucide="cookie" class="w-6 h-6 text-blue-500"></i>
-      <span>Cookies</span>
-    </a>
-
-    <!-- Ayuda -->
-    <a href="go:ayuda" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-      <i data-lucide="help-circle" class="w-6 h-6 text-blue-500"></i>
-      <span>Ayuda</span>
-    </a>
-
-    <!-- Contacto -->
-    <a href="go:contacto" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-      <i data-lucide="mail" class="w-6 h-6 text-blue-500"></i>
-      <span>Contacto</span>
-    </a>
-
-    <!-- Acerca de -->
-    <a href="go:acerca" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-      <i data-lucide="info" class="w-6 h-6 text-blue-500"></i>
-      <span>Acerca de</span>
-    </a>
-
-    <!-- Compartir la app -->
-    <a href="go:compartir" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-      <i data-lucide="share-2" class="w-6 h-6 text-blue-500"></i>
-      <span>Compartir la app</span>
-    </a>
-
-    <!-- Enviar sugerencias -->
-    <a href="go:sugerencias" class="flex items-center gap-3 p-3 bg-gray-100 rounded-lg hover:bg-gray-200">
-      <i data-lucide="message-circle" class="w-6 h-6 text-blue-500"></i>
-      <span>Enviar sugerencias</span>
-    </a>
-
-    <!-- Botón Logout, ocupa 2 columnas para todo el ancho -->
-    <button id="btn-logout" type="button" title="Cerrar sesión" class="col-span-2">
-      <i data-lucide="log-out" class="w-5 h-5"></i>
-      <span>Cerrar sesión</span>
-    </button>
-  </div>
-
 </div>
 
   <script type="module">
