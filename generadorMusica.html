@@ -1,146 +1,535 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Generador de Playlists y Tracks</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-<style>
-* { -webkit-user-select: none; -webkit-touch-callout: none; }
-#individualUrlsContainer { margin-top: 1rem; max-width: 100%; background-color: #1f2937; padding: 0.75rem; border-radius: 0.5rem; font-family: monospace; font-size: 0.875rem; color: #9ee6a8; overflow-wrap: break-word; }
-#duplicateModal { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background-color: rgba(0,0,0,0.5); z-index: 50; opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
-#duplicateModal.show { opacity: 1; pointer-events: auto; }
-#duplicateModalContent { background-color: #8b5cf6; border: 4px solid #7ee787; border-radius: 1rem; padding: 1.5rem 2rem; color: #fff; font-weight: bold; font-size: 1.2rem; text-align: center; box-shadow: 0 0 20px #7ee787; transform: scale(0.8); transition: transform 0.4s ease; }
-#duplicateModal.show #duplicateModalContent { transform: scale(1); }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Generador y Reproductor de Música</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <style>
+    * { -webkit-user-select: none; -webkit-touch-callout: none; }
+    .track-item {
+      cursor: pointer;
+      padding: 0.5rem 0.25rem;
+      border-radius: 0.375rem;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    .track-item:hover {
+      background-color: #2d1600;
+    }
+    .track-item.active {
+      color: #a3f7bf;
+      font-weight: 600;
+      background-color: #1a3a27;
+    }
+    #individualUrlsContainer {
+      margin-top: 1rem;
+      max-width: 100%;
+      background-color: #1f2937;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      font-family: monospace;
+      font-size: 0.875rem;
+      color: #9ee6a8;
+      overflow-wrap: break-word;
+    }
+  </style>
 </head>
 <body class="bg-gradient-to-b from-[#2d1600] to-black text-white min-h-screen flex flex-col items-center p-4">
 
-<div class="w-full max-w-3xl">
-  <h1 class="text-3xl font-bold mb-6 text-center">Buscador y Reproductor de Música</h1>
-  <div class="mb-6 max-w-sm mx-auto">
-    <input id="searchInput" type="text" placeholder="Escribe un artista (ej: Shakira)" class="w-full p-3 rounded-lg text-black" />
-    <button id="searchBtn" class="w-full mt-3 bg-green-500 hover:bg-green-600 text-black font-semibold py-2 rounded-lg">Buscar</button>
+  <div class="w-full max-w-3xl">
+    <h1 class="text-3xl font-bold mb-6 text-center">Buscador y Reproductor de Música</h1>
+
+    <!-- Buscador -->
+    <div class="mb-6 max-w-sm mx-auto">
+      <input id="searchInput" type="text" placeholder="Escribe un artista (ej: Shakira)" class="w-full p-3 rounded-lg text-black" />
+      <button id="searchBtn" class="w-full mt-3 bg-green-500 hover:bg-green-600 text-black font-semibold py-2 rounded-lg">Buscar</button>
+    </div>
+
+    <!-- Álbumes -->
+    <div id="albumsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
+
+    <div id="tracksSection" class="hidden mb-8">
+      <h2 class="text-2xl font-semibold mb-4 text-center">Canciones del Álbum</h2>
+      <div id="tracksContainer" class="space-y-3 max-h-[400px] overflow-y-auto bg-gray-800 p-4 rounded-lg"></div>
+      <button id="saveAlbumBtn" disabled class="mt-4 w-full bg-green-600 hover:bg-green-700 text-black font-semibold py-2 rounded-lg">Guardar álbum en playlist y cargar para reproducir</button>
+    </div>
+
+    <!-- URL generada -->
+    <div id="generatedContainer" class="hidden mt-4 flex flex-col items-center justify-center gap-3">
+      <div id="generatedUrlContainer" class="max-w-full bg-gray-900 p-3 rounded-lg break-words text-green-400 font-mono text-sm"></div>
+      <div id="individualUrlsContainer" class="max-w-full hidden"></div>
+      <div class="flex items-center gap-3">
+        <button id="copyBtn" class="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-200 px-4 py-2 rounded-lg">
+          <i class="fa-solid fa-copy"></i><span id="copyBtnText">Copiar todo</span>
+        </button>
+      </div>
+      <span id="copyMsg" class="hidden text-sm text-green-400 font-medium">¡Copiado!</span>
+    </div>
+
+    <!-- Reproductor -->
+    <div class="w-full max-w-sm mx-auto bg-gradient-to-b from-[#2d1600] to-black p-6 rounded-xl shadow-lg mt-12">
+      <div class="flex justify-center mb-6">
+        <img id="albumCover" src="https://via.placeholder.com/300" alt="Imagen del álbum" class="rounded-xl w-full max-w-xs shadow-lg" />
+      </div>
+      <div class="text-center mb-2">
+        <h2 id="trackTitle" class="text-lg font-semibold">Título</h2>
+        <p id="trackArtist" class="text-sm text-gray-400">Artista</p>
+      </div>
+      <audio id="audio" src=""></audio>
+      <div class="mt-4">
+        <input type="range" id="progress" value="0" class="w-full accent-green-500" />
+        <div class="flex justify-between text-xs text-gray-400 mt-1">
+          <span id="current">0:00</span>
+          <span id="total">0:00</span>
+        </div>
+      </div>
+      <div class="flex justify-between items-center mt-4 px-6 text-2xl text-white">
+        <button id="shuffleBtn" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-shuffle"></i></button>
+        <button id="back"><i class="fa-solid fa-backward-step"></i></button>
+        <button id="playBtn" class="bg-white text-black w-14 h-14 rounded-full flex items-center justify-center shadow-lg">
+          <i class="fa-solid fa-play" id="playIcon"></i>
+        </button>
+        <button id="next"><i class="fa-solid fa-forward-step"></i></button>
+        <button id="repeatBtn" class="opacity-60 hover:opacity-100"><i class="fa-solid fa-repeat"></i></button>
+      </div>
+      <div id="playlistContainer" class="mt-6 max-h-60 overflow-y-auto text-left px-2"></div>
+    </div>
   </div>
-  <div id="albumsContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"></div>
-  <div id="tracksSection" class="hidden mb-8">
-    <h2 class="text-2xl font-semibold mb-4 text-center">Canciones del Álbum</h2>
-    <div id="tracksContainer" class="space-y-3 max-h-[400px] overflow-y-auto bg-gray-800 p-4 rounded-lg"></div>
-    <button id="saveAlbumBtn" disabled class="mt-4 w-full bg-green-600 hover:bg-green-700 text-black font-semibold py-2 rounded-lg">Guardar álbum en playlist y cargar para reproducir</button>
-  </div>
-  <div id="generatedContainer" class="hidden mt-4 flex flex-col items-center justify-center gap-3">
-    <div id="generatedUrlContainer" class="max-w-full bg-gray-900 p-3 rounded-lg break-words text-green-400 font-mono text-sm"></div>
-    <div id="individualUrlsContainer" class="max-w-full hidden"></div>
-  </div>
-</div>
 
-<div id="duplicateModal">
-  <div id="duplicateModalContent"></div>
-</div>
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
+    import { getDatabase, ref, push, set, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-auth.js";
-import { getDatabase, ref, push, set, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
+    const firebaseConfig = {
+      apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
+      authDomain: "flixplemusic.firebaseapp.com",
+      databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
+      projectId: "flixplemusic",
+      storageBucket: "flixplemusic.appspot.com",
+      messagingSenderId: "792301053512",
+      appId: "1:792301053512:web:13878703d081f1a7b3da7d"
+    };
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
-  authDomain: "flixplemusic.firebaseapp.com",
-  databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
-  projectId: "flixplemusic",
-  storageBucket: "flixplemusic.appspot.com",
-  messagingSenderId: "792301053512",
-  appId: "1:792301053512:web:13878703d081f1a7b3da7d"
-};
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getDatabase(app);
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getDatabase(app);
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const albumsContainer = document.getElementById('albumsContainer');
+    const tracksSection = document.getElementById('tracksSection');
+    const tracksContainer = document.getElementById('tracksContainer');
+    const saveAlbumBtn = document.getElementById('saveAlbumBtn');
+    const generatedContainer = document.getElementById('generatedContainer');
+    const generatedUrlContainer = document.getElementById('generatedUrlContainer');
+    const individualUrlsContainer = document.getElementById('individualUrlsContainer');
+    const copyBtn = document.getElementById('copyBtn');
+    const copyMsg = document.getElementById('copyMsg');
 
-const searchInput = document.getElementById('searchInput');
-const searchBtn = document.getElementById('searchBtn');
-const albumsContainer = document.getElementById('albumsContainer');
-const tracksSection = document.getElementById('tracksSection');
-const tracksContainer = document.getElementById('tracksContainer');
-const saveAlbumBtn = document.getElementById('saveAlbumBtn');
-const generatedContainer = document.getElementById('generatedContainer');
-const generatedUrlContainer = document.getElementById('generatedUrlContainer');
-const individualUrlsContainer = document.getElementById('individualUrlsContainer');
-const duplicateModal = document.getElementById('duplicateModal');
-const duplicateModalContent = document.getElementById('duplicateModalContent');
+    const audio = document.getElementById('audio');
+    const playBtn = document.getElementById('playBtn');
+    const playIcon = document.getElementById('playIcon');
+    const progress = document.getElementById('progress');
+    const current = document.getElementById('current');
+    const total = document.getElementById('total');
+    const repeatBtn = document.getElementById('repeatBtn');
+    const shuffleBtn = document.getElementById('shuffleBtn');
+    const backBtn = document.getElementById('back');
+    const nextBtn = document.getElementById('next');
+    const albumCoverImg = document.getElementById('albumCover');
+    const trackTitleElem = document.getElementById('trackTitle');
+    const trackArtistElem = document.getElementById('trackArtist');
+    const playlistContainer = document.getElementById('playlistContainer');
 
-let playlist = [], currentAlbumTitle = "", currentArtist = "", currentAlbumCover = "";
-let isAdmin = false;
+    let playlist = [];
+    let currentTrackIndex = 0;
+    let isRepeat = false;
+    let isShuffle = false;
 
-onAuthStateChanged(auth, async (user) => {
-  if(user){
-    const snapshot = await get(ref(db, `admins/${user.uid}`));
-    isAdmin = snapshot.exists() && snapshot.val().role==="admin";
-    saveAlbumBtn.disabled = !isAdmin;
-  } else { isAdmin = false; saveAlbumBtn.disabled = true; }
-});
+    let currentAlbumTitle = "";
+    let currentArtist = "";
+    let currentAlbumCover = ""; // <-- guarda la portada real
 
-function showDuplicateModal(message){
-  duplicateModalContent.textContent = message;
-  duplicateModal.classList.add('show');
-  setTimeout(()=>duplicateModal.classList.remove('show'), 5000);
-  duplicateModal.onclick = ()=>duplicateModal.classList.remove('show');
-}
+    // Controla si usuario actual es admin
+    let isAdmin = false;
 
-// Guardar playlist y tracks
-saveAlbumBtn.onclick = async () => {
-  if(!isAdmin){ alert("No tienes permisos para guardar."); return; }
-
-  // Construir playlist desde inputs
-  playlist = [];
-  for(const div of tracksContainer.children){
-    const title = div.children[0].textContent;
-    const url = (div.children[1].value||'').trim();
-    if(url) playlist.push({ title, artist: currentArtist, url, cover: currentAlbumCover });
-  }
-  if(!playlist.length){ alert("Ingresa al menos una URL válida."); return; }
-
-  try {
-    // Revisar duplicados
-    const playlistsSnapshot = await get(ref(db,'playlists'));
-    const allPlaylists = playlistsSnapshot.exists()? playlistsSnapshot.val() : {};
-    const exists = Object.values(allPlaylists).some(p=>p.album===currentAlbumTitle && p.artist===currentArtist);
-    if(exists){ showDuplicateModal(`El álbum "${currentAlbumTitle}" de ${currentArtist} ya existe.`); return; }
-
-    // Guardar playlist principal
-    const pr = push(ref(db,'playlists'));
-    const playlistId = pr.key;
-    await set(pr, { createdAt: new Date().toISOString(), playlist, album: currentAlbumTitle, artist: currentArtist, cover: currentAlbumCover });
-
-    // Guardar tracks individuales y generar URLs
-    const tracksSnapshot = await get(ref(db,'tracks'));
-    const existingTracks = tracksSnapshot.exists()? tracksSnapshot.val() : {};
-    const individualUrls = [];
-    for(const track of playlist){
-      const trackExists = Object.entries(existingTracks).some(([k,t])=>t.title===track.title && t.artist===track.artist);
-      if(trackExists){
-        const existingTrackId = Object.entries(existingTracks).find(([k,t])=>t.title===track.title && t.artist===track.artist)[0];
-        individualUrls.push(`${location.origin}/Flixplemusic/reproductor2.html?track=${existingTrackId}`);
-        continue;
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const snapshot = await get(ref(db, `admins/${user.uid}`));
+          if (snapshot.exists() && snapshot.val().role === "admin") {
+            isAdmin = true;
+            saveAlbumBtn.disabled = false;
+          } else {
+            isAdmin = false;
+            saveAlbumBtn.disabled = true;
+            // no mostrar alerta repetida al cargar la página, solo si intenta guardar
+            console.warn("Usuario no es admin");
+          }
+        } catch (e) {
+          isAdmin = false;
+          saveAlbumBtn.disabled = true;
+          console.error("Error al verificar permisos de administrador.", e);
+        }
+      } else {
+        isAdmin = false;
+        saveAlbumBtn.disabled = true;
       }
-      const trackRef = push(ref(db,'tracks')); 
-      const trackId = trackRef.key;
-      await set(trackRef,{ title: track.title, artist: track.artist, url: track.url, cover: track.cover, album: currentAlbumTitle, createdAt: new Date().toISOString(), playlistId });
-      individualUrls.push(`${location.origin}/Flixplemusic/reproductor2.html?track=${trackId}`);
+    });
+
+    function jsonp(url) {
+      return new Promise((resolve, reject) => {
+        const cb = 'cb_' + Math.random().toString(36).substring(2, 9);
+        const script = document.createElement('script');
+        window[cb] = data => {
+          try {
+            delete window[cb];
+          } catch (e) {}
+          if (script.parentNode) script.parentNode.removeChild(script);
+          resolve(data);
+        };
+        script.onerror = () => {
+          try { delete window[cb]; } catch (e) {}
+          if (script.parentNode) script.parentNode.removeChild(script);
+          reject(new Error('JSONP error'));
+        };
+        script.src = `${url}&output=jsonp&callback=${cb}`;
+        document.body.appendChild(script);
+      });
     }
 
-    // Mostrar URLs generadas
-    const link = `${location.origin}/Flixplemusic/Reproductor.html?playlist=${playlistId}`;
-    generatedUrlContainer.textContent = `Playlist URL: ${link}`;
-    individualUrlsContainer.innerHTML = '<strong>URLs individuales:</strong><br>' + individualUrls.map(u=>`<a href="${u}" target="_blank" class="underline text-green-300">${u}</a>`).join('<br>');
-    individualUrlsContainer.classList.remove('hidden');
-    generatedContainer.classList.remove('hidden');
+    async function searchArtist() {
+      const q = searchInput.value.trim();
+      if (!q) return alert("Escribe un artista");
+      albumsContainer.innerHTML = 'Buscando...';
+      tracksSection.classList.add('hidden');
+      generatedContainer.classList.add('hidden');
+      saveAlbumBtn.disabled = true;
+      try {
+        const d = await jsonp(`https://api.deezer.com/search/artist?q=${encodeURIComponent(q)}`);
+        const artist = d.data?.[0];
+        if (!artist) {
+          albumsContainer.innerHTML = '<p class="text-red-500 text-center">Artista no encontrado</p>';
+          return;
+        }
+        const ad = await jsonp(`https://api.deezer.com/artist/${artist.id}/albums?limit=20`);
+        renderAlbums(ad.data);
+      } catch (err) {
+        console.error(err);
+        albumsContainer.innerHTML = '<p class="text-red-500 text-center">Error al buscar</p>';
+      }
+    }
 
-    alert("Se guardó el álbum y los tracks individuales con éxito");
+    function renderAlbums(albums) {
+      albumsContainer.innerHTML = '';
+      if (!Array.isArray(albums) || !albums.length) {
+        albumsContainer.innerHTML = '<p class="text-yellow-400 text-center">No se encontraron álbumes</p>';
+        return;
+      }
+      albums.forEach(a => {
+        const div = document.createElement('div');
+        div.className = 'bg-gray-800 p-3 rounded cursor-pointer flex flex-col items-center hover:bg-gray-700';
+        div.innerHTML = `<img src="${a.cover_medium}" class="w-32 h-32 rounded mb-2"/><h3 class="text-center font-semibold">${a.title}</h3>`;
+        div.onclick = () => loadTracks(a.id, a.cover_big, a.title);
+        albumsContainer.appendChild(div);
+      });
+    }
 
-  } catch(err){ console.error(err); alert("Error al guardar: " + err.message); }
-};
-</script>
+    async function loadTracks(albumId, coverUrl, albumTitle) {
+      tracksContainer.innerHTML = 'Cargando canciones...';
+      tracksSection.classList.remove('hidden');
+      generatedContainer.classList.add('hidden');
+      saveAlbumBtn.disabled = true;
+      playlist = [];
+
+      // guardar y mostrar la portada correcta
+      currentAlbumTitle = albumTitle || '';
+      currentAlbumCover = coverUrl || 'https://via.placeholder.com/300';
+      albumCoverImg.src = currentAlbumCover;
+
+      try {
+        const d = await jsonp(`https://api.deezer.com/album/${albumId}`);
+        tracksContainer.innerHTML = '';
+        currentArtist = d.artist?.name || '';
+        if (!d.tracks?.data?.length) {
+          tracksContainer.innerHTML = '<p class="text-red-500 text-center">No se encontraron canciones</p>';
+          return;
+        }
+        d.tracks.data.forEach(t => {
+          const div = document.createElement('div');
+          div.className = 'bg-gray-700 p-2 rounded flex justify-between items-center';
+          const titleDiv = document.createElement('div');
+          titleDiv.textContent = t.title;
+          titleDiv.className = 'truncate max-w-[40%]';
+          const input = document.createElement('input');
+          input.type = 'url';
+          input.placeholder = `URL MP3 para "${t.title}"`;
+          input.className = 'w-2/3 p-1 rounded text-black';
+          div.appendChild(titleDiv);
+          div.appendChild(input);
+          tracksContainer.appendChild(div);
+        });
+        // Solo habilitar si usuario es admin
+        saveAlbumBtn.disabled = !isAdmin;
+
+      } catch (err) {
+        console.error(err);
+        tracksContainer.innerHTML = '<p class="text-red-500 text-center">Error al cargar canciones</p>';
+      }
+    }
+
+    saveAlbumBtn.onclick = async () => {
+      if (!isAdmin) {
+        alert("No tienes permisos para guardar.");
+        return;
+      }
+      playlist = [];
+      for (const div of tracksContainer.children) {
+        const title = div.children[0].textContent;
+        const url = (div.children[1].value || '').trim();
+        if (url) playlist.push({ title, artist: currentArtist, url, cover: currentAlbumCover });
+      }
+      if (!playlist.length) return alert("Ingresa al menos una URL válida.");
+
+      try {
+        const pr = push(ref(db, 'playlists'));
+        const playlistId = pr.key;
+        await set(pr, {
+          createdAt: new Date().toISOString(),
+          playlist,
+          album: currentAlbumTitle,
+          artist: currentArtist,
+          cover: currentAlbumCover
+        });
+
+        const individualUrls = [];
+        for (const track of playlist) {
+          const trackRef = push(ref(db, 'tracks'));
+          const trackId = trackRef.key;
+          await set(trackRef, {
+            title: track.title,
+            artist: track.artist,
+            url: track.url,
+            cover: track.cover,
+            album: currentAlbumTitle,
+            createdAt: new Date().toISOString(),
+            playlistId: playlistId
+          });
+
+          individualUrls.push(`${location.origin}/Flixplemusic/reproductor2.html?track=${trackId}`);
+        }
+
+        const link = `${location.origin}/Flixplemusic/Reproductor.html?playlist=${playlistId}`;
+        generatedUrlContainer.textContent = link;
+
+        individualUrlsContainer.innerHTML = '<strong>URLs individuales para cada canción:</strong><br>' + individualUrls.map(u => `<a href="${u}" target="_blank" class="underline text-green-300">${u}</a>`).join('<br>');
+        individualUrlsContainer.classList.remove('hidden');
+
+        generatedContainer.classList.remove('hidden');
+
+        await loadPlaylistFromFirebase(playlistId);
+
+        alert("Se guardó el álbum con éxito");
+      } catch (err) {
+        console.error(err);
+        alert("Error al guardar: " + (err.message || err));
+      }
+    };
+
+    function renderPlaylist() {
+      playlistContainer.innerHTML = '';
+      playlist.forEach((track, index) => {
+        const div = document.createElement('div');
+        div.classList.add('track-item');
+        if (index === currentTrackIndex) div.classList.add('active');
+        div.textContent = `${track.title} - ${track.artist}`;
+        div.title = `${track.title} - ${track.artist}`;
+        div.onclick = () => playTrack(index);
+        playlistContainer.appendChild(div);
+      });
+    }
+
+    function playTrack(index) {
+      if (!playlist.length || index < 0 || index >= playlist.length) return;
+      currentTrackIndex = index;
+      const track = playlist[index];
+
+      albumCoverImg.src = track.cover || currentAlbumCover || 'https://via.placeholder.com/300';
+      trackTitleElem.textContent = track.title || 'Título';
+      trackArtistElem.textContent = track.artist || 'Artista';
+
+      audio.src = track.url || '';
+      audio.play().catch(err => console.warn('Autoplay bloqueado o error al reproducir', err));
+      playIcon.classList.replace('fa-play', 'fa-pause');
+
+      renderPlaylist();
+    }
+
+    function formatTime(sec) {
+      if (isNaN(sec)) return '0:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    audio.addEventListener('loadedmetadata', () => {
+      total.textContent = formatTime(audio.duration);
+    });
+
+    audio.addEventListener('timeupdate', () => {
+      if (audio.duration) {
+        progress.value = (audio.currentTime / audio.duration) * 100;
+        current.textContent = formatTime(audio.currentTime);
+      }
+    });
+
+    progress.addEventListener('input', () => {
+      if (audio.duration) {
+        audio.currentTime = (progress.value / 100) * audio.duration;
+      }
+    });
+
+    playBtn.addEventListener('click', () => {
+      if (audio.paused) {
+        audio.play().catch(err => console.warn('Error al reproducir', err));
+        playIcon.classList.replace('fa-play', 'fa-pause');
+      } else {
+        audio.pause();
+        playIcon.classList.replace('fa-pause', 'fa-play');
+      }
+    });
+
+    repeatBtn.addEventListener('click', () => {
+      isRepeat = !isRepeat;
+      audio.loop = isRepeat;
+      repeatBtn.classList.toggle('text-green-500', isRepeat);
+    });
+
+    shuffleBtn.addEventListener('click', () => {
+      isShuffle = !isShuffle;
+      shuffleBtn.classList.toggle('text-green-500', isShuffle);
+    });
+
+    nextBtn.addEventListener('click', () => {
+      if (!playlist.length) return;
+      if (isShuffle) {
+        const randomIndex = Math.floor(Math.random() * playlist.length);
+        playTrack(randomIndex);
+      } else {
+        if (currentTrackIndex + 1 < playlist.length) {
+          playTrack(currentTrackIndex + 1);
+        } else if (isRepeat) {
+          playTrack(0);
+        }
+      }
+    });
+
+    backBtn.addEventListener('click', () => {
+      if (!playlist.length) return;
+      if (isShuffle) {
+        const randomIndex = Math.floor(Math.random() * playlist.length);
+        playTrack(randomIndex);
+      } else {
+        if (currentTrackIndex - 1 >= 0) {
+          playTrack(currentTrackIndex - 1);
+        } else if (isRepeat) {
+          playTrack(playlist.length - 1);
+        }
+      }
+    });
+
+    audio.addEventListener('ended', () => {
+      if (isRepeat) {
+        audio.currentTime = 0;
+        audio.play();
+      } else {
+        nextBtn.click();
+      }
+    });
+
+    async function loadPlaylistFromFirebase(id) {
+      try {
+        const snapshot = await get(ref(db, `playlists/${id}`));
+        if (!snapshot.exists()) {
+          alert("Playlist no encontrada.");
+          return;
+        }
+        const data = snapshot.val();
+        if (!data.playlist || !Array.isArray(data.playlist)) {
+          alert("Playlist inválida.");
+          return;
+        }
+        playlist = data.playlist;
+        currentTrackIndex = 0;
+        renderPlaylist();
+        playTrack(0);
+      } catch (err) {
+        console.error(err);
+        alert("Error cargando playlist: " + (err.message || err));
+      }
+    }
+
+    copyBtn.onclick = () => {
+      const textToCopy = `${generatedUrlContainer.textContent}\n\n${individualUrlsContainer.textContent}`;
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        copyMsg.classList.remove('hidden');
+        setTimeout(() => copyMsg.classList.add('hidden'), 2000);
+      }).catch((e) => {
+        console.warn('No se pudo copiar', e);
+        alert("No se pudo copiar al portapapeles");
+      });
+    };
+
+    searchBtn.onclick = searchArtist;
+
+    function getQueryParam(param) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(param);
+    }
+
+    window.onload = () => {
+      const playlistId = getQueryParam('playlist');
+      if (playlistId) {
+        loadPlaylistFromFirebase(playlistId);
+        tracksSection.classList.add('hidden');
+      }
+    };
+
+    // Bloquear clic derecho
+    document.addEventListener('contextmenu', function (e) {
+      e.preventDefault();
+    });
+
+    // Bloquear teclas F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J, Ctrl+S, Ctrl+P
+    document.addEventListener('keydown', function (e) {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key.toUpperCase())) ||
+        (e.ctrlKey && ['U', 'S', 'P'].includes(e.key.toUpperCase()))
+      ) {
+        e.preventDefault();
+      }
+    });
+
+    // Bloquear menú desde click derecho largo (por si algún navegador no lo previene)
+    window.oncontextmenu = function () {
+      return false;
+    };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('a').forEach(el => {
+        const url = el.getAttribute('href');
+        if (url) {
+          el.removeAttribute('href');
+          el.style.cursor = 'pointer';
+          el.onclick = () => window.location.href = url;
+        }
+      });
+    });
+  </script>
+
 </body>
 </html>
