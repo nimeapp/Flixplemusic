@@ -11,32 +11,208 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 
 <style>
-  body { font-family: 'Montserrat', sans-serif; margin:0; padding-bottom:60px; background:#121212; color:#eee; }
-  nav { position:fixed; bottom:0; left:0; right:0; background:#000; border-top:2px solid #90ee90; display:flex; justify-content:space-around; padding:0.5rem 0; font-size:10px; z-index:10001; }
-  nav a, nav button { background:none; border:none; color:inherit; display:flex; flex-direction:column; align-items:center; cursor:pointer; text-decoration:none; font-size:10px; }
-  nav a:hover, nav button:hover { opacity:0.8; }
-  nav a.active-tab i, nav a.active-tab span { color:#a855f7 !important; stroke:#a855f7 !important; }
-  #avatar { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px; color:white; border:2px solid #90ee90; overflow:hidden; background-color:#555; }
+  /* ===== BODY ===== */
+  body {
+    font-family: 'Montserrat', sans-serif;
+    margin: 0;
+    padding-bottom: 60px;
+    background: #121212;
+    color: #eee;
+  }
 
-  /* Slider perfil */
-  #profile-container { position:fixed; top:0; right:0; width:100%; max-width:360px; height:calc(100vh - 48px); background:#f5f6f7; color:black; font-family:sans-serif; padding:1rem; box-sizing:border-box; overflow-y:auto; z-index:10000; transform:translateX(100%); transition:transform 0.4s ease; border-left:1px solid #ddd; bottom:48px; }
-  #profile-container.visible { transform:translateX(0); }
-  #profile-content { animation: slideInRight 0.4s ease-out forwards; }
-  @keyframes slideInRight { from { transform:translateX(100%); opacity:0; } to { transform:translateX(0); opacity:1; } }
-  #contenedor-perfil { background:white; padding:1rem; display:flex; align-items:center; gap:1rem; border-radius:0.5rem; box-shadow:0 0 10px rgba(0,0,0,0.2); }
-  #avatar-profile { width:64px; height:64px; background:#888; color:white; font-size:2rem; font-weight:bold; display:flex; justify-content:center; align-items:center; border-radius:50%; overflow:hidden; }
-  #user-name { font-weight:600; font-size:1.2rem; color:#333; }
+  /* ===== NAVEGACIÓN INFERIOR ===== */
+  nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: #000;
+    border-top: 2px solid #90ee90;
+    display: flex;
+    justify-content: space-around;
+    padding: 0.5rem 0;
+    font-size: 10px;
+    z-index: 10001;
+  }
 
-  #seccion-mi-informacion { background:white; padding:1rem; margin-top:1rem; border-radius:0.5rem; box-shadow:0 0 10px rgba(0,0,0,0.2); max-width:400px; display:none; color:black; }
-  #seccion-mi-informacion.visible { display:block; }
-  #btn-cerrar-mi-informacion { background:none; border:none; cursor:pointer; }
+  nav a,
+  nav button {
+    background: none;
+    border: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    text-decoration: none;
+    font-size: 10px;
+  }
 
-  #opciones-container { background:white; margin-top:1rem; padding:1rem; border-radius:0.5rem; box-shadow:0 0 10px rgba(0,0,0,0.2); max-width:500px; color:black; display:grid; grid-template-columns:repeat(2,1fr); gap:1rem; }
-  #opciones-container button, #opciones-container a { background:#f0f0f0; padding:0.75rem; border-radius:0.5rem; text-decoration:none; color:#2563eb; display:flex; align-items:center; gap:0.5rem; cursor:pointer; }
-  #opciones-container button:hover, #opciones-container a:hover { background:#dbeafe; }
+  nav a:hover,
+  nav button:hover {
+    opacity: 0.8;
+  }
 
-  .btn-logout { background-color:rgba(139,92,246,0.3); border:2px solid rgba(132,204,22,0.3); color:#8b5cf6; font-weight:600; cursor:pointer; justify-content:center; width:100%; display:flex; align-items:center; gap:0.5rem; padding:0.75rem; border-radius:0.5rem; }
-  .btn-logout:hover { background-color:rgba(139,92,246,0.5); border-color:rgba(132,204,22,0.6); }
+  nav a.active-tab i,
+  nav a.active-tab span {
+    color: #a855f7 !important;
+    stroke: #a855f7 !important;
+  }
+
+  #avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    color: white;
+    border: 2px solid #90ee90;
+    overflow: hidden;
+    background-color: #555;
+  }
+
+  /* ===== SLIDER PERFIL ===== */
+  #profile-container {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 100%;
+    max-width: 360px;
+    height: calc(100vh - 48px);
+    background: #f5f6f7;
+    color: black;
+    font-family: sans-serif;
+    padding: 1rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+    z-index: 10000;
+    transform: translateX(100%);
+    transition: transform 0.4s ease;
+    border-left: 1px solid #ddd;
+    bottom: 48px;
+  }
+
+  #profile-container.visible {
+    transform: translateX(0);
+  }
+
+  #profile-content {
+    animation: slideInRight 0.4s ease-out forwards;
+  }
+
+  @keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  #contenedor-perfil {
+    background: white;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  }
+
+  #avatar-profile {
+    width: 64px;
+    height: 64px;
+    background: #888;
+    color: white;
+    font-size: 2rem;
+    font-weight: bold;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+    overflow: hidden;
+  }
+
+  #user-name {
+    font-weight: 600;
+    font-size: 1.2rem;
+    color: #333;
+  }
+
+  /* ===== SECCIÓN MI INFORMACIÓN ===== */
+  #seccion-mi-informacion {
+    background: white;
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    max-width: 400px;
+    display: none;
+    color: black;
+  }
+
+  #seccion-mi-informacion.visible {
+    display: block;
+  }
+
+  #btn-cerrar-mi-informacion {
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  /* ===== OPCIONES DEL SLIDER ===== */
+  #opciones-container {
+    background: white;
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    max-width: 500px;
+    color: black;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  #opciones-container button,
+  #opciones-container a {
+    background: #f0f0f0;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    text-decoration: none;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+  }
+
+  #opciones-container button:hover,
+  #opciones-container a:hover {
+    background: #dbeafe;
+  }
+
+  /* ===== BOTÓN LOGOUT ANCHO COMPLETO ===== */
+  .btn-logout {
+    background-color: rgba(139,92,246,0.3);
+    border: 2px solid rgba(132,204,22,0.3);
+    color: #8b5cf6;
+    font-weight: 600;
+    cursor: pointer;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    width: 100%; /* Abarca todo el contenedor */
+    grid-column: 1 / -1; /* Ocupa ambas columnas */
+  }
+
+  .btn-logout:hover {
+    background-color: rgba(139,92,246,0.5);
+    border-color: rgba(132,204,22,0.6);
+  }
 </style>
 </head>
 <body>
@@ -52,7 +228,9 @@
   <a href="https://nimeapp.github.io/Flixplemusic/tulista.html" target="_top" aria-label="Tu Lista">
     <i data-lucide="list" class="text-purple-500"></i><span>Tu Lista</span>
   </a>
-  <button id="profile-btn" aria-label="Perfil" style="padding:0;"><div id="avatar"></div></button>
+  <button id="profile-btn" aria-label="Perfil" style="padding:0;">
+    <div id="avatar"></div>
+  </button>
 </nav>
 
 <!-- Slider de Perfil -->
@@ -130,7 +308,10 @@ btnLogout.addEventListener('click', async () => {
   try {
     await signOut(auth);
     window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
-  } catch (error) { console.error(error); alert('No se pudo cerrar sesión'); }
+  } catch (error) {
+    console.error(error);
+    alert('No se pudo cerrar sesión');
+  }
 });
 
 function setAvatar(initials, color, photoURL) {
@@ -155,7 +336,9 @@ onAuthStateChanged(auth, async (user) => {
       userNameSpan.textContent = data.name||user.displayName||'';
       setAvatar(data.initials || (data.name ? data.name.charAt(0).toUpperCase() : ''), data.profileColor||'#555', data.photoURL||user.photoURL);
     }
-  } else { window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html'; }
+  } else {
+    window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
+  }
   cerrarMiInformacion();
 });
 
@@ -178,10 +361,6 @@ btnCerrarMiInfo.addEventListener('click', cerrarMiInformacion);
 btnCambiarContrasena.addEventListener('click',()=> window.top.location.href='https://nimeapp.github.io/Flixplemusic/reset_password.html');
 
 document.addEventListener('DOMContentLoaded', ()=>lucide.createIcons());
-</script>
-
-<script>
-  lucide.createIcons();
 </script>
 
 </body>
