@@ -96,8 +96,8 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
@@ -185,7 +185,18 @@ document.getElementById('btn-register').addEventListener('click', async () => {
     return showModal('La contraseña debe tener al menos 8 caracteres, mayúscula, número y símbolo.');
 
   try {
+    // Crear usuario
     const userCredential = await createUserWithEmailAndPassword(auth, regEmail.value.trim(), regPassword.value);
+
+    // Leer el contador global
+    const counterRef = ref(db, 'counters/users');
+    const counterSnap = await get(counterRef);
+    let newUserNumber = 1;
+    if (counterSnap.exists()) {
+      newUserNumber = counterSnap.val() + 1;
+    }
+
+    // Guardar datos del usuario
     const initials = regName.value.trim().split(/\s+/).map(w => w[0].toUpperCase()).slice(0,2).join('');
     const colors = ["#bb00ff", "#00ff80", "#ff0055", "#ff7700", "#00aaff", "#ffaa00", "#00ffaa", "#ff00aa"];
     const profileColor = colors[Math.floor(Math.random() * colors.length)];
@@ -193,10 +204,16 @@ document.getElementById('btn-register').addEventListener('click', async () => {
     await set(ref(db, 'users/' + userCredential.user.uid), { 
       name: regName.value.trim(), 
       email: regEmail.value.trim(), 
-      initials, profileColor,
+      initials, 
+      profileColor,
+      userNumber: newUserNumber,
       createdAt: new Date().toISOString() 
     });
 
+    // Actualizar el contador global
+    await set(counterRef, newUserNumber);
+
+    // Enviar verificación
     await sendEmailVerification(userCredential.user, { url: 'https://nimeapp.github.io/Flixplemusic/loginuser.html' });
     showModal('Cuenta creada. Verifica tu correo.');
     document.getElementById('container-register').classList.add('hidden');
