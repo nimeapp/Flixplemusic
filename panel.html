@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" class="scroll-smooth">
+<html lang="es" class="scroll-smooth" >
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -9,32 +9,140 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     /* Icono cámara centrado dentro del círculo */
-    #camera-icon { width:28px; height:28px; display:flex; align-items:center; justify-content:center; padding:4px; }
-    #camera-icon i { width:14px !important; height:14px !important; }
+    #camera-icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+    }
+    #camera-icon i {
+      width: 14px !important;
+      height: 14px !important;
+    }
 
     /* Sidebar perfil */
-    #profile-sidebar { transition: transform 0.3s ease-in-out; transform: translateX(100%); display:flex; flex-direction:column; justify-content:space-between; }
-    #profile-sidebar.open { transform: translateX(0); }
-    #sidebar-overlay { transition: opacity 0.3s ease-in-out; opacity:0; pointer-events:none; background:rgba(0,0,0,0.7); position:fixed; inset:0; z-index:30; }
-    #sidebar-overlay.visible { opacity:1; pointer-events:auto; }
+    #profile-sidebar {
+      transition: transform 0.3s ease-in-out;
+      transform: translateX(100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    #profile-sidebar.open {
+      transform: translateX(0);
+    }
+
+    /* Fondo semi-transparente cuando sidebar abierto */
+    #sidebar-overlay {
+      transition: opacity 0.3s ease-in-out;
+      opacity: 0;
+      pointer-events: none;
+      background: rgba(0,0,0,0.7);
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+    }
+    #sidebar-overlay.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
 
     /* Modal */
-    #modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); display:none; justify-content:center; align-items:center; z-index:50; }
-    #modal-overlay.active { display:flex; }
-    #modal { background:#1f2937; border-radius:0.5rem; padding:1.5rem; width:90%; max-width:400px; box-shadow:0 10px 15px rgba(0,0,0,0.5); color:#e0e0e0; }
-    #modal h3 { font-size:1.25rem; margin-bottom:1rem; }
-    #modal input[type="url"] { width:100%; padding:0.5rem; border-radius:0.375rem; border:none; margin-bottom:1rem; font-size:1rem; color:#111827; }
-    #modal button { background-color:#7c3aed; color:white; padding:0.5rem 1rem; border-radius:0.375rem; font-weight:600; cursor:pointer; transition:background-color 0.2s; margin-right:0.5rem; }
-    #modal button:hover { background-color:#6d28d9; }
-    #modal .btn-cancel { background-color:#374151; }
-    #modal .btn-cancel:hover { background-color:#4b5563; }
-    #modal p.error { color:#f87171; margin-top:0.5rem; font-size:0.875rem; }
+    #modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+    }
+    #modal-overlay.active {
+      display: flex;
+    }
+    #modal {
+      background: #1f2937; /* gray-800 */
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 10px 15px rgba(0,0,0,0.5);
+      color: #e0e0e0;
+    }
+    #modal h3 {
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+    #modal input[type="url"] {
+      width: 100%;
+      padding: 0.5rem;
+      border-radius: 0.375rem;
+      border: none;
+      margin-bottom: 1rem;
+      font-size: 1rem;
+      color: #111827;
+    }
+    #modal button {
+      background-color: #7c3aed; /* purple-600 */
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 0.375rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      margin-right: 0.5rem;
+    }
+    #modal button:hover {
+      background-color: #6d28d9; /* purple-700 */
+    }
+    #modal .btn-cancel {
+      background-color: #374151; /* gray-700 */
+    }
+    #modal .btn-cancel:hover {
+      background-color: #4b5563; /* gray-600 */
+    }
+    #modal p.error {
+      color: #f87171; /* red-400 */
+      margin-top: 0.5rem;
+      font-size: 0.875rem;
+    }
 
-    /* TARJETAS DASHBOARD */
-    .dashboard-card { background:#1f2937; border-radius:0.75rem; padding:1.5rem; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0.75rem; transition: transform 0.3s, box-shadow 0.3s, background 0.3s; cursor:pointer; border:1px solid #374151; }
-    .dashboard-card:hover { transform:translateY(-4px); box-shadow:0 10px 20px rgba(0,0,0,0.5); background:#27272a; }
-    .dashboard-card i { width:48px; height:48px; color:#a78bfa; }
-    .dashboard-card span { font-size:1rem; font-weight:600; text-align:center; color:#e0e0e0; }
+    /* Tarjetas Dashboard */
+    .dashboard-card {
+      background: #1f2937; /* gray-800 */
+      border-radius: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      gap: 1rem;
+      aspect-ratio: 1 / 1; /* cuadrado */
+      transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+      cursor: pointer;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    .dashboard-card:hover {
+      background: #7c3aed; /* purple-600 */
+      transform: translateY(-4px);
+      box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+    }
+    .dashboard-card i {
+      width: 48px;
+      height: 48px;
+    }
+    .dashboard-card span {
+      font-size: 1.125rem;
+      font-weight: 600;
+      text-align: center;
+      color: #e0e0e0;
+    }
+    .dashboard-card i.edit { color: #facc15; }   /* amarillo */
+    .dashboard-card i.music { color: #22d3ee; }  /* cyan */
+    .dashboard-card i.feed { color: #f472b6; }   /* rosa */
+    .dashboard-card i.trash { color: #f87171; }  /* rojo */
   </style>
 </head>
 <body class="bg-gray-900 text-gray-200 min-h-screen flex flex-col">
@@ -55,30 +163,34 @@
 
   <!-- CONTENIDO PRINCIPAL -->
   <main class="flex-grow p-6 max-w-4xl mx-auto w-full">
-    <section class="grid grid-cols-2 gap-6">
-      <a href="https://nimeapp.github.io/Flixplemusic/editar.html" class="dashboard-card" title="Editar Perfil">
-        <i data-lucide="edit-2"></i>
+    <section class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 gap-6">
+      <a href="https://nimeapp.github.io/Flixplemusic/editar.html" 
+         class="dashboard-card" title="Editar Perfil">
+        <i data-lucide="edit-2" class="edit"></i>
         <span>Editar Perfil</span>
       </a>
 
-      <a href="https://nimeapp.github.io/Flixplemusic/generadorMusica.html" class="dashboard-card" title="Generador Música">
-        <i data-lucide="music"></i>
+      <a href="https://nimeapp.github.io/Flixplemusic/generadorMusica.html" 
+         class="dashboard-card" title="Generador Música">
+        <i data-lucide="music" class="music"></i>
         <span>Generador Música</span>
       </a>
 
-      <a href="https://nimeapp.github.io/Flixplemusic/generadorfeed.html" class="dashboard-card" title="Generador Feed">
-        <i data-lucide="rss"></i>
+      <a href="https://nimeapp.github.io/Flixplemusic/generadorfeed.html" 
+         class="dashboard-card" title="Generador Feed">
+        <i data-lucide="rss" class="feed"></i>
         <span>Generador Feed</span>
       </a>
 
-      <a href="https://nimeapp.github.io/Flixplemusic/eliminar.html" class="dashboard-card" title="Eliminar Canciones">
-        <i data-lucide="trash-2"></i>
+      <a href="https://nimeapp.github.io/Flixplemusic/eliminar.html" 
+         class="dashboard-card" title="Eliminar Canciones">
+        <i data-lucide="trash-2" class="trash"></i>
         <span>Eliminar Canciones</span>
       </a>
     </section>
   </main>
 
-  <!-- SIDEBAR -->
+  <!-- SIDEBAR PERFIL -->
   <div id="sidebar-overlay"></div>
   <aside id="profile-sidebar" class="fixed top-0 right-0 h-full w-80 bg-gray-800 shadow-lg p-6 flex flex-col z-40">
     <div>
@@ -102,7 +214,7 @@
     </button>
   </aside>
 
-  <!-- MODAL -->
+  <!-- MODAL CAMBIAR IMAGEN -->
   <div id="modal-overlay">
     <div id="modal">
       <h3>Cambiar URL de imagen de perfil</h3>
@@ -130,64 +242,124 @@
       databaseURL: "https://flixplemusic-default-rtdb.firebaseio.com",
       projectId: "flixplemusic",
       storageBucket: "flixplemusic.firebasestorage.app",
-      messagingSenderId: "798157423410",
-      appId: "1:798157423410:web:fa4bb34d108c62a8626df2"
+      messagingSenderId: "792301053512",
+      appId: "1:792301053512:web:13878703d081f1a7b3da7d"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const database = getDatabase(app);
 
-    // Verificar si el usuario está autenticado
-    onAuthStateChanged(auth, (user) => {
+    const profileImage = document.getElementById('profile-image');
+    const cameraIcon = document.getElementById('camera-icon');
+    const profileContainer = document.getElementById('profile-container');
+    const errorMsg = document.getElementById('error-msg');
+
+    const sidebar = document.getElementById('profile-sidebar');
+    const sidebarOverlay = document.getElementById('sidebar-overlay');
+    const sidebarProfileImage = document.getElementById('sidebar-profile-image');
+    const sidebarUserName = document.getElementById('sidebar-user-name').querySelector('span');
+    const sidebarUserEmail = document.getElementById('sidebar-user-email').querySelector('span');
+    const closeSidebarBtn = document.getElementById('close-sidebar-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    const modalOverlay = document.getElementById('modal-overlay');
+    const modalCancelBtn = document.getElementById('modal-cancel-btn');
+    const modalSaveBtn = document.getElementById('modal-save-btn');
+    const newImageUrlInput = document.getElementById('new-image-url');
+    const modalError = document.getElementById('modal-error');
+
+    let currentUser = null;
+    let currentUserData = null;
+
+    function openSidebar() {
+      if (!currentUserData) return;
+      sidebarProfileImage.src = currentUserData.profileImage || 'https://via.placeholder.com/150?text=Sin+Imagen';
+      sidebarUserName.textContent = currentUserData.name || currentUser.displayName || 'Sin nombre';
+      sidebarUserEmail.textContent = currentUserData.email || currentUser.email || 'Sin correo';
+      sidebar.classList.add('open');
+      sidebarOverlay.classList.add('visible');
+      document.body.style.overflow = 'hidden';
+      window.lucide.replace();
+    }
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('visible');
+      document.body.style.overflow = '';
+    }
+
+    onAuthStateChanged(auth, async (user) => {
       if (user) {
-        const uid = user.uid;
-        const userRef = ref(database, 'Usuarios/' + uid);
-        get(userRef).then((snapshot) => {
+        currentUser = user;
+        try {
+          const snapshot = await get(ref(database, 'admins/' + user.uid));
           if (snapshot.exists()) {
-            const data = snapshot.val();
-            // Actualizar datos en header y sidebar
-            document.getElementById('profile-image').src = data.foto || "https://via.placeholder.com/150?text=Sin+Imagen";
-            document.getElementById('sidebar-profile-image').src = data.foto || "https://via.placeholder.com/150?text=Sin+Imagen";
-            document.getElementById('sidebar-user-name').querySelector('span').innerText = data.nombre || "Usuario";
-            document.getElementById('sidebar-user-email').querySelector('span').innerText = data.email || "email@ejemplo.com";
+            currentUserData = snapshot.val();
+            profileImage.src = currentUserData.profileImage || 'https://via.placeholder.com/150?text=Sin+Imagen';
+          } else {
+            errorMsg.textContent = 'No se encontraron datos de usuario en la base de datos.';
+            currentUserData = { name: user.displayName || 'Sin nombre', email: user.email || 'Sin correo', profileImage: 'https://via.placeholder.com/150?text=Sin+Imagen' };
+            profileImage.src = currentUserData.profileImage;
           }
-        }).catch(err => console.error(err));
+        } catch (error) {
+          errorMsg.textContent = 'Error al cargar datos: ' + error.message;
+          currentUserData = { name: user.displayName || 'Sin nombre', email: user.email || 'Sin correo', profileImage: 'https://via.placeholder.com/150?text=Sin+Imagen' };
+          profileImage.src = currentUserData.profileImage;
+        }
       } else {
-        // Redirigir si no está logueado
-        window.location.href = "/login.html";
+        window.location.href = 'https://nimeapp.github.io/Flixplemusic/login.html';
+      }
+      window.lucide.replace();
+    });
+
+    profileContainer.addEventListener('click', openSidebar);
+    sidebarOverlay.addEventListener('click', closeSidebar);
+    closeSidebarBtn.addEventListener('click', closeSidebar);
+
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await signOut(auth);
+        window.location.href = 'https://nimeapp.github.io/Flixplemusic/login.html';
+      } catch (error) {
+        errorMsg.textContent = 'Error al cerrar sesión: ' + error.message;
       }
     });
 
-    // Cerrar sesión
-    document.getElementById('logout-btn').addEventListener('click', () => {
-      signOut(auth).then(() => window.location.href = "/login.html");
+    cameraIcon.addEventListener('click', (e) => {
+      e.stopPropagation();
+      newImageUrlInput.value = currentUserData?.profileImage || '';
+      modalError.classList.add('hidden');
+      modalOverlay.classList.add('active');
+      newImageUrlInput.focus();
     });
 
-    // Modal cambiar imagen
-    const modalOverlay = document.getElementById('modal-overlay');
-    const profileImage = document.getElementById('profile-image');
-    const cameraIcon = document.getElementById('camera-icon');
-    const modalSaveBtn = document.getElementById('modal-save-btn');
-    const modalCancelBtn = document.getElementById('modal-cancel-btn');
-    const newImageUrl = document.getElementById('new-image-url');
-    const modalError = document.getElementById('modal-error');
+    modalCancelBtn.addEventListener('click', () => {
+      modalOverlay.classList.remove('active');
+    });
+    modalOverlay.addEventListener('click', (e) => {
+      if(e.target === modalOverlay) modalOverlay.classList.remove('active');
+    });
 
-    cameraIcon.addEventListener('click', () => modalOverlay.classList.add('active'));
-    modalCancelBtn.addEventListener('click', () => modalOverlay.classList.remove('active'));
-    
-    modalSaveBtn.addEventListener('click', () => {
-      const url = newImageUrl.value.trim();
-      if (!url) { modalError.innerText="La URL no puede estar vacía"; modalError.classList.remove('hidden'); return; }
-      const uid = auth.currentUser.uid;
-      const updates = {}; updates['Usuarios/' + uid + '/foto'] = url;
-      update(ref(database), updates).then(() => {
-        profileImage.src = url;
-        document.getElementById('sidebar-profile-image').src = url;
+    function isValidUrl(string) { try { new URL(string); return true; } catch { return false; } }
+    function hasValidImageExtension(url) { return /\.(png|jpe?g|gif)$/i.test(url.trim()); }
+
+    modalSaveBtn.addEventListener('click', async () => {
+      const newUrl = newImageUrlInput.value.trim();
+      if (!newUrl) { modalError.textContent = 'Por favor ingresa una URL.'; modalError.classList.remove('hidden'); return; }
+      if (!isValidUrl(newUrl)) { modalError.textContent = 'La URL no es válida.'; modalError.classList.remove('hidden'); return; }
+      if (!hasValidImageExtension(newUrl)) { modalError.textContent = 'La URL debe terminar en .png, .jpg, .jpeg o .gif'; modalError.classList.remove('hidden'); return; }
+      modalError.classList.add('hidden');
+      try {
+        await update(ref(database, 'admins/' + currentUser.uid), { profileImage: newUrl });
+        currentUserData.profileImage = newUrl;
+        profileImage.src = newUrl;
+        sidebarProfileImage.src = newUrl;
         modalOverlay.classList.remove('active');
-      }).catch(err => { modalError.innerText = err.message; modalError.classList.remove('hidden'); });
+      } catch (error) {
+        modalError.textContent = 'Error al actualizar imagen: ' + error.message;
+        modalError.classList.remove('hidden');
+      }
     });
-
   </script>
 </body>
 </html>
