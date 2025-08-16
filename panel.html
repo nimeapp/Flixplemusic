@@ -7,17 +7,14 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    /* Icono cámara centrado */
     #camera-icon { width:28px;height:28px;display:flex;align-items:center;justify-content:center;padding:4px; }
     #camera-icon i { width:14px!important;height:14px!important; }
 
-    /* Sidebar perfil */
     #profile-sidebar { transition:transform 0.3s ease-in-out; transform:translateX(100%); display:flex; flex-direction:column; justify-content:space-between; }
     #profile-sidebar.open { transform:translateX(0); }
     #sidebar-overlay { transition:opacity 0.3s ease-in-out; opacity:0; pointer-events:none; background:rgba(0,0,0,0.7); position:fixed; inset:0; z-index:30; }
     #sidebar-overlay.visible { opacity:1; pointer-events:auto; }
 
-    /* Modal */
     #modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); display:none; justify-content:center; align-items:center; z-index:50; }
     #modal-overlay.active { display:flex; }
     #modal { background:#1f2937; border-radius:0.5rem; padding:1.5rem; width:90%; max-width:400px; box-shadow:0 10px 15px rgba(0,0,0,0.5); color:#e0e0e0; }
@@ -29,7 +26,6 @@
     #modal .btn-cancel:hover { background-color:#4b5563; }
     #modal p.error { color:#f87171; margin-top:0.5rem; font-size:0.875rem; }
 
-    /* Dashboard cards */
     .dashboard-card { background:#1f2937; border-radius:0.75rem; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; gap:1rem; aspect-ratio:1/1; transition:transform 0.2s, background 0.2s, box-shadow 0.2s; cursor:pointer; box-shadow:0 4px 8px rgba(0,0,0,0.3); }
     .dashboard-card:hover { background:#7c3aed; transform:translateY(-4px); box-shadow:0 8px 16px rgba(0,0,0,0.4); }
     .dashboard-card i { width:48px; height:48px; }
@@ -39,15 +35,13 @@
     .dashboard-card i.feed { color:#f472b6; }
     .dashboard-card i.trash { color:#f87171; }
 
-    /* Contenedor Dasha */
-    #dasha-container { width:100%; background:#1f2937; color:#e0e0e0; padding:1rem 1.5rem; border-radius:0.75rem; display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; user-select:none; pointer-events:none; flex-wrap:wrap; }
+    #dasha-container { width:100%; background:#1f2937; color:#e0e0e0; padding:1rem 1.5rem; border-radius:0.75rem; display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; user-select:none; flex-wrap:wrap; }
     #dasha-container i { width:32px; height:32px; }
     #dasha-container span { font-weight:600; font-size:1rem; }
   </style>
 </head>
 <body class="bg-gray-900 text-gray-200 min-h-screen flex flex-col">
 
-  <!-- HEADER -->
   <header class="bg-gray-800 p-4 flex items-center justify-between relative z-20">
     <div class="relative cursor-pointer" id="profile-container" title="Ver perfil">
       <img id="profile-image" src="https://via.placeholder.com/150?text=Sin+Imagen" alt="Perfil" class="rounded-full w-16 h-16 object-cover border-4 border-purple-400" />
@@ -57,7 +51,6 @@
     </div>
   </header>
 
-  <!-- DASHBOARD -->
   <main class="flex-grow p-6 max-w-4xl mx-auto w-full">
     <div id="dasha-container">
       <i data-lucide="layout-dashboard"></i>
@@ -65,14 +58,13 @@
     </div>
 
     <section class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 gap-6">
-      <a href="https://nimeapp.github.io/Flixplemusic/editar.html" class="dashboard-card" title="Editar Perfil"><i data-lucide="edit-2" class="edit"></i><span>Editar Perfil</span></a>
-      <a href="https://nimeapp.github.io/Flixplemusic/generadorMusica.html" class="dashboard-card" title="Generador Música"><i data-lucide="music" class="music"></i><span>Generador Música</span></a>
-      <a href="https://nimeapp.github.io/Flixplemusic/generadorfeed.html" class="dashboard-card" title="Generador Feed"><i data-lucide="rss" class="feed"></i><span>Generador Feed</span></a>
-      <a href="https://nimeapp.github.io/Flixplemusic/eliminar.html" class="dashboard-card" title="Eliminar Canciones"><i data-lucide="trash-2" class="trash"></i><span>Eliminar Canciones</span></a>
+      <a href="editar.html" class="dashboard-card" title="Editar Perfil"><i data-lucide="edit-2" class="edit"></i><span>Editar Perfil</span></a>
+      <a href="generadorMusica.html" class="dashboard-card" title="Generador Música"><i data-lucide="music" class="music"></i><span>Generador Música</span></a>
+      <a href="generadorfeed.html" class="dashboard-card" title="Generador Feed"><i data-lucide="rss" class="feed"></i><span>Generador Feed</span></a>
+      <a href="eliminar.html" class="dashboard-card" title="Eliminar Canciones"><i data-lucide="trash-2" class="trash"></i><span>Eliminar Canciones</span></a>
     </section>
   </main>
 
-  <!-- SIDEBAR -->
   <div id="sidebar-overlay"></div>
   <aside id="profile-sidebar" class="fixed top-0 right-0 h-full w-80 bg-gray-800 shadow-lg p-6 flex flex-col z-40">
     <div>
@@ -89,7 +81,6 @@
     </button>
   </aside>
 
-  <!-- MODAL -->
   <div id="modal-overlay">
     <div id="modal">
       <h3>Cambiar URL de imagen de perfil</h3>
@@ -150,7 +141,6 @@
     let currentUser = null;
     let currentUserData = null;
 
-    // Sidebar
     function openSidebar() {
       if (!currentUserData) return;
       sidebarProfileImage.src = currentUserData.profileImage || 'https://via.placeholder.com/150?text=Sin+Imagen';
@@ -172,7 +162,7 @@
     closeSidebarBtn.addEventListener('click', closeSidebar);
 
     logoutBtn.addEventListener('click', async () => {
-      try { await signOut(auth); window.location.href = 'https://nimeapp.github.io/Flixplemusic/login.html'; }
+      try { await signOut(auth); window.location.href = 'login.html'; }
       catch(e){ errorMsg.textContent = 'Error al cerrar sesión: '+e.message; }
     });
 
@@ -197,7 +187,6 @@
       }catch(e){ modalError.textContent='Error al actualizar imagen: '+e.message; modalError.classList.remove('hidden'); }
     });
 
-    // Autenticación y datos usuario
     onAuthStateChanged(auth, async (user)=>{
       if(user){
         currentUser=user;
@@ -206,11 +195,10 @@
           if(snapshot.exists()){ currentUserData = snapshot.val(); profileImage.src=currentUserData.profileImage||'https://via.placeholder.com/150?text=Sin+Imagen'; }
           else{ currentUserData={name:user.displayName,email:user.email,profileImage:'https://via.placeholder.com/150?text=Sin+Imagen'}; profileImage.src=currentUserData.profileImage; errorMsg.textContent='No se encontraron datos de usuario en la base de datos.';}
         }catch(e){ currentUserData={name:user.displayName,email:user.email,profileImage:'https://via.placeholder.com/150?text=Sin+Imagen'}; profileImage.src=currentUserData.profileImage; errorMsg.textContent='Error al cargar datos: '+e.message; }
-      }else{ window.location.href='https://nimeapp.github.io/Flixplemusic/login.html'; }
+      }else{ window.location.href='login.html'; }
       window.lucide.replace();
     });
 
-    // Lectura usuarios en tiempo real
     const usersRef = ref(db,'users');
     onValue(usersRef,(snapshot)=>{
       const users = snapshot.val()||{};
@@ -218,7 +206,7 @@
       let active=0, inactive=0;
       const now = new Date();
       Object.values(users).forEach(u=>{
-        const lastLogin = new Date(u.lastLogin||u.createdAt||now);
+        const lastLogin = u.lastLogin ? new Date(u.lastLogin) : (u.createdAt ? new Date(u.createdAt) : now);
         const diffHours = (now-lastLogin)/(1000*60*60);
         if(diffHours<=24) active++; else inactive++;
       });
