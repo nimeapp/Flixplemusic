@@ -133,7 +133,6 @@
             for (const key in datos) {
               if (!datos.hasOwnProperty(key)) continue;
               const item = datos[key];
-              // Checar campos posibles
               const camposArtista = ['artist', 'artista'];
               for (const campo of camposArtista) {
                 if (item[campo] && typeof item[campo] === 'string') {
@@ -169,12 +168,9 @@
     function actualizarNombreConVerificado() {
       if (!artistaActual) return;
       nombreEncontrado.innerHTML = '';
-
       const spanNombre = document.createElement('span');
       spanNombre.textContent = artistaActual.name;
-
       nombreEncontrado.appendChild(spanNombre);
-
       if (checkboxVerificado.checked) {
         const imgVerificado = document.createElement('img');
         imgVerificado.src = urlIconoVerificado;
@@ -204,9 +200,7 @@
         artistaActual = artista;
         imgArtista.src = artista.picture_medium;
         imgArtista.alt = artista.name;
-
         actualizarNombreConVerificado();
-
         infoArtista.classList.remove('hidden');
         mensaje.textContent = '';
       } catch (e) {
@@ -215,9 +209,7 @@
       }
     };
 
-    checkboxVerificado.addEventListener('change', () => {
-      actualizarNombreConVerificado();
-    });
+    checkboxVerificado.addEventListener('change', actualizarNombreConVerificado);
 
     async function checkAdmin(uid) {
       try {
@@ -246,12 +238,8 @@
       }
     });
 
-    function mostrarModal() {
-      modalNoEncontrado.style.display = 'flex';
-    }
-    function ocultarModal() {
-      modalNoEncontrado.style.display = 'none';
-    }
+    function mostrarModal() { modalNoEncontrado.style.display = 'flex'; }
+    function ocultarModal() { modalNoEncontrado.style.display = 'none'; }
     modalNoEncontrado.addEventListener('click', ocultarModal);
 
     formPerfil.onsubmit = async (e) => {
@@ -273,14 +261,10 @@
 
       // Validar existencia en nodos
       const existe = await artistaExisteEnNodos(nombreArtista);
+      if (!existe) { mostrarModal(); return; }
 
-      if (!existe) {
-        mostrarModal();
-        return;
-      }
-
-      // Generar URL personalizada sin espacios
-      const nombreUrl = encodeURIComponent(nombreArtista.replace(/\s+/g, ''));
+      // **GENERAR URL CON ESPACIOS CODIFICADOS**
+      const nombreUrl = encodeURIComponent(nombreArtista); // <-- Aquí se conserva el nombre exacto
       const urlPerfil = `https://nimeapp.github.io/Flixplemusic/perfilartista.html?nombre=$delartista/${nombreUrl}`;
 
       const perfil = {
@@ -294,9 +278,7 @@
       };
 
       try {
-        // Guardamos o actualizamos el perfil en Firebase (en nodo artists)
         await set(ref(db, `artists/${perfil.deezerId}`), perfil);
-
         mensaje.textContent = 'Perfil guardado con éxito ✅';
 
         urlGuardadaDiv.innerHTML = `
@@ -311,15 +293,10 @@
         document.getElementById('btnCopiarUrl').onclick = () => {
           const input = document.getElementById('urlPerfilInput');
           input.select();
-          input.setSelectionRange(0, 99999); // Para móviles
-
+          input.setSelectionRange(0, 99999);
           navigator.clipboard.writeText(input.value)
-            .then(() => {
-              mensaje.textContent = 'URL copiada al portapapeles ✔️';
-            })
-            .catch(() => {
-              mensaje.textContent = 'Error al copiar URL';
-            });
+            .then(() => { mensaje.textContent = 'URL copiada al portapapeles ✔️'; })
+            .catch(() => { mensaje.textContent = 'Error al copiar URL'; });
         };
 
       } catch (error) {
