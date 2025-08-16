@@ -11,7 +11,6 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 
 <style>
-  /* ===== BODY ===== */
   body {
     font-family: 'Montserrat', sans-serif;
     margin: 0;
@@ -20,7 +19,6 @@
     color: #eee;
   }
 
-  /* ===== NAVEGACIÓN INFERIOR ===== */
   nav {
     position: fixed;
     bottom: 0;
@@ -74,7 +72,6 @@
     background-color: #555;
   }
 
-  /* ===== SLIDER PERFIL ===== */
   #profile-container {
     position: fixed;
     top: 0;
@@ -138,7 +135,6 @@
     color: #333;
   }
 
-  /* ===== SECCIÓN MI INFORMACIÓN ===== */
   #seccion-mi-informacion {
     background: white;
     padding: 1rem;
@@ -160,7 +156,6 @@
     cursor: pointer;
   }
 
-  /* ===== OPCIONES DEL SLIDER ===== */
   #opciones-container {
     background: white;
     margin-top: 1rem;
@@ -192,7 +187,6 @@
     background: #dbeafe;
   }
 
-  /* ===== BOTÓN LOGOUT ANCHO COMPLETO ===== */
   .btn-logout {
     background-color: rgba(139,92,246,0.3);
     border: 2px solid rgba(132,204,22,0.3);
@@ -205,8 +199,8 @@
     gap: 0.5rem;
     padding: 0.75rem;
     border-radius: 0.5rem;
-    width: 100%; /* Abarca todo el contenedor */
-    grid-column: 1 / -1; /* Ocupa ambas columnas */
+    width: 100%;
+    grid-column: 1 / -1;
   }
 
   .btn-logout:hover {
@@ -217,7 +211,6 @@
 </head>
 <body>
 
-<!-- Menú Inferior -->
 <nav>
   <a href="https://nimeapp.github.io/Flixplemusic/index.html" target="_top" aria-label="Inicio">
     <i data-lucide="home" class="text-purple-500"></i><span>Inicio</span>
@@ -233,7 +226,6 @@
   </button>
 </nav>
 
-<!-- Slider de Perfil -->
 <div id="profile-container" aria-label="Perfil de Usuario" role="dialog" aria-modal="true" aria-hidden="true" tabindex="-1">
   <div id="profile-content">
     <div id="contenedor-perfil">
@@ -334,7 +326,8 @@ onAuthStateChanged(auth, async (user) => {
       const data = snapshot.val();
       usuarioActual = { ...data, email: data.email||user.email, displayName: data.name||user.displayName };
       userNameSpan.textContent = data.name||user.displayName||'';
-      setAvatar(data.initials || (data.name ? data.name.charAt(0).toUpperCase() : ''), data.profileColor||'#555', data.photoURL||user.photoURL);
+      // Mostrar exactamente las iniciales guardadas en Firebase
+      setAvatar(data.initials, data.profileColor||'#555', data.photoURL||user.photoURL);
     }
   } else {
     window.top.location.href = 'https://nimeapp.github.io/Flixplemusic/loginuser.html';
