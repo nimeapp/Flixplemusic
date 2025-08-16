@@ -7,80 +7,134 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    #camera-icon { width:28px;height:28px;display:flex;align-items:center;justify-content:center;padding:4px; }
-    #camera-icon i { width:14px!important;height:14px!important; }
+    body { background-color:#111827; color:#e0e0e0; min-height:100vh; }
 
-    #profile-sidebar { transition:transform 0.3s ease-in-out; transform:translateX(100%); display:flex; flex-direction:column; justify-content:space-between; }
+    #dasha-container {
+      width:100%;
+      background:#1f2937;
+      color:#e0e0e0;
+      padding:1rem 1.5rem;
+      border-radius:0.75rem;
+      display:flex;
+      align-items:center;
+      gap:1rem;
+      margin-bottom:1.5rem;
+      user-select:none;
+      flex-wrap:wrap;
+    }
+
+    .dashboard-card {
+      background:#1f2937;
+      border-radius:0.75rem;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:2rem;
+      gap:1rem;
+      aspect-ratio:1/1;
+      transition:transform 0.2s, background 0.2s, box-shadow 0.2s;
+      cursor:pointer;
+      box-shadow:0 4px 8px rgba(0,0,0,0.3);
+    }
+
+    .dashboard-card:hover {
+      background:#7c3aed;
+      transform:translateY(-4px);
+      box-shadow:0 8px 16px rgba(0,0,0,0.4);
+    }
+
+    .dashboard-card i { width:48px; height:48px; }
+    .dashboard-card span { font-size:1.125rem; font-weight:600; text-align:center; color:#e0e0e0; }
+
+    /* Sidebar */
+    #profile-sidebar { 
+      transition:transform 0.3s ease-in-out; 
+      transform:translateX(100%); 
+      display:flex; flex-direction:column; justify-content:space-between; 
+      position:fixed; top:0; right:0; height:100%; width:80%; max-width:400px; 
+      background:#1f2937; padding:2rem; z-index:50; border-left:2px solid #7c3aed;
+    }
     #profile-sidebar.open { transform:translateX(0); }
-    #sidebar-overlay { transition:opacity 0.3s ease-in-out; opacity:0; pointer-events:none; background:rgba(0,0,0,0.7); position:fixed; inset:0; z-index:30; }
+    #sidebar-overlay { 
+      transition:opacity 0.3s ease-in-out; 
+      opacity:0; pointer-events:none; 
+      background:rgba(0,0,0,0.7); 
+      position:fixed; inset:0; z-index:40; 
+    }
     #sidebar-overlay.visible { opacity:1; pointer-events:auto; }
 
-    #modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); display:none; justify-content:center; align-items:center; z-index:50; }
+    #profile-sidebar img { border-radius:50%; border:4px solid #7c3aed; width:120px; height:120px; object-fit:cover; margin:0 auto 1rem; }
+
+    #profile-sidebar h2 { text-align:center; font-size:1.5rem; margin-bottom:0.5rem; }
+    #profile-sidebar p { text-align:center; margin-bottom:1rem; color:#9d7cd3; }
+
+    #camera-icon {
+      width:32px; height:32px; display:flex; align-items:center; justify-content:center; 
+      padding:4px; border-radius:50%; background:#7c3aed; position:absolute; bottom:0; right:0; cursor:pointer;
+    }
+
+    #modal-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,0.7); display:none; justify-content:center; align-items:center; z-index:60;
+    }
     #modal-overlay.active { display:flex; }
-    #modal { background:#1f2937; border-radius:0.5rem; padding:1.5rem; width:90%; max-width:400px; box-shadow:0 10px 15px rgba(0,0,0,0.5); color:#e0e0e0; }
+    #modal { background:#1f2937; border-radius:0.5rem; padding:1.5rem; width:90%; max-width:400px; color:#e0e0e0; }
     #modal h3 { font-size:1.25rem; margin-bottom:1rem; }
     #modal input[type="url"] { width:100%; padding:0.5rem; border-radius:0.375rem; border:none; margin-bottom:1rem; font-size:1rem; color:#111827; }
-    #modal button { background-color:#7c3aed; color:white; padding:0.5rem 1rem; border-radius:0.375rem; font-weight:600; cursor:pointer; transition:background-color 0.2s; margin-right:0.5rem; }
-    #modal button:hover { background-color:#6d28d9; }
+    #modal button { background-color:#7c3aed; color:white; padding:0.5rem 1rem; border-radius:0.375rem; font-weight:600; cursor:pointer; margin-right:0.5rem; }
     #modal .btn-cancel { background-color:#374151; }
     #modal .btn-cancel:hover { background-color:#4b5563; }
     #modal p.error { color:#f87171; margin-top:0.5rem; font-size:0.875rem; }
 
-    .dashboard-card { background:#1f2937; border-radius:0.75rem; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2rem; gap:1rem; aspect-ratio:1/1; transition:transform 0.2s, background 0.2s, box-shadow 0.2s; cursor:pointer; box-shadow:0 4px 8px rgba(0,0,0,0.3); }
-    .dashboard-card:hover { background:#7c3aed; transform:translateY(-4px); box-shadow:0 8px 16px rgba(0,0,0,0.4); }
-    .dashboard-card i { width:48px; height:48px; }
-    .dashboard-card span { font-size:1.125rem; font-weight:600; text-align:center; color:#e0e0e0; }
-    .dashboard-card i.edit { color:#facc15; }
-    .dashboard-card i.music { color:#22d3ee; }
-    .dashboard-card i.feed { color:#f472b6; }
-    .dashboard-card i.trash { color:#f87171; }
-
-    #dasha-container { width:100%; background:#1f2937; color:#e0e0e0; padding:1rem 1.5rem; border-radius:0.75rem; display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem; user-select:none; flex-wrap:wrap; }
-    #dasha-container i { width:32px; height:32px; }
-    #dasha-container span { font-weight:600; font-size:1rem; }
   </style>
 </head>
-<body class="bg-gray-900 text-gray-200 min-h-screen flex flex-col">
+<body class="flex flex-col">
 
+  <!-- HEADER -->
   <header class="bg-gray-800 p-4 flex items-center justify-between relative z-20">
-    <div class="relative cursor-pointer" id="profile-container" title="Ver perfil">
-      <img id="profile-image" src="https://via.placeholder.com/150?text=Sin+Imagen" alt="Perfil" class="rounded-full w-16 h-16 object-cover border-4 border-purple-400" />
-      <div id="camera-icon" class="absolute bg-gray-500 rounded-full shadow-lg opacity-80 cursor-pointer border-2 border-white" style="bottom:0;right:0;" title="Editar imagen">
+    <h1 class="text-2xl font-bold text-purple-400">Panel Administrador</h1>
+    <div id="profile-container" class="relative cursor-pointer">
+      <img id="profile-image" src="https://via.placeholder.com/150?text=Sin+Imagen" alt="Perfil" class="rounded-full w-16 h-16 border-4 border-purple-400 object-cover" />
+      <div id="camera-icon" title="Editar imagen">
         <i data-lucide="camera" class="text-white"></i>
       </div>
     </div>
   </header>
 
+  <!-- DASHBOARD -->
   <main class="flex-grow p-6 max-w-4xl mx-auto w-full">
     <div id="dasha-container">
       <i data-lucide="layout-dashboard"></i>
-      <span>Dashboard | Total Usuarios: <b id="total-users">0</b>, Activos: <b id="active-users">0</b>, Inactivos: <b id="inactive-users">0</b></span>
+      <span>
+        Total Usuarios: <b id="total-users">0</b>,
+        Activos: <b id="active-users">0</b>,
+        Inactivos: <b id="inactive-users">0</b>
+      </span>
     </div>
 
-    <section class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-2 gap-6">
-      <a href="editar.html" class="dashboard-card" title="Editar Perfil"><i data-lucide="edit-2" class="edit"></i><span>Editar Perfil</span></a>
-      <a href="generadorMusica.html" class="dashboard-card" title="Generador Música"><i data-lucide="music" class="music"></i><span>Generador Música</span></a>
-      <a href="generadorfeed.html" class="dashboard-card" title="Generador Feed"><i data-lucide="rss" class="feed"></i><span>Generador Feed</span></a>
-      <a href="eliminar.html" class="dashboard-card" title="Eliminar Canciones"><i data-lucide="trash-2" class="trash"></i><span>Eliminar Canciones</span></a>
+    <section class="grid grid-cols-2 md:grid-cols-2 gap-6">
+      <a href="#" class="dashboard-card" title="Editar Perfil"><i data-lucide="edit-2"></i><span>Editar Perfil</span></a>
+      <a href="#" class="dashboard-card" title="Generador Música"><i data-lucide="music"></i><span>Generador Música</span></a>
+      <a href="#" class="dashboard-card" title="Generador Feed"><i data-lucide="rss"></i><span>Generador Feed</span></a>
+      <a href="#" class="dashboard-card" title="Eliminar Canciones"><i data-lucide="trash-2"></i><span>Eliminar Canciones</span></a>
     </section>
   </main>
 
+  <!-- SIDEBAR -->
   <div id="sidebar-overlay"></div>
-  <aside id="profile-sidebar" class="fixed top-0 right-0 h-full w-80 bg-gray-800 shadow-lg p-6 flex flex-col z-40">
+  <aside id="profile-sidebar">
     <div>
-      <button id="close-sidebar-btn" class="self-end text-purple-400 hover:text-purple-600 mb-6" title="Cerrar perfil">
-        <i data-lucide="x" class="w-6 h-6 cursor-pointer"></i>
+      <button id="close-sidebar-btn" class="self-end mb-6 text-purple-400 hover:text-purple-600">
+        <i data-lucide="x" class="w-6 h-6"></i>
       </button>
-      <img id="sidebar-profile-image" alt="Perfil" class="mx-auto rounded-full w-28 h-28 object-cover border-4 border-purple-400 mb-6" />
-      <h2 id="sidebar-user-name" class="text-2xl font-semibold mb-1 flex items-center justify-center gap-2"><i data-lucide="user" class="w-6 h-6"></i><span>Nombre</span></h2>
-      <p id="sidebar-user-email" class="text-purple-400 mb-6 flex items-center justify-center gap-2"><i data-lucide="mail" class="w-5 h-5"></i><span>Email</span></p>
-      <p class="text-purple-300 mb-6 font-medium text-center">Administrador</p>
+      <img id="sidebar-profile-image" src="https://via.placeholder.com/150?text=Sin+Imagen" alt="Perfil" />
+      <h2 id="sidebar-user-name">Nombre Admin</h2>
+      <p id="sidebar-user-email">admin@email.com</p>
+      <p>Administrador</p>
     </div>
-    <button id="logout-btn" class="bg-purple-600 hover:bg-purple-700 px-5 py-3 rounded font-semibold inline-flex items-center justify-center gap-2 transition mt-auto w-full">
-      <i data-lucide="log-out" class="w-5 h-5"></i>Cerrar sesión
-    </button>
   </aside>
 
+  <!-- MODAL -->
   <div id="modal-overlay">
     <div id="modal">
       <h3>Cambiar URL de imagen de perfil</h3>
@@ -93,10 +147,7 @@
     </div>
   </div>
 
-  <p id="error-msg" class="text-red-500 mt-4 text-center"></p>
-
   <script type="module">
-    lucide.createIcons();
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
     import { getDatabase, ref, get, update, onValue } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
@@ -122,15 +173,13 @@
     const profileImage = document.getElementById('profile-image');
     const cameraIcon = document.getElementById('camera-icon');
     const profileContainer = document.getElementById('profile-container');
-    const errorMsg = document.getElementById('error-msg');
 
     const sidebar = document.getElementById('profile-sidebar');
     const sidebarOverlay = document.getElementById('sidebar-overlay');
     const sidebarProfileImage = document.getElementById('sidebar-profile-image');
-    const sidebarUserName = document.getElementById('sidebar-user-name').querySelector('span');
-    const sidebarUserEmail = document.getElementById('sidebar-user-email').querySelector('span');
+    const sidebarUserName = document.getElementById('sidebar-user-name');
+    const sidebarUserEmail = document.getElementById('sidebar-user-email');
     const closeSidebarBtn = document.getElementById('close-sidebar-btn');
-    const logoutBtn = document.getElementById('logout-btn');
 
     const modalOverlay = document.getElementById('modal-overlay');
     const modalCancelBtn = document.getElementById('modal-cancel-btn');
@@ -148,27 +197,30 @@
       sidebarUserEmail.textContent = currentUserData.email || currentUser.email || 'Sin correo';
       sidebar.classList.add('open');
       sidebarOverlay.classList.add('visible');
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow='hidden';
       window.lucide.replace();
     }
+
     function closeSidebar() {
       sidebar.classList.remove('open');
       sidebarOverlay.classList.remove('visible');
-      document.body.style.overflow = '';
+      document.body.style.overflow='';
     }
 
     profileContainer.addEventListener('click', openSidebar);
     sidebarOverlay.addEventListener('click', closeSidebar);
     closeSidebarBtn.addEventListener('click', closeSidebar);
 
-    logoutBtn.addEventListener('click', async () => {
-      try { await signOut(auth); window.location.href = 'login.html'; }
-      catch(e){ errorMsg.textContent = 'Error al cerrar sesión: '+e.message; }
+    cameraIcon.addEventListener('click', e=>{
+      e.stopPropagation();
+      newImageUrlInput.value = currentUserData?.profileImage || '';
+      modalError.classList.add('hidden');
+      modalOverlay.classList.add('active');
+      newImageUrlInput.focus();
     });
 
-    cameraIcon.addEventListener('click', (e)=>{ e.stopPropagation(); newImageUrlInput.value = currentUserData?.profileImage || ''; modalError.classList.add('hidden'); modalOverlay.classList.add('active'); newImageUrlInput.focus(); });
-    modalCancelBtn.addEventListener('click', ()=>modalOverlay.classList.remove('active'));
-    modalOverlay.addEventListener('click', (e)=>{ if(e.target===modalOverlay) modalOverlay.classList.remove('active'); });
+    modalCancelBtn.addEventListener('click', ()=> modalOverlay.classList.remove('active'));
+    modalOverlay.addEventListener('click', e=> { if(e.target===modalOverlay) modalOverlay.classList.remove('active'); });
 
     function isValidUrl(string){ try{ new URL(string); return true;} catch{return false;} }
     function hasValidImageExtension(url){ return /\.(png|jpe?g|gif)$/i.test(url.trim()); }
@@ -182,38 +234,47 @@
       try{
         await update(ref(db,'admins/'+currentUser.uid),{profileImage:newUrl});
         currentUserData.profileImage = newUrl;
-        profileImage.src = newUrl; sidebarProfileImage.src = newUrl;
+        profileImage.src = newUrl;
+        sidebarProfileImage.src = newUrl;
         modalOverlay.classList.remove('active');
       }catch(e){ modalError.textContent='Error al actualizar imagen: '+e.message; modalError.classList.remove('hidden'); }
     });
 
-    onAuthStateChanged(auth, async (user)=>{
+    onAuthStateChanged(auth, async user=>{
       if(user){
-        currentUser=user;
+        currentUser = user;
         try{
           const snapshot = await get(ref(db,'admins/'+user.uid));
           if(snapshot.exists()){ currentUserData = snapshot.val(); profileImage.src=currentUserData.profileImage||'https://via.placeholder.com/150?text=Sin+Imagen'; }
-          else{ currentUserData={name:user.displayName,email:user.email,profileImage:'https://via.placeholder.com/150?text=Sin+Imagen'}; profileImage.src=currentUserData.profileImage; errorMsg.textContent='No se encontraron datos de usuario en la base de datos.';}
-        }catch(e){ currentUserData={name:user.displayName,email:user.email,profileImage:'https://via.placeholder.com/150?text=Sin+Imagen'}; profileImage.src=currentUserData.profileImage; errorMsg.textContent='Error al cargar datos: '+e.message; }
-      }else{ window.location.href='login.html'; }
+          else{ currentUserData={name:user.displayName,email:user.email,profileImage:'https://via.placeholder.com/150?text=Sin+Imagen'}; profileImage.src=currentUserData.profileImage; }
+        }catch(e){ currentUserData={name:user.displayName,email:user.email,profileImage:'https://via.placeholder.com/150?text=Sin+Imagen'}; profileImage.src=currentUserData.profileImage; }
+      }else{ window.location.href='https://nimeapp.github.io/Flixplemusic/login.html'; }
       window.lucide.replace();
     });
 
+    // Contador de usuarios
+    const counterRef = ref(db,'counters/users');
+    get(counterRef).then(snapshot=>{
+      const counterValue = snapshot.val()||0;
+      totalUsersEl.textContent = counterValue;
+    }).catch(err=>{ totalUsersEl.textContent = 0; console.error(err); });
+
     const usersRef = ref(db,'users');
-    onValue(usersRef,(snapshot)=>{
+    onValue(usersRef,snapshot=>{
       const users = snapshot.val()||{};
-      const total = Object.keys(users).length;
       let active=0, inactive=0;
       const now = new Date();
       Object.values(users).forEach(u=>{
-        const lastLogin = u.lastLogin ? new Date(u.lastLogin) : (u.createdAt ? new Date(u.createdAt) : now);
+        const lastLogin = new Date(u.lastLogin||u.createdAt||now);
         const diffHours = (now-lastLogin)/(1000*60*60);
         if(diffHours<=24) active++; else inactive++;
       });
-      totalUsersEl.textContent=total;
-      activeUsersEl.textContent=active;
-      inactiveUsersEl.textContent=inactive;
+      activeUsersEl.textContent = active;
+      inactiveUsersEl.textContent = inactive;
     });
+
+    lucide.createIcons();
   </script>
+
 </body>
 </html>
