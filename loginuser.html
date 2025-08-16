@@ -96,8 +96,8 @@
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
-import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import { getDatabase, ref, set, runTransaction } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
@@ -175,7 +175,7 @@ document.getElementById('btn-login').addEventListener('click', async () => {
   }
 });
 
-// Registro
+// Registro con contador
 document.getElementById('btn-register').addEventListener('click', async () => {
   if (!regName.value || !regEmail.value || !regPassword.value || !regPasswordConfirm.value)
     return showModal('Completa todos los campos.');
@@ -195,6 +195,12 @@ document.getElementById('btn-register').addEventListener('click', async () => {
       email: regEmail.value.trim(), 
       initials, profileColor,
       createdAt: new Date().toISOString() 
+    });
+
+    // 🔥 Incrementar contador de usuarios
+    const counterRef = ref(db, 'stats/total_users');
+    await runTransaction(counterRef, (currentValue) => {
+      return (currentValue || 0) + 1;
     });
 
     await sendEmailVerification(userCredential.user, { url: 'https://nimeapp.github.io/Flixplemusic/loginuser.html' });
