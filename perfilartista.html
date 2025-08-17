@@ -51,7 +51,7 @@
     section.stats p {
       margin: 0.3rem 0;
     }
-    .albums, .tracks {
+    .albums {
       display: flex;
       flex-wrap: nowrap;
       overflow-x: auto;
@@ -62,12 +62,14 @@
       background: #27272a;
       border-radius: 0.5rem;
       padding: 0.5rem;
-      min-width: 110px;
       cursor: pointer;
       transition: transform 0.2s;
       user-select: none;
     }
-    .album img {
+    .album {
+      min-width: 110px;
+    }
+    .album img, .track img {
       width: 100%;
       border-radius: 0.5rem;
       object-fit: cover;
@@ -82,6 +84,17 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    /* NUEVO: grid para tracks */
+    .tracks {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 1rem;
+    }
+    @media (min-width: 640px) {
+      .tracks {
+        grid-template-columns: repeat(3, 1fr);
+      }
     }
   </style>
 </head>
@@ -235,6 +248,7 @@
             div.addEventListener('click', () => abrirReproductor(track.key, 'track'));
             div.addEventListener('keydown', e => { if (e.key === 'Enter') abrirReproductor(track.key, 'track'); });
             div.innerHTML = `
+              <img src="${track.cover || 'https://via.placeholder.com/150'}" alt="${track.title || track.nombre}" />
               <div class="track-info">${track.title || track.nombre}</div>
             `;
             tracksContainer.appendChild(div);
