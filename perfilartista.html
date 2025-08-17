@@ -58,43 +58,57 @@
       gap: 1rem;
       padding-bottom: 1rem;
     }
-    .album, .track {
+    .album {
       background: #27272a;
       border-radius: 0.5rem;
       padding: 0.5rem;
       cursor: pointer;
       transition: transform 0.2s;
       user-select: none;
-    }
-    .album {
       min-width: 110px;
     }
-    .album img, .track img {
+    .album img {
       width: 100%;
       border-radius: 0.5rem;
       object-fit: cover;
       aspect-ratio: 1 / 1;
     }
     .album:hover, .track:hover {
-      transform: scale(1.05);
+      transform: scale(1.03);
+    }
+
+    /* --- NUEVO estilo tracks tipo Spotify --- */
+    .tracks {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .track {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: #27272a;
+      border-radius: 0.5rem;
+      padding: 0.4rem 0.6rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .track:hover {
+      background: #3f3f46;
+    }
+    .track img {
+      width: 48px;
+      height: 48px;
+      border-radius: 0.3rem;
+      object-fit: cover;
+      flex-shrink: 0;
     }
     .track-info {
-      margin-top: 0.5rem;
-      font-size: 0.9rem;
+      font-size: 0.95rem;
+      font-weight: 500;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-    }
-    /* NUEVO: grid para tracks */
-    .tracks {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 1rem;
-    }
-    @media (min-width: 640px) {
-      .tracks {
-        grid-template-columns: repeat(3, 1fr);
-      }
     }
   </style>
 </head>
@@ -158,10 +172,8 @@
     // Función para abrir reproductor en la misma pestaña con el ID correcto
     function abrirReproductor(id, tipo) {
       if (tipo === 'album') {
-        // Abrir reproductor de playlist
         window.location.href = `https://nimeapp.github.io/Flixplemusic/Reproductor.html?playlist=${id}`;
       } else if (tipo === 'track') {
-        // Abrir reproductor de canción individual
         window.location.href = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${id}`;
       }
     }
@@ -174,7 +186,7 @@
       }
 
       try {
-        // Buscar artista por nombre
+        // Buscar artista
         const artistsRef = ref(db, 'artists');
         const q = query(artistsRef, orderByChild('nombre'), equalTo(nombreArtista));
         const snapshot = await get(q);
@@ -188,16 +200,11 @@
         const artistKey = Object.keys(artists)[0];
         const artist = artists[artistKey];
 
-        // Mostrar datos artista
         document.getElementById('artistImage').src = artist.imagen || 'https://via.placeholder.com/96';
         document.getElementById('artistName').textContent = artist.nombre || 'Artista';
-        if (artist.verificado) {
-          document.getElementById('verifiedIcon').style.display = 'inline-block';
-        } else {
-          document.getElementById('verifiedIcon').style.display = 'none';
-        }
+        document.getElementById('verifiedIcon').style.display = artist.verificado ? 'inline-block' : 'none';
 
-        // Cargar álbumes (playlists) donde "artist" == nombreArtista
+        // Cargar álbumes
         const playlistsRef = ref(db, 'playlists');
         const playlistsQuery = query(playlistsRef, orderByChild('artist'), equalTo(nombreArtista));
         const playlistsSnap = await get(playlistsQuery);
@@ -216,7 +223,6 @@
             div.title = album.album || album.title || 'Álbum';
             div.tabIndex = 0;
             div.addEventListener('click', () => abrirReproductor(album.key, 'album'));
-            div.addEventListener('keydown', e => { if (e.key === 'Enter') abrirReproductor(album.key, 'album'); });
             div.innerHTML = `
               <img src="${album.cover || 'https://via.placeholder.com/150'}" alt="${album.album || album.title}" />
               <div class="track-info">${album.album || album.title}</div>
@@ -227,7 +233,7 @@
           albumsContainer.textContent = 'No se encontraron álbumes';
         }
 
-        // Cargar canciones (tracks) donde "artist" == nombreArtista
+        // Cargar canciones
         const tracksRef = ref(db, 'tracks');
         const tracksQuery = query(tracksRef, orderByChild('artist'), equalTo(nombreArtista));
         const tracksSnap = await get(tracksQuery);
@@ -246,7 +252,6 @@
             div.title = track.title || track.nombre || 'Canción';
             div.tabIndex = 0;
             div.addEventListener('click', () => abrirReproductor(track.key, 'track'));
-            div.addEventListener('keydown', e => { if (e.key === 'Enter') abrirReproductor(track.key, 'track'); });
             div.innerHTML = `
               <img src="${track.cover || 'https://via.placeholder.com/150'}" alt="${track.title || track.nombre}" />
               <div class="track-info">${track.title || track.nombre}</div>
@@ -257,11 +262,10 @@
           tracksContainer.textContent = 'No se encontraron canciones';
         }
 
-        // Estadísticas simples
+        // Estadísticas
         document.getElementById('totalAlbums').textContent = albums.length;
         document.getElementById('totalTracks').textContent = tracks.length;
 
-        // Crear iconos Lucide (en caso de que uses otros iconos lucide)
         if (window.lucide) lucide.createIcons();
 
       } catch (error) {
