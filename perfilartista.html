@@ -77,6 +77,7 @@
       transform: scale(1.03);
     }
 
+    /* --- Estilo tracks tipo Spotify --- */
     .tracks {
       display: flex;
       flex-direction: column;
@@ -168,6 +169,16 @@
       document.getElementById('tracksContainer').textContent = 'Error al cargar canciones.';
     }
 
+    // Abrir reproductor
+    function abrirReproductor(id, tipo) {
+      if (tipo === 'album') {
+        window.location.href = `https://nimeapp.github.io/Flixplemusic/Reproductor.html?playlist=${id}`;
+      } else if (tipo === 'track') {
+        window.location.href = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${id}`;
+      }
+    }
+
+    // Mezclar array aleatoriamente
     function shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -231,14 +242,13 @@
           albumsContainer.textContent = 'No se encontraron álbumes';
         }
 
-        // Cargar canciones populares
+        // Cargar canciones más escuchadas
         const tracksRef = ref(db, 'tracks');
         const tracksQuery = query(tracksRef, orderByChild('artist'), equalTo(nombreArtista));
         const tracksSnap = await get(tracksQuery);
         const tracksContainer = document.getElementById('tracksContainer');
         tracksContainer.innerHTML = '';
         let tracks = [];
-        let selectedTracksIds = []; // <- Aquí guardamos los 15 tracks
         if (tracksSnap.exists()) {
           tracksSnap.forEach(childSnap => {
             const key = childSnap.key;
@@ -246,21 +256,21 @@
             tracks.push({ ...track, key });
           });
 
+          // Ordenar por plays (más escuchadas primero)
           tracks.sort((a, b) => (b.plays || 0) - (a.plays || 0));
+
+          // Tomar top 30
           let topTracks = tracks.slice(0, 30);
+
+          // Mezclar y seleccionar 15 aleatorias
           let selectedTracks = shuffleArray(topTracks).slice(0, 15);
-          selectedTracksIds = selectedTracks.map(t => t.key); // <-- IDs de las 15 canciones
 
           selectedTracks.forEach(track => {
             const div = document.createElement('div');
             div.className = 'track';
             div.title = track.title || track.nombre || 'Canción';
             div.tabIndex = 0;
-            div.addEventListener('click', () => {
-              // Abrir reproductor solo con los tracks seleccionados
-              const url = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?playlistIds=${encodeURIComponent(JSON.stringify(selectedTracksIds))}&current=${track.key}`;
-              window.location.href = url;
-            });
+            div.addEventListener('click', () => abrirReproductor(track.key, 'track'));
             div.innerHTML = `
               <img src="${track.cover || 'https://via.placeholder.com/150'}" alt="${track.title || track.nombre}" />
               <div class="track-info">${track.title || track.nombre}</div>
