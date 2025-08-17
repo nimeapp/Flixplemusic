@@ -170,11 +170,14 @@
     }
 
     // Abrir reproductor
+    function abrirReproductorPlaylist(tracks, index) {
+      const ids = tracks.map(t => t.key).join(',');
+      window.location.href = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?tracks=${ids}&start=${index}`;
+    }
+
     function abrirReproductor(id, tipo) {
       if (tipo === 'album') {
         window.location.href = `https://nimeapp.github.io/Flixplemusic/Reproductor.html?playlist=${id}`;
-      } else if (tipo === 'track') {
-        window.location.href = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${id}`;
       }
     }
 
@@ -265,12 +268,12 @@
           // Mezclar y seleccionar 15 aleatorias
           let selectedTracks = shuffleArray(topTracks).slice(0, 15);
 
-          selectedTracks.forEach(track => {
+          selectedTracks.forEach((track, index) => {
             const div = document.createElement('div');
             div.className = 'track';
             div.title = track.title || track.nombre || 'Canción';
             div.tabIndex = 0;
-            div.addEventListener('click', () => abrirReproductor(track.key, 'track'));
+            div.addEventListener('click', () => abrirReproductorPlaylist(selectedTracks, index));
             div.innerHTML = `
               <img src="${track.cover || 'https://via.placeholder.com/150'}" alt="${track.title || track.nombre}" />
               <div class="track-info">${track.title || track.nombre}</div>
