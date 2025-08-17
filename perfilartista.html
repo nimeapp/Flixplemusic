@@ -77,7 +77,7 @@
       transform: scale(1.03);
     }
 
-    /* --- NUEVO estilo tracks tipo Spotify --- */
+    /* --- Estilo tracks tipo Spotify --- */
     .tracks {
       display: flex;
       flex-direction: column;
@@ -133,7 +133,7 @@
   </section>
 
   <section>
-    <h2>Canciones</h2>
+    <h2>Canciones populares</h2>
     <div id="tracksContainer" class="tracks">Cargando canciones...</div>
   </section>
 
@@ -169,13 +169,22 @@
       document.getElementById('tracksContainer').textContent = 'Error al cargar canciones.';
     }
 
-    // Función para abrir reproductor en la misma pestaña con el ID correcto
+    // Abrir reproductor
     function abrirReproductor(id, tipo) {
       if (tipo === 'album') {
         window.location.href = `https://nimeapp.github.io/Flixplemusic/Reproductor.html?playlist=${id}`;
       } else if (tipo === 'track') {
         window.location.href = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${id}`;
       }
+    }
+
+    // Mezclar array aleatoriamente
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
     }
 
     async function main() {
@@ -233,7 +242,7 @@
           albumsContainer.textContent = 'No se encontraron álbumes';
         }
 
-        // Cargar canciones
+        // Cargar canciones más escuchadas
         const tracksRef = ref(db, 'tracks');
         const tracksQuery = query(tracksRef, orderByChild('artist'), equalTo(nombreArtista));
         const tracksSnap = await get(tracksQuery);
@@ -246,7 +255,17 @@
             const track = childSnap.val();
             tracks.push({ ...track, key });
           });
-          tracks.forEach(track => {
+
+          // Ordenar por plays (más escuchadas primero)
+          tracks.sort((a, b) => (b.plays || 0) - (a.plays || 0));
+
+          // Tomar top 30
+          let topTracks = tracks.slice(0, 30);
+
+          // Mezclar y seleccionar 15 aleatorias
+          let selectedTracks = shuffleArray(topTracks).slice(0, 15);
+
+          selectedTracks.forEach(track => {
             const div = document.createElement('div');
             div.className = 'track';
             div.title = track.title || track.nombre || 'Canción';
