@@ -21,7 +21,7 @@
       padding: 1rem;
       font-family: system-ui, sans-serif;
     }
-    #tracksListContainer {
+    #tracksListContainer, #recommendedContainer {
       margin-top: 2rem;
       width: 100%;
       max-width: 400px;
@@ -32,7 +32,7 @@
       overflow-y: auto;
       box-shadow: none; 
     }
-    #tracksListContainer h3 {
+    #tracksListContainer h3, #recommendedContainer h3 {
       margin-bottom: 1rem;
       font-weight: 700;
       text-align: center;
@@ -66,6 +66,37 @@
       font-size: 0.85rem;
       text-align: left;
       margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .recommended-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 0.8rem;
+      cursor: pointer;
+    }
+    .recommended-item img {
+      width: 50px;
+      height: 50px;
+      border-radius: 0.5rem;
+      margin-right: 0.75rem;
+    }
+    .recommended-text {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .recommended-text .title {
+      font-weight: 500;
+      color: white;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .recommended-text .artist {
+      font-size: 0.8rem;
+      color: #cccccc;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -110,6 +141,12 @@
     <div id="tracksList"></div>
   </div>
 
+  <!-- Contenedor de canciones recomendadas -->
+  <div id="recommendedContainer">
+    <h3>Canciones recomendadas para ti</h3>
+    <div id="recommendedList"></div>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
@@ -145,61 +182,12 @@
     const tracksListTitle = document.getElementById('tracksListTitle');
     const favoriteHeart = document.getElementById('favoriteHeart');
 
+    const recommendedListDiv = document.getElementById('recommendedList');
+
     let currentTrackIndex = -1;
     let tracks = [];
     let isRepeat = false;
     let isShuffle = false;
-
-    const FAVORITES_KEY = 'flixplemusic_favorites';
-
-    function getFavorites() {
-      try {
-        const fav = localStorage.getItem(FAVORITES_KEY);
-        return fav ? JSON.parse(fav) : [];
-      } catch {
-        return [];
-      }
-    }
-
-    function saveFavorites(favs) {
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs));
-    }
-
-    function isFavorite(trackId) {
-      const favs = getFavorites();
-      return favs.includes(trackId);
-    }
-
-    function updateHeartIcon() {
-      if (currentTrackIndex === -1) {
-        favoriteHeart.classList.replace('fa-heart', 'fa-heart'); 
-        favoriteHeart.classList.remove('fa-solid');
-        favoriteHeart.classList.add('fa-regular');
-        return;
-      }
-      const currentId = tracks[currentTrackIndex].id;
-      if (isFavorite(currentId)) {
-        favoriteHeart.classList.remove('fa-regular');
-        favoriteHeart.classList.add('fa-solid');
-      } else {
-        favoriteHeart.classList.remove('fa-solid');
-        favoriteHeart.classList.add('fa-regular');
-      }
-    }
-
-    favoriteHeart.addEventListener('click', () => {
-      if (currentTrackIndex === -1) return;
-      const currentId = tracks[currentTrackIndex].id;
-      let favs = getFavorites();
-
-      if (favs.includes(currentId)) {
-        favs = favs.filter(id => id !== currentId);
-      } else {
-        favs.push(currentId);
-      }
-      saveFavorites(favs);
-      updateHeartIcon();
-    });
 
     function formatTime(sec) {
       if (isNaN(sec)) return '0:00';
@@ -214,16 +202,9 @@
         const div = document.createElement('div');
         div.classList.add('track-item');
         div.dataset.index = index;
-
-        div.innerHTML = `
-          <div class="track-title">${track.title}</div>
-          <div class="track-artist">${track.artist}</div>
-        `;
-
+        div.innerHTML = `<div class="track-title">${track.title}</div><div class="track-artist">${track.artist}</div>`;
         div.onclick = () => playTrack(index);
-        if (index === currentTrackIndex) {
-          div.classList.add('active');
-        }
+        if (index === currentTrackIndex) div.classList.add('active');
         tracksListDiv.appendChild(div);
       });
     }
@@ -236,170 +217,82 @@
       albumCoverImg.src = track.cover || 'https://via.placeholder.com/300';
       trackTitleElem.textContent = track.title || 'Título';
       trackArtistElem.textContent = track.artist || 'Artista';
-
       audio.src = track.url || '';
-      audio.play().catch(() => {
-        console.log('Auto-play bloqueado, esperando interacción.');
-      });
-      playIcon.classList.replace('fa-play', 'fa-pause');
-
+      audio.play().catch(()=>{});
+      playIcon.classList.replace('fa-play','fa-pause');
       renderTracks();
-      updateHeartIcon();
     }
 
     async function loadMainTrack(trackId) {
-      try {
-        const snapshot = await get(ref(db, `tracks/${trackId}`));
-        if (!snapshot.exists()) {
-          return null;
-        }
-        const track = snapshot.val();
-        return {
-          id: trackId,
-          title: track.title,
-          artist: track.artist,
-          cover: track.cover,
-          url: track.url
-        };
-      } catch (error) {
-        console.error(error);
-        return null;
-      }
+      const snapshot = await get(ref(db, `tracks/${trackId}`));
+      if (!snapshot.exists()) return null;
+      const track = snapshot.val();
+      return { id: trackId, ...track };
     }
 
     async function loadArtistTracks(artist) {
-      try {
-        tracksListTitle.textContent = `Canciones de ${artist}`; // <- Cambio aquí
+      tracksListTitle.textContent = `Canciones de ${artist}`;
+      const snapshot = await get(ref(db, 'tracks'));
+      if (!snapshot.exists()) return;
+      const allTracks = snapshot.val();
+      let artistTracks = Object.entries(allTracks)
+        .map(([id, t]) => ({ id, ...t }))
+        .filter(t => t.artist === artist)
+        .slice(0, 15);
+      tracks = artistTracks;
+      renderTracks();
 
-        const snapshot = await get(ref(db, 'tracks'));
-        if (!snapshot.exists()) {
-          tracksListDiv.innerHTML = '<p>No se encontraron canciones.</p>';
-          return [];
-        }
-        const allTracks = snapshot.val();
-
-        let artistTracks = Object.entries(allTracks)
-          .map(([id, t]) => ({ id, ...t }))
-          .filter(t => t.artist === artist);
-
-        if (artistTracks.length === 0) {
-          tracksListDiv.innerHTML = '<p>No hay canciones para este artista.</p>';
-          return [];
-        }
-
-        for (let i = artistTracks.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [artistTracks[i], artistTracks[j]] = [artistTracks[j], artistTracks[i]];
-        }
-
-        artistTracks = artistTracks.slice(0, 15);
-
-        tracks = artistTracks;
-
-        renderTracks();
-
-        return artistTracks;
-      } catch (error) {
-        tracksListDiv.innerHTML = '<p>Error cargando canciones.</p>';
-        console.error(error);
-        return [];
-      }
+      // Cargar recomendaciones
+      loadRecommendedTracks(artist, allTracks);
     }
 
-    audio.addEventListener('loadedmetadata', () => {
-      total.textContent = formatTime(audio.duration);
-    });
-    audio.addEventListener('timeupdate', () => {
-      if (audio.duration) {
-        progress.value = (audio.currentTime / audio.duration) * 100;
-        current.textContent = formatTime(audio.currentTime);
-      }
-    });
-    progress.addEventListener('input', () => {
-      if (audio.duration) {
-        audio.currentTime = (progress.value / 100) * audio.duration;
-      }
-    });
-    playBtn.addEventListener('click', () => {
-      if (audio.paused) {
-        audio.play();
-        playIcon.classList.replace('fa-play', 'fa-pause');
-      } else {
-        audio.pause();
-        playIcon.classList.replace('fa-pause', 'fa-play');
-      }
-    });
-    repeatBtn.addEventListener('click', () => {
-      isRepeat = !isRepeat;
-      audio.loop = isRepeat;
-      repeatBtn.classList.toggle('text-green-500', isRepeat);
-    });
-    shuffleBtn.addEventListener('click', () => {
-      isShuffle = !isShuffle;
-      shuffleBtn.classList.toggle('text-green-500', isShuffle);
-    });
+    function loadRecommendedTracks(currentArtist, allTracks) {
+      recommendedListDiv.innerHTML = '';
+      let otherTracks = Object.entries(allTracks)
+        .map(([id, t]) => ({ id, ...t }))
+        .filter(t => t.artist !== currentArtist);
 
-    nextBtn.addEventListener('click', () => {
-      if (tracks.length === 0) return;
-      if (isShuffle) {
-        let nextIndex;
-        do {
-          nextIndex = Math.floor(Math.random() * tracks.length);
-        } while (nextIndex === currentTrackIndex && tracks.length > 1);
-        playTrack(nextIndex);
-      } else {
-        let nextIndex = currentTrackIndex + 1;
-        if (nextIndex >= tracks.length) {
-          if (isRepeat) nextIndex = 0;
-          else return;
-        }
-        playTrack(nextIndex);
+      // Mezclar aleatoriamente
+      for (let i = otherTracks.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [otherTracks[i], otherTracks[j]] = [otherTracks[j], otherTracks[i]];
       }
-    });
+      otherTracks = otherTracks.slice(0, 10); // limitar a 10
 
-    backBtn.addEventListener('click', () => {
-      if (tracks.length === 0) return;
-      if (isShuffle) {
-        let prevIndex;
-        do {
-          prevIndex = Math.floor(Math.random() * tracks.length);
-        } while (prevIndex === currentTrackIndex && tracks.length > 1);
-        playTrack(prevIndex);
-      } else {
-        let prevIndex = currentTrackIndex - 1;
-        if (prevIndex < 0) {
-          if (isRepeat) prevIndex = tracks.length - 1;
-          else return;
-        }
-        playTrack(prevIndex);
-      }
-    });
+      otherTracks.forEach(track => {
+        const div = document.createElement('div');
+        div.classList.add('recommended-item');
+        div.innerHTML = `
+          <img src="${track.cover || 'https://via.placeholder.com/50'}" alt="Miniatura">
+          <div class="recommended-text">
+            <div class="title">${track.title}</div>
+            <div class="artist">${track.artist}</div>
+          </div>
+        `;
+        div.onclick = () => {
+          tracks.push(track);
+          playTrack(tracks.length - 1);
+        };
+        recommendedListDiv.appendChild(div);
+      });
+    }
 
-    audio.addEventListener('ended', () => {
-      if (isRepeat) {
-        audio.currentTime = 0;
-        audio.play();
-      } else {
-        nextBtn.click();
-      }
-    });
+    audio.addEventListener('loadedmetadata', ()=>{ total.textContent = formatTime(audio.duration); });
+    audio.addEventListener('timeupdate', ()=>{ progress.value = (audio.currentTime/audio.duration)*100; current.textContent = formatTime(audio.currentTime); });
+    progress.addEventListener('input', ()=>{ audio.currentTime = (progress.value/100)*audio.duration; });
+    playBtn.addEventListener('click', ()=>{ audio.paused ? audio.play() && playIcon.classList.replace('fa-play','fa-pause') : audio.pause() && playIcon.classList.replace('fa-pause','fa-play'); });
+    nextBtn.addEventListener('click', ()=>{ if(tracks.length===0) return; let next = (currentTrackIndex+1)%tracks.length; playTrack(next); });
+    backBtn.addEventListener('click', ()=>{ if(tracks.length===0) return; let prev = (currentTrackIndex-1+tracks.length)%tracks.length; playTrack(prev); });
 
     window.onload = async () => {
       const params = new URLSearchParams(window.location.search);
       const trackId = params.get('track');
-      if (!trackId) {
-        return;
-      }
-
+      if(!trackId) return;
       const mainTrack = await loadMainTrack(trackId);
-      if (!mainTrack) return;
-
+      if(!mainTrack) return;
       await loadArtistTracks(mainTrack.artist);
-
-      currentTrackIndex = tracks.findIndex(t => t.id === trackId);
-      if (currentTrackIndex === -1) currentTrackIndex = 0;
-
-      playTrack(currentTrackIndex);
+      const idx = tracks.findIndex(t=>t.id===trackId);
+      playTrack(idx>=0?idx:0);
     };
   </script>
 
