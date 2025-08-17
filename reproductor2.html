@@ -106,7 +106,7 @@
 
   <!-- Lista de canciones del artista -->
   <div id="tracksListContainer">
-    <h3>Canciones de este artista</h3>
+    <h3 id="tracksListTitle">Canciones de este artista</h3>
     <div id="tracksList"></div>
   </div>
 
@@ -142,6 +142,7 @@
     const trackTitleElem = document.getElementById('trackTitle');
     const trackArtistElem = document.getElementById('trackArtist');
     const tracksListDiv = document.getElementById('tracksList');
+    const tracksListTitle = document.getElementById('tracksListTitle');
     const favoriteHeart = document.getElementById('favoriteHeart');
 
     let currentTrackIndex = -1;
@@ -149,10 +150,8 @@
     let isRepeat = false;
     let isShuffle = false;
 
-    // Llave para localStorage
     const FAVORITES_KEY = 'flixplemusic_favorites';
 
-    // Leer favoritos desde localStorage
     function getFavorites() {
       try {
         const fav = localStorage.getItem(FAVORITES_KEY);
@@ -162,21 +161,18 @@
       }
     }
 
-    // Guardar favoritos en localStorage
     function saveFavorites(favs) {
       localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs));
     }
 
-    // Verificar si la canción actual está en favoritos
     function isFavorite(trackId) {
       const favs = getFavorites();
       return favs.includes(trackId);
     }
 
-    // Actualizar ícono corazón según estado favorito
     function updateHeartIcon() {
       if (currentTrackIndex === -1) {
-        favoriteHeart.classList.replace('fa-heart', 'fa-heart'); // reset
+        favoriteHeart.classList.replace('fa-heart', 'fa-heart'); 
         favoriteHeart.classList.remove('fa-solid');
         favoriteHeart.classList.add('fa-regular');
         return;
@@ -191,7 +187,6 @@
       }
     }
 
-    // Alternar favorito al hacer click en el corazón SIN ALERTAS
     favoriteHeart.addEventListener('click', () => {
       if (currentTrackIndex === -1) return;
       const currentId = tracks[currentTrackIndex].id;
@@ -204,7 +199,6 @@
       }
       saveFavorites(favs);
       updateHeartIcon();
-      // ALERTA REMOVIDA
     });
 
     function formatTime(sec) {
@@ -257,7 +251,6 @@
       try {
         const snapshot = await get(ref(db, `tracks/${trackId}`));
         if (!snapshot.exists()) {
-          // alert removido
           return null;
         }
         const track = snapshot.val();
@@ -269,7 +262,6 @@
           url: track.url
         };
       } catch (error) {
-        // alert removido
         console.error(error);
         return null;
       }
@@ -277,6 +269,8 @@
 
     async function loadArtistTracks(artist) {
       try {
+        tracksListTitle.textContent = `Canciones de ${artist}`; // <- Cambio aquí
+
         const snapshot = await get(ref(db, 'tracks'));
         if (!snapshot.exists()) {
           tracksListDiv.innerHTML = '<p>No se encontraron canciones.</p>';
@@ -394,7 +388,6 @@
       const params = new URLSearchParams(window.location.search);
       const trackId = params.get('track');
       if (!trackId) {
-        // alert removido
         return;
       }
 
