@@ -18,8 +18,6 @@
       padding: 1rem;
       font-family: system-ui, sans-serif;
     }
-
-    /* Contenedores */
     #tracksListContainer, #recommendedTracksContainer {
       margin-top: 2rem;
       width: 100%;
@@ -28,8 +26,6 @@
       border-radius: 0.75rem;
       padding: 1rem;
     }
-
-    /* Títulos */
     #tracksListContainer h3, #recommendedTracksContainer h3 {
       font-weight: 700;
       text-align: center;
@@ -42,13 +38,10 @@
       padding-top: 0.5rem;
       padding-bottom: 0.5rem;
     }
-
-    /* Scroll y lista */
     #tracksList, #recommendedTracksList {
       max-height: 300px;
       overflow-y: auto;
     }
-
     .track-item, .rec-track-item {
       cursor: pointer;
       padding: 0.4rem 0.5rem;
@@ -60,36 +53,10 @@
     }
     .track-item:hover, .rec-track-item:hover { background-color: #2d1600; }
     .track-item.active { color: #a3f7bf; font-weight: 600; background-color: #1a3a27; }
-
-    .track-thumb, .rec-track-thumb {
-      width: 50px;
-      height: 50px;
-      object-fit: cover;
-      border-radius: 0.375rem;
-      flex-shrink: 0;
-    }
-
-    .track-info, .rec-track-info {
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-
-    .track-title, .rec-track-title {
-      color: white; 
-      font-weight: 500;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .track-artist, .rec-track-artist {
-      color: #cccccc; 
-      font-size: 0.85rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
+    .track-thumb, .rec-track-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 0.375rem; flex-shrink: 0; }
+    .track-info, .rec-track-info { display: flex; flex-direction: column; overflow: hidden; }
+    .track-title, .rec-track-title { color: white; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .track-artist, .rec-track-artist { color: #cccccc; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   </style>
 </head>
 <body>
@@ -124,13 +91,11 @@
   </div>
 </div>
 
-<!-- Lista de canciones del artista -->
 <div id="tracksListContainer">
   <h3 id="tracksListTitle">Canciones de este artista</h3>
   <div id="tracksList"></div>
 </div>
 
-<!-- Recomendadas de otros artistas -->
 <div id="recommendedTracksContainer">
   <h3>Canciones recomendadas para ti</h3>
   <div id="recommendedTracksList"></div>
@@ -176,7 +141,6 @@ let currentTrackIndex = -1;
 let tracks = [];
 let isRepeat = false;
 let isShuffle = false;
-
 const FAVORITES_KEY = 'flixplemusic_favorites';
 
 function getFavorites() { try { return JSON.parse(localStorage.getItem(FAVORITES_KEY))||[]; } catch { return []; } }
@@ -229,10 +193,11 @@ function renderRecommendedTracks(otherTracks){
         <div class="rec-track-title">${track.title}</div>
         <div class="rec-track-artist">${track.artist}</div>
       </div>`;
-    div.onclick=()=>{ 
-      // Reproducir la canción de recomendadas
-      tracks.push(track); 
-      playTrack(tracks.length-1); 
+    div.onclick=async()=>{ 
+      // Al hacer clic en una recomendada, carga TODAS las canciones de ese artista
+      await loadArtistTracks(track.artist);
+      const index = tracks.findIndex(t => t.id === track.id);
+      if(index !== -1) playTrack(index);
     };
     recommendedTracksDiv.appendChild(div);
   });
