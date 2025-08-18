@@ -8,55 +8,14 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
     * { -webkit-user-select: none; -webkit-touch-callout: none; }
-    body {
-      background: black;
-      color: white;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 1rem;
-      font-family: system-ui, sans-serif;
-    }
-    #tracksListContainer, #recommendedTracksContainer {
-      margin-top: 2rem;
-      width: 100%;
-      max-width: 400px;
-      background: transparent; 
-      border-radius: 0.75rem;
-      padding: 1rem;
-    }
-    #tracksListContainer h3, #recommendedTracksContainer h3 {
-      font-weight: 700;
-      text-align: center;
-      color: white;
-      margin-bottom: 1rem;
-      position: sticky;
-      top: 0;
-      background: black;
-      z-index: 10;
-      padding-top: 0.5rem;
-      padding-bottom: 0.5rem;
-    }
-    #tracksList, #recommendedTracksList {
-      max-height: 300px;
-      overflow-y: auto;
-    }
-    .track-item, .rec-track-item {
-      cursor: pointer;
-      padding: 0.4rem 0.5rem;
-      border-radius: 0.375rem;
-      transition: background-color 0.3s, color 0.3s;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .track-item:hover, .rec-track-item:hover { background-color: #2d1600; }
+    body { background: black; color: white; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 1rem; font-family: system-ui, sans-serif; }
+    #tracksListContainer { margin-top: 2rem; width: 100%; max-width: 400px; background: transparent; border-radius: 0.75rem; padding: 1rem; max-height: 300px; overflow-y: auto; }
+    #tracksListContainer h3 { margin-bottom: 1rem; font-weight: 700; text-align: center; color: white; }
+    .track-item { cursor: pointer; padding: 0.4rem 0.5rem; border-radius: 0.375rem; transition: background-color 0.3s, color 0.3s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; flex-direction: column; }
+    .track-item:hover { background-color: #2d1600; }
     .track-item.active { color: #a3f7bf; font-weight: 600; background-color: #1a3a27; }
-    .track-thumb, .rec-track-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 0.375rem; flex-shrink: 0; }
-    .track-info, .rec-track-info { display: flex; flex-direction: column; overflow: hidden; }
-    .track-title, .rec-track-title { color: white; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .track-artist, .rec-track-artist { color: #cccccc; font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .track-title { color: white; font-weight: 500; }
+    .track-artist { color: #cccccc; font-size: 0.85rem; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   </style>
 </head>
 <body>
@@ -96,11 +55,6 @@
   <div id="tracksList"></div>
 </div>
 
-<div id="recommendedTracksContainer">
-  <h3>Canciones recomendadas para ti</h3>
-  <div id="recommendedTracksList"></div>
-</div>
-
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
@@ -128,39 +82,37 @@ const repeatBtn = document.getElementById('repeatBtn');
 const shuffleBtn = document.getElementById('shuffleBtn');
 const backBtn = document.getElementById('back');
 const nextBtn = document.getElementById('next');
-
 const albumCoverImg = document.getElementById('albumCover');
 const trackTitleElem = document.getElementById('trackTitle');
 const trackArtistElem = document.getElementById('trackArtist');
 const tracksListDiv = document.getElementById('tracksList');
 const tracksListTitle = document.getElementById('tracksListTitle');
 const favoriteHeart = document.getElementById('favoriteHeart');
-const recommendedTracksDiv = document.getElementById('recommendedTracksList');
 
 let currentTrackIndex = -1;
 let tracks = [];
 let isRepeat = false;
 let isShuffle = false;
-const FAVORITES_KEY = 'flixplemusic_favorites';
 
-function getFavorites() { try { return JSON.parse(localStorage.getItem(FAVORITES_KEY))||[]; } catch { return []; } }
-function saveFavorites(favs) { localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs)); }
-function isFavorite(trackId) { return getFavorites().includes(trackId); }
+const FAVORITES_KEY = 'flixplemusic_favorites';
+const getFavorites = () => JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
+const saveFavorites = favs => localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs));
+const isFavorite = id => getFavorites().includes(id);
+
+favoriteHeart.addEventListener('click', () => {
+  if(currentTrackIndex === -1) return;
+  const id = tracks[currentTrackIndex].id;
+  let favs = getFavorites();
+  favs.includes(id) ? favs = favs.filter(x => x !== id) : favs.push(id);
+  saveFavorites(favs);
+  updateHeartIcon();
+});
 
 function updateHeartIcon(){
   if(currentTrackIndex===-1){ favoriteHeart.classList.replace('fa-heart','fa-heart'); favoriteHeart.classList.remove('fa-solid'); favoriteHeart.classList.add('fa-regular'); return; }
   const currentId=tracks[currentTrackIndex].id;
-  isFavorite(currentId)?favoriteHeart.classList.replace('fa-regular','fa-solid'):favoriteHeart.classList.replace('fa-solid','fa-regular');
+  isFavorite(currentId)?(favoriteHeart.classList.remove('fa-regular'),favoriteHeart.classList.add('fa-solid')):(favoriteHeart.classList.remove('fa-solid'),favoriteHeart.classList.add('fa-regular'));
 }
-
-favoriteHeart.addEventListener('click',()=>{
-  if(currentTrackIndex===-1) return;
-  const currentId = tracks[currentTrackIndex].id;
-  let favs = getFavorites();
-  favs.includes(currentId)?favs=favs.filter(id=>id!==currentId):favs.push(currentId);
-  saveFavorites(favs);
-  updateHeartIcon();
-});
 
 function formatTime(sec){ if(isNaN(sec)) return '0:00'; const m=Math.floor(sec/60); const s=Math.floor(sec%60).toString().padStart(2,'0'); return `${m}:${s}`; }
 
@@ -170,36 +122,10 @@ function renderTracks(){
     const div=document.createElement('div');
     div.classList.add('track-item');
     div.dataset.index=index;
-    div.innerHTML=`
-      <img src="${track.cover||'https://via.placeholder.com/50'}" class="track-thumb" />
-      <div class="track-info">
-        <div class="track-title">${track.title}</div>
-        <div class="track-artist">${track.artist}</div>
-      </div>`;
-    div.onclick=()=>playTrack(index);
+    div.innerHTML=`<div class="track-title">${track.title}</div><div class="track-artist">${track.artist}</div>`;
+    div.onclick=()=> loadArtistAndPlay(track.artist, track.id);
     if(index===currentTrackIndex) div.classList.add('active');
     tracksListDiv.appendChild(div);
-  });
-}
-
-function renderRecommendedTracks(otherTracks){
-  recommendedTracksDiv.innerHTML='';
-  otherTracks.forEach(track=>{
-    const div=document.createElement('div');
-    div.classList.add('rec-track-item');
-    div.innerHTML=`
-      <img src="${track.cover||'https://via.placeholder.com/50'}" class="rec-track-thumb"/>
-      <div class="rec-track-info">
-        <div class="rec-track-title">${track.title}</div>
-        <div class="rec-track-artist">${track.artist}</div>
-      </div>`;
-    div.onclick=async()=>{ 
-      // Al hacer clic en una recomendada, carga TODAS las canciones de ese artista
-      await loadArtistTracks(track.artist);
-      const index = tracks.findIndex(t => t.id === track.id);
-      if(index !== -1) playTrack(index);
-    };
-    recommendedTracksDiv.appendChild(div);
   });
 }
 
@@ -211,57 +137,40 @@ function playTrack(index){
   trackTitleElem.textContent=track.title||'Título';
   trackArtistElem.textContent=track.artist||'Artista';
   audio.src=track.url||'';
-  audio.play().catch(()=>console.log('Auto-play bloqueado'));
+  audio.play().catch(()=>console.log('Autoplay bloqueado'));
   playIcon.classList.replace('fa-play','fa-pause');
   renderTracks();
   updateHeartIcon();
 }
 
 async function loadMainTrack(trackId){
-  try{
-    const snapshot=await get(ref(db,`tracks/${trackId}`));
-    if(!snapshot.exists()) return null;
-    return {id:trackId,...snapshot.val()};
-  }catch{return null;}
+  const snapshot=await get(ref(db,`tracks/${trackId}`));
+  if(!snapshot.exists()) return null;
+  return {id:trackId,...snapshot.val()};
 }
 
-async function loadArtistTracks(artist){
+async function loadArtistAndPlay(artist, trackId){
   const snapshot=await get(ref(db,'tracks'));
-  if(!snapshot.exists()) return [];
+  if(!snapshot.exists()) return;
   const allTracks=Object.entries(snapshot.val()).map(([id,t])=>({id,...t}));
-  const artistTracks=allTracks.filter(t=>t.artist===artist).slice(0,15);
-  tracks=artistTracks;
+  tracks=allTracks.filter(t=>t.artist===artist);
   tracksListTitle.textContent=`Canciones de ${artist}`;
   renderTracks();
-
-  const otherTracks=allTracks.filter(t=>t.artist!==artist);
-  for(let i=otherTracks.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [otherTracks[i],otherTracks[j]]=[otherTracks[j],otherTracks[i]]; }
-  renderRecommendedTracks(otherTracks.slice(0,15));
-  return artistTracks;
+  currentTrackIndex=tracks.findIndex(t=>t.id===trackId);
+  if(currentTrackIndex===-1) currentTrackIndex=0;
+  playTrack(currentTrackIndex);
 }
 
-// Eventos básicos
+// Controles
 audio.addEventListener('loadedmetadata',()=>{ total.textContent=formatTime(audio.duration); });
-audio.addEventListener('timeupdate',()=>{ if(audio.duration){ progress.value=(audio.currentTime/audio.duration)*100; current.textContent=formatTime(audio.currentTime); } });
+audio.addEventListener('timeupdate',()=>{ if(audio.duration){ progress.value=(audio.currentTime/audio.duration)*100; current.textContent=formatTime(audio.currentTime); }});
 progress.addEventListener('input',()=>{ if(audio.duration) audio.currentTime=(progress.value/100)*audio.duration; });
-
-playBtn.addEventListener('click',()=>{ audio.paused?audio.play()&&playIcon.classList.replace('fa-play','fa-pause'):audio.pause()&&playIcon.classList.replace('fa-pause','fa-play'); });
+playBtn.addEventListener('click',()=>{ audio.paused?(audio.play(),playIcon.classList.replace('fa-play','fa-pause')):(audio.pause(),playIcon.classList.replace('fa-pause','fa-play')); });
 repeatBtn.addEventListener('click',()=>{ isRepeat=!isRepeat; audio.loop=isRepeat; repeatBtn.classList.toggle('text-green-500',isRepeat); });
 shuffleBtn.addEventListener('click',()=>{ isShuffle=!isShuffle; shuffleBtn.classList.toggle('text-green-500',isShuffle); });
-
-nextBtn.addEventListener('click',()=>{
-  if(tracks.length===0) return;
-  if(isShuffle){ let nextIndex; do{ nextIndex=Math.floor(Math.random()*tracks.length); }while(nextIndex===currentTrackIndex && tracks.length>1); playTrack(nextIndex);}
-  else{ let nextIndex=currentTrackIndex+1;if(nextIndex>=tracks.length){ if(isRepeat) nextIndex=0; else return; } playTrack(nextIndex); }
-});
-
-backBtn.addEventListener('click',()=>{
-  if(tracks.length===0) return;
-  if(isShuffle){ let prevIndex; do{ prevIndex=Math.floor(Math.random()*tracks.length); }while(prevIndex===currentTrackIndex && tracks.length>1); playTrack(prevIndex);}
-  else{ let prevIndex=currentTrackIndex-1;if(prevIndex<0){ if(isRepeat) prevIndex=tracks.length-1; else return; } playTrack(prevIndex); }
-});
-
-audio.addEventListener('ended',()=>{ if(isRepeat){ audio.currentTime=0; audio.play(); } else nextBtn.click(); });
+nextBtn.addEventListener('click',()=>{ if(tracks.length===0) return; let nextIndex=isShuffle?Math.floor(Math.random()*tracks.length):currentTrackIndex+1; if(nextIndex>=tracks.length) nextIndex=isRepeat?0:currentTrackIndex; playTrack(nextIndex); });
+backBtn.addEventListener('click',()=>{ if(tracks.length===0) return; let prevIndex=isShuffle?Math.floor(Math.random()*tracks.length):currentTrackIndex-1; if(prevIndex<0) prevIndex=isRepeat?tracks.length-1:currentTrackIndex; playTrack(prevIndex); });
+audio.addEventListener('ended',()=>{ isRepeat?(audio.currentTime=0,audio.play()):nextBtn.click(); });
 
 window.onload=async()=>{
   const params=new URLSearchParams(window.location.search);
@@ -269,10 +178,7 @@ window.onload=async()=>{
   if(!trackId) return;
   const mainTrack=await loadMainTrack(trackId);
   if(!mainTrack) return;
-  await loadArtistTracks(mainTrack.artist);
-  currentTrackIndex=tracks.findIndex(t=>t.id===trackId);
-  if(currentTrackIndex===-1) currentTrackIndex=0;
-  playTrack(currentTrackIndex);
+  loadArtistAndPlay(mainTrack.artist, trackId);
 };
 </script>
 
