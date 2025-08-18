@@ -78,46 +78,6 @@
       user-select: none;
       pointer-events: none;
     }
-
-    /* Reproductor flotante */
-    #floatingPlayer {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #1a1a1a;
-      border-top-left-radius: 1rem;
-      border-top-right-radius: 1rem;
-      width: 100%;
-      max-width: 480px;
-      padding: 0.5rem 1rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.7);
-      z-index: 999;
-    }
-    #floatingPlayer div.controls {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    #floatingPlayer button {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 1.3rem;
-      cursor: pointer;
-    }
-    #floatingPlayer span {
-      color: #a3f7bf;
-      font-weight: 600;
-      max-width: 200px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      display: block;
-    }
   </style>
 </head>
 <body>
@@ -126,65 +86,9 @@
     <li>Cargando...</li>
   </ul>
 
-  <!-- Reproductor flotante -->
-  <div id="floatingPlayer">
-    <span id="fpTrackTitle">Título</span>
-    <div class="controls">
-      <button id="fpPrev"><i class="fa-solid fa-backward-step"></i></button>
-      <button id="fpPlayPause"><i class="fa-solid fa-play"></i></button>
-      <button id="fpNext"><i class="fa-solid fa-forward-step"></i></button>
-    </div>
-  </div>
-
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
-
-    // Importa la API del reproductor
-    class MusicPlayer {
-      constructor() {
-        this.audio = new Audio();
-        this.playlist = [];
-        this.currentTrackIndex = 0;
-        this.isPlaying = false;
-        this.audio.addEventListener('ended', () => this.nextTrack());
-        this.audio.addEventListener('timeupdate', () => {
-          if (this.onTimeUpdate) this.onTimeUpdate(this.audio.currentTime);
-        });
-      }
-      play(trackUrl) {
-        if (trackUrl) this.audio.src = trackUrl;
-        this.audio.play();
-        this.isPlaying = true;
-        if (this.onPlay) this.onPlay(this.getCurrentTrack());
-      }
-      pause() {
-        this.audio.pause();
-        this.isPlaying = false;
-      }
-      toggle() {
-        this.isPlaying ? this.pause() : this.play();
-        this.isPlaying = !this.isPlaying;
-      }
-      setPlaylist(playlistArray, startIndex = 0) {
-        this.playlist = playlistArray;
-        this.currentTrackIndex = startIndex;
-      }
-      getCurrentTrack() {
-        return this.playlist[this.currentTrackIndex] || {};
-      }
-      nextTrack() {
-        if (!this.playlist.length) return;
-        this.currentTrackIndex = (this.currentTrackIndex + 1) % this.playlist.length;
-        this.play(this.playlist[this.currentTrackIndex].url);
-      }
-      prevTrack() {
-        if (!this.playlist.length) return;
-        this.currentTrackIndex = (this.currentTrackIndex - 1 + this.playlist.length) % this.playlist.length;
-        this.play(this.playlist[this.currentTrackIndex].url);
-      }
-    }
-    const player = new MusicPlayer();
 
     const firebaseConfig = {
       apiKey: "AIzaSyDiACaIKPXiSdcBo-bq4BW7z7gjpouVNos",
@@ -195,16 +99,12 @@
       messagingSenderId: "792301053512",
       appId: "1:792301053512:web:13878703d081f1a7b3da7d"
     };
+
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
     const FAVORITES_KEY = 'flixplemusic_favorites';
     const favoritesList = document.getElementById('favoritesList');
-
-    const fpTrackTitle = document.getElementById('fpTrackTitle');
-    const fpPlayPause = document.getElementById('fpPlayPause');
-    const fpPrev = document.getElementById('fpPrev');
-    const fpNext = document.getElementById('fpNext');
 
     async function loadFavoriteTracks() {
       const favs = JSON.parse(localStorage.getItem(FAVORITES_KEY) || '[]');
@@ -230,11 +130,8 @@
         return;
       }
 
-      // Configura la playlist en el player
-      player.setPlaylist(tracks);
-
       favoritesList.innerHTML = '';
-      tracks.forEach((track, index) => {
+      tracks.forEach(track => {
         const li = document.createElement('li');
 
         const img = document.createElement('img');
@@ -260,40 +157,15 @@
         li.appendChild(infoDiv);
 
         li.addEventListener('click', () => {
-          player.currentTrackIndex = index;
-          player.play(track.url);
-          fpTrackTitle.textContent = `${track.title} - ${track.artist}`;
-          fpPlayPause.innerHTML = '<i class="fa-solid fa-pause"></i>';
+          const url = `https://nimeapp.github.io/Flixplemusic/reproductor2.html?track=${encodeURIComponent(track.id)}`;
+          window.location.href = url;
         });
 
         favoritesList.appendChild(li);
       });
     }
 
-    // Controles del reproductor flotante
-    fpPlayPause.addEventListener('click', () => {
-      player.toggle();
-      fpPlayPause.innerHTML = player.isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play"></i>';
-      const track = player.getCurrentTrack();
-      fpTrackTitle.textContent = `${track.title || 'Título'} - ${track.artist || 'Artista'}`;
-    });
-
-    fpPrev.addEventListener('click', () => {
-      player.prevTrack();
-      const track = player.getCurrentTrack();
-      fpTrackTitle.textContent = `${track.title || 'Título'} - ${track.artist || 'Artista'}`;
-      fpPlayPause.innerHTML = '<i class="fa-solid fa-pause"></i>';
-    });
-
-    fpNext.addEventListener('click', () => {
-      player.nextTrack();
-      const track = player.getCurrentTrack();
-      fpTrackTitle.textContent = `${track.title || 'Título'} - ${track.artist || 'Artista'}`;
-      fpPlayPause.innerHTML = '<i class="fa-solid fa-pause"></i>';
-    });
-
     window.onload = loadFavoriteTracks;
   </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 </body>
 </html>
