@@ -21,18 +21,15 @@
       padding: 1rem;
       font-family: system-ui, sans-serif;
     }
-    #tracksListContainer {
+    #tracksListContainer, #recommendedContainer {
       margin-top: 2rem;
       width: 100%;
       max-width: 400px;
       background: transparent; 
       border-radius: 0.75rem;
       padding: 1rem;
-      max-height: 300px;
-      overflow-y: auto;
-      box-shadow: none; 
     }
-    #tracksListContainer h3 {
+    #tracksListContainer h3, #recommendedTitle {
       margin-bottom: 1rem;
       font-weight: 700;
       text-align: center;
@@ -43,11 +40,9 @@
       padding: 0.4rem 0.5rem;
       border-radius: 0.375rem;
       transition: background-color 0.3s, color 0.3s;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
     }
     .track-item:hover {
       background-color: #2d1600;
@@ -57,18 +52,48 @@
       font-weight: 600;
       background-color: #1a3a27;
     }
+    .track-item img {
+      width: 50px;
+      height: 50px;
+      border-radius: 0.5rem;
+      object-fit: cover;
+    }
+    .track-text {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
     .track-title {
       color: white; 
       font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .track-artist {
       color: #cccccc; 
       font-size: 0.85rem;
-      text-align: left;
-      margin-top: 2px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+    #tracksList {
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    #recommendedTracks {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    #recommendedTitleContainer {
+      position: sticky;
+      top: 0;
+      background: black;
+      padding: 0.5rem 0;
+      z-index: 10;
     }
   </style>
 </head>
@@ -110,6 +135,14 @@
     <div id="tracksList"></div>
   </div>
 
+  <!-- Contenedor de recomendaciones -->
+  <div id="recommendedContainer">
+    <div id="recommendedTitleContainer">
+      <h3 id="recommendedTitle">Canciones recomendadas para ti</h3>
+    </div>
+    <div id="recommendedTracks"></div>
+  </div>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
     import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-database.js";
@@ -144,6 +177,7 @@
     const tracksListDiv = document.getElementById('tracksList');
     const tracksListTitle = document.getElementById('tracksListTitle');
     const favoriteHeart = document.getElementById('favoriteHeart');
+    const recommendedTracksDiv = document.getElementById('recommendedTracks');
 
     let currentTrackIndex = -1;
     let tracks = [];
@@ -153,58 +187,29 @@
     const FAVORITES_KEY = 'flixplemusic_favorites';
 
     function getFavorites() {
-      try {
-        const fav = localStorage.getItem(FAVORITES_KEY);
-        return fav ? JSON.parse(fav) : [];
-      } catch {
-        return [];
-      }
+      try { return JSON.parse(localStorage.getItem(FAVORITES_KEY)) || []; } catch { return []; }
     }
-
-    function saveFavorites(favs) {
-      localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs));
-    }
-
-    function isFavorite(trackId) {
-      const favs = getFavorites();
-      return favs.includes(trackId);
-    }
+    function saveFavorites(favs) { localStorage.setItem(FAVORITES_KEY, JSON.stringify(favs)); }
+    function isFavorite(trackId) { return getFavorites().includes(trackId); }
 
     function updateHeartIcon() {
-      if (currentTrackIndex === -1) {
-        favoriteHeart.classList.replace('fa-heart', 'fa-heart'); 
-        favoriteHeart.classList.remove('fa-solid');
-        favoriteHeart.classList.add('fa-regular');
-        return;
-      }
+      if (currentTrackIndex === -1) { favoriteHeart.className = 'fa-regular fa-heart text-xl opacity-70 hover:opacity-100 cursor-pointer'; return; }
       const currentId = tracks[currentTrackIndex].id;
-      if (isFavorite(currentId)) {
-        favoriteHeart.classList.remove('fa-regular');
-        favoriteHeart.classList.add('fa-solid');
-      } else {
-        favoriteHeart.classList.remove('fa-solid');
-        favoriteHeart.classList.add('fa-regular');
-      }
+      favoriteHeart.className = isFavorite(currentId) ? 'fa-solid fa-heart text-xl opacity-70 hover:opacity-100 cursor-pointer' : 'fa-regular fa-heart text-xl opacity-70 hover:opacity-100 cursor-pointer';
     }
 
     favoriteHeart.addEventListener('click', () => {
       if (currentTrackIndex === -1) return;
       const currentId = tracks[currentTrackIndex].id;
       let favs = getFavorites();
-
-      if (favs.includes(currentId)) {
-        favs = favs.filter(id => id !== currentId);
-      } else {
-        favs.push(currentId);
-      }
+      favs = favs.includes(currentId) ? favs.filter(id => id !== currentId) : [...favs, currentId];
       saveFavorites(favs);
       updateHeartIcon();
     });
 
     function formatTime(sec) {
       if (isNaN(sec)) return '0:00';
-      const m = Math.floor(sec / 60);
-      const s = Math.floor(sec % 60).toString().padStart(2, '0');
+      const m = Math.floor(sec / 60), s = Math.floor(sec % 60).toString().padStart(2,'0');
       return `${m}:${s}`;
     }
 
@@ -212,196 +217,106 @@
       tracksListDiv.innerHTML = '';
       tracks.forEach((track, index) => {
         const div = document.createElement('div');
-        div.classList.add('track-item');
+        div.className = 'track-item';
         div.dataset.index = index;
-
         div.innerHTML = `
-          <div class="track-title">${track.title}</div>
-          <div class="track-artist">${track.artist}</div>
+          <img src="${track.cover || 'https://via.placeholder.com/50'}" alt="cover">
+          <div class="track-text">
+            <div class="track-title">${track.title}</div>
+            <div class="track-artist">${track.artist}</div>
+          </div>
         `;
-
         div.onclick = () => playTrack(index);
-        if (index === currentTrackIndex) {
-          div.classList.add('active');
-        }
+        if (index === currentTrackIndex) div.classList.add('active');
         tracksListDiv.appendChild(div);
       });
     }
 
-    function playTrack(index) {
-      if (index < 0 || index >= tracks.length) return;
-      currentTrackIndex = index;
-      const track = tracks[index];
-
-      albumCoverImg.src = track.cover || 'https://via.placeholder.com/300';
-      trackTitleElem.textContent = track.title || 'Título';
-      trackArtistElem.textContent = track.artist || 'Artista';
-
-      audio.src = track.url || '';
-      audio.play().catch(() => {
-        console.log('Auto-play bloqueado, esperando interacción.');
+    function renderRecommended(allTracks) {
+      recommendedTracksDiv.innerHTML = '';
+      allTracks.forEach(track => {
+        const div = document.createElement('div');
+        div.className = 'track-item';
+        div.innerHTML = `
+          <img src="${track.cover || 'https://via.placeholder.com/50'}" alt="cover">
+          <div class="track-text">
+            <div class="track-title">${track.title}</div>
+            <div class="track-artist">${track.artist}</div>
+          </div>
+        `;
+        div.onclick = () => playTrackById(track.id);
+        recommendedTracksDiv.appendChild(div);
       });
-      playIcon.classList.replace('fa-play', 'fa-pause');
+    }
 
+    function playTrack(index) {
+      if(index<0 || index>=tracks.length) return;
+      currentTrackIndex=index;
+      const track=tracks[index];
+      albumCoverImg.src=track.cover||'https://via.placeholder.com/300';
+      trackTitleElem.textContent=track.title;
+      trackArtistElem.textContent=track.artist;
+      audio.src=track.url||'';
+      audio.play().catch(()=>console.log('Autoplay bloqueado'));
+      playIcon.classList.replace('fa-play','fa-pause');
       renderTracks();
       updateHeartIcon();
     }
 
-    async function loadMainTrack(trackId) {
-      try {
-        const snapshot = await get(ref(db, `tracks/${trackId}`));
-        if (!snapshot.exists()) {
-          return null;
-        }
-        const track = snapshot.val();
-        return {
-          id: trackId,
-          title: track.title,
-          artist: track.artist,
-          cover: track.cover,
-          url: track.url
-        };
-      } catch (error) {
-        console.error(error);
-        return null;
-      }
+    async function playTrackById(trackId){
+      const snapshot = await get(ref(db, `tracks/${trackId}`));
+      if(!snapshot.exists()) return;
+      const track = {id: trackId, ...snapshot.val()};
+      let index = tracks.findIndex(t=>t.id===trackId);
+      if(index===-1) { tracks.unshift(track); index=0; }
+      playTrack(index);
     }
 
-    async function loadArtistTracks(artist) {
-      try {
-        tracksListTitle.textContent = `Canciones de ${artist}`; // <- Cambio aquí
+    async function loadTracks(trackId){
+      const snapshot = await get(ref(db, `tracks/${trackId}`));
+      if(!snapshot.exists()) return;
+      const mainTrack = {id: trackId, ...snapshot.val()};
+      tracksListTitle.textContent = `Canciones de ${mainTrack.artist}`;
+      const allSnapshot = await get(ref(db,'tracks'));
+      if(!allSnapshot.exists()) return;
+      const allTracks = Object.entries(allSnapshot.val()).map(([id,t])=>({id,...t}));
 
-        const snapshot = await get(ref(db, 'tracks'));
-        if (!snapshot.exists()) {
-          tracksListDiv.innerHTML = '<p>No se encontraron canciones.</p>';
-          return [];
-        }
-        const allTracks = snapshot.val();
+      // Tracks del artista
+      tracks = allTracks.filter(t=>t.artist===mainTrack.artist).sort(()=>Math.random()-0.5).slice(0,15);
+      renderTracks();
 
-        let artistTracks = Object.entries(allTracks)
-          .map(([id, t]) => ({ id, ...t }))
-          .filter(t => t.artist === artist);
+      // Recomendaciones
+      const recommended = allTracks.filter(t=>t.artist!==mainTrack.artist).sort(()=>Math.random()-0.5).slice(0,15);
+      renderRecommended(recommended);
 
-        if (artistTracks.length === 0) {
-          tracksListDiv.innerHTML = '<p>No hay canciones para este artista.</p>';
-          return [];
-        }
-
-        for (let i = artistTracks.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [artistTracks[i], artistTracks[j]] = [artistTracks[j], artistTracks[i]];
-        }
-
-        artistTracks = artistTracks.slice(0, 15);
-
-        tracks = artistTracks;
-
-        renderTracks();
-
-        return artistTracks;
-      } catch (error) {
-        tracksListDiv.innerHTML = '<p>Error cargando canciones.</p>';
-        console.error(error);
-        return [];
-      }
+      currentTrackIndex = tracks.findIndex(t=>t.id===trackId);
+      if(currentTrackIndex===-1) currentTrackIndex=0;
+      playTrack(currentTrackIndex);
     }
 
-    audio.addEventListener('loadedmetadata', () => {
-      total.textContent = formatTime(audio.duration);
+    audio.addEventListener('loadedmetadata',()=>{total.textContent=formatTime(audio.duration);});
+    audio.addEventListener('timeupdate',()=>{if(audio.duration){progress.value=(audio.currentTime/audio.duration)*100;current.textContent=formatTime(audio.currentTime);}});
+    progress.addEventListener('input',()=>{if(audio.duration) audio.currentTime=(progress.value/100)*audio.duration;});
+    playBtn.addEventListener('click',()=>{audio.paused?(audio.play(),playIcon.classList.replace('fa-play','fa-pause')):(audio.pause(),playIcon.classList.replace('fa-pause','fa-play'));});
+    repeatBtn.addEventListener('click',()=>{isRepeat=!isRepeat;audio.loop=isRepeat;repeatBtn.classList.toggle('text-green-500',isRepeat);});
+    shuffleBtn.addEventListener('click',()=>{isShuffle=!isShuffle;shuffleBtn.classList.toggle('text-green-500',isShuffle);});
+    nextBtn.addEventListener('click',()=>{
+      if(tracks.length===0) return;
+      if(isShuffle){let n; do{n=Math.floor(Math.random()*tracks.length);}while(n===currentTrackIndex&&tracks.length>1);playTrack(n);}
+      else{let n=currentTrackIndex+1;if(n>=tracks.length){if(isRepeat)n=0;else return;}playTrack(n);}
     });
-    audio.addEventListener('timeupdate', () => {
-      if (audio.duration) {
-        progress.value = (audio.currentTime / audio.duration) * 100;
-        current.textContent = formatTime(audio.currentTime);
-      }
+    backBtn.addEventListener('click',()=>{
+      if(tracks.length===0) return;
+      if(isShuffle){let n; do{n=Math.floor(Math.random()*tracks.length);}while(n===currentTrackIndex&&tracks.length>1);playTrack(n);}
+      else{let n=currentTrackIndex-1;if(n<0){if(isRepeat)n=tracks.length-1;else return;}playTrack(n);}
     });
-    progress.addEventListener('input', () => {
-      if (audio.duration) {
-        audio.currentTime = (progress.value / 100) * audio.duration;
-      }
-    });
-    playBtn.addEventListener('click', () => {
-      if (audio.paused) {
-        audio.play();
-        playIcon.classList.replace('fa-play', 'fa-pause');
-      } else {
-        audio.pause();
-        playIcon.classList.replace('fa-pause', 'fa-play');
-      }
-    });
-    repeatBtn.addEventListener('click', () => {
-      isRepeat = !isRepeat;
-      audio.loop = isRepeat;
-      repeatBtn.classList.toggle('text-green-500', isRepeat);
-    });
-    shuffleBtn.addEventListener('click', () => {
-      isShuffle = !isShuffle;
-      shuffleBtn.classList.toggle('text-green-500', isShuffle);
-    });
+    audio.addEventListener('ended',()=>{if(isRepeat){audio.currentTime=0;audio.play();}else nextBtn.click();});
 
-    nextBtn.addEventListener('click', () => {
-      if (tracks.length === 0) return;
-      if (isShuffle) {
-        let nextIndex;
-        do {
-          nextIndex = Math.floor(Math.random() * tracks.length);
-        } while (nextIndex === currentTrackIndex && tracks.length > 1);
-        playTrack(nextIndex);
-      } else {
-        let nextIndex = currentTrackIndex + 1;
-        if (nextIndex >= tracks.length) {
-          if (isRepeat) nextIndex = 0;
-          else return;
-        }
-        playTrack(nextIndex);
-      }
-    });
-
-    backBtn.addEventListener('click', () => {
-      if (tracks.length === 0) return;
-      if (isShuffle) {
-        let prevIndex;
-        do {
-          prevIndex = Math.floor(Math.random() * tracks.length);
-        } while (prevIndex === currentTrackIndex && tracks.length > 1);
-        playTrack(prevIndex);
-      } else {
-        let prevIndex = currentTrackIndex - 1;
-        if (prevIndex < 0) {
-          if (isRepeat) prevIndex = tracks.length - 1;
-          else return;
-        }
-        playTrack(prevIndex);
-      }
-    });
-
-    audio.addEventListener('ended', () => {
-      if (isRepeat) {
-        audio.currentTime = 0;
-        audio.play();
-      } else {
-        nextBtn.click();
-      }
-    });
-
-    window.onload = async () => {
+    window.onload = ()=>{
       const params = new URLSearchParams(window.location.search);
       const trackId = params.get('track');
-      if (!trackId) {
-        return;
-      }
-
-      const mainTrack = await loadMainTrack(trackId);
-      if (!mainTrack) return;
-
-      await loadArtistTracks(mainTrack.artist);
-
-      currentTrackIndex = tracks.findIndex(t => t.id === trackId);
-      if (currentTrackIndex === -1) currentTrackIndex = 0;
-
-      playTrack(currentTrackIndex);
+      if(trackId) loadTracks(trackId);
     };
   </script>
-
 </body>
 </html>
